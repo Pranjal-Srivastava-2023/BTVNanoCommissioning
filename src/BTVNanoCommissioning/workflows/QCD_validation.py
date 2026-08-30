@@ -102,8 +102,8 @@ class NanoProcessor(processor.ProcessorABC):
         output = {}
         if not self.noHist:
             output = histogrammer(
-                events.Jet.fields,
-                obj_list=["jet0"],
+                events.FatJet.fields,
+                obj_list=["jet0", "dilep"],
                 hist_collections=["common", "fourvec", "QCD"],
             )
 
@@ -320,8 +320,12 @@ class NanoProcessor(processor.ProcessorABC):
         
         jets_subjet_cut = jets_ID[subjet_mask]
         cutflow["subjet_req"] += ak.sum(ak.num(jets_subjet_cut))
-        
-        jet_req = ak.pad_none(jets_subjet_cut, 1, axis=1) 
+
+        print("Jet cutflow:")
+        for key in ["jet_all", "jet_ele_removed", "jet_mu_removed", "jet_ID", "subjet_req"]:
+            print(f"  {key:20s} {cutflow[key]}")
+
+        jet_req = ak.pad_none(jets_subjet_cut, 1, axis=1)
 
         #######################
         # Selected Zee events #
@@ -369,7 +373,11 @@ class NanoProcessor(processor.ProcessorABC):
         for i, cut in enumerate(zee_cuts):
             passed = zee_cut.all(*zee_cuts[:i + 1])
             cutflow_Zee[cut] += ak.sum(passed)
-        
+
+        print("Zee cutflow:")
+        for key, value in cutflow_Zee.items():
+            print(f"  {key:10s} {value}")
+
         zee_event_level = zee_cut.all(*zee_cuts)
         zee_events = events[zee_event_level]
             
@@ -419,18 +427,18 @@ class NanoProcessor(processor.ProcessorABC):
         ]
         for i, cut in enumerate(zmm_cuts):
             passed = zmm_cut.all(*zmm_cuts[:i + 1])
-            cutflow_Zmm[cut] += ak.sum(passed)   
-        
-       
-        
-        
+            cutflow_Zmm[cut] += ak.sum(passed)
+
+        print("Zmm cutflow:")
+        for key, value in cutflow_Zmm.items():
+            print(f"  {key:10s} {value}")
+
         zmm_event_level = zmm_cut.all(*zmm_cuts)
         zmm_events = events[zmm_event_level]
-        
-        
+
+
         event_level = zee_event_level | zmm_event_level
-        events_selected = events[event_level]
-        
+
         if len(events[event_level]) == 0:
             if self.isArray:
                 array_writer(
@@ -444,23 +452,55 @@ class NanoProcessor(processor.ProcessorABC):
                     empty=True,
                 )
             return {dataset: output}
- 
+
+        ####################
+        # Selected objects #
+        ####################
+        # Zee/Zmm are mutually exclusive per event (event_level = zee | zmm), so pick
+        # whichever candidate actually fired for each event.
+        Zee_cand = ele_req[:, 0] + ele_req[:, 1]
+        Zmm_cand = mu_req[:, 0] + mu_req[:, 1]
+        dilep_pt = ak.where(zee_event_level, Zee_cand.pt, Zmm_cand.pt)
+        dilep_eta = ak.where(zee_event_level, Zee_cand.eta, Zmm_cand.eta)
+        dilep_phi = ak.where(zee_event_level, Zee_cand.phi, Zmm_cand.phi)
+        dilep_mass = ak.where(zee_event_level, Zee_cand.mass, Zmm_cand.mass)
+
+        # Keep the structure of events and pruned the object size
+        pruned_ev = events[event_level]
+        pruned_ev["SelJet"] = jets_subjet_cut[event_level][:, 0]
+        pruned_ev["njet"] = ak.num(jets_subjet_cut[event_level], axis=1)
+        # tau1/tau2/tau3 ratios aren't precomputed branches, derive them for the QCD hists
+        pruned_ev["SelJet", "tau21"] = ak.where(
+            pruned_ev.SelJet.tau1 > 0,
+            pruned_ev.SelJet.tau2 / pruned_ev.SelJet.tau1,
+            -1.0,
+        )
+        pruned_ev["SelJet", "tau32"] = ak.where(
+            pruned_ev.SelJet.tau2 > 0,
+            pruned_ev.SelJet.tau3 / pruned_ev.SelJet.tau2,
+            -1.0,
+        )
+        pruned_ev["dilep"] = ak.zip(
+            {
+                "pt": dilep_pt[event_level],
+                "eta": dilep_eta[event_level],
+                "phi": dilep_phi[event_level],
+                "mass": dilep_mass[event_level],
+            }
+        )
+
         ####################
         #     Output       #
         ####################
         # Configure SFs
         weights = weight_manager(
-            events[event_level],
+            pruned_ev,
             None,
             self.isSyst,
             campaign=self._campaign,
         )
-        
-        ####################
-        #     Output       #
-        ####################
+
         # Configure systematics
-        
         if shift_name is None:
             systematics = ["nominal"] + list(weights.variations)
         else:
@@ -469,7 +509,7 @@ class NanoProcessor(processor.ProcessorABC):
         # Configure histograms
         if not self.noHist:
             output = histo_writter(
-                events[event_level], output, weights, systematics, self.isSyst, None
+                pruned_ev, output, weights, systematics, self.isSyst, None
             )
         # Output arrays
         if self.isArray:

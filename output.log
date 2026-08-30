@@ -1,0 +1,36 @@
+XGBoost missing, deactivating BDT output
+Running with the following options:
+Namespace(workflow='QCD_sf', output='hists.coffea', outputdir=None, samplejson='metadata/test_Zb.json', year='2018', campaign='2018-UL', selectionModifier='', isSyst=False, ttbar_reweights='none', isArray=False, noHist=True, overwrite=True, executor='iterative', workers=3, scaleout=6, memory=4.0, disk=4, voms=None, chunk=200000, retries=25, fsize=50, index='0,0', validate=False, skipbadfiles=False, only=None, skip_structure_validation=False, validate_files_per_sample=None, limit=None, max=None)
+Dataset validation complete. 1 valid samples remaining.
+Preprocessing 100% ━━━━━━━━━━━━━━━━━━━━━━━━ 1/1 [ 0:00:02 < 0:00:00 | ? file/s ]
+Total Events         177605
+ele_all              159538
+ele_ip               137443
+ele_kin              75968
+ele_EE_EB            74571
+ele_ID               47018
+mu_all               136976
+mu_kin               76683
+mu_ID                69934
+mu_iso               64691
+Total Events         177605
+ele_all              160403
+ele_ip               138207
+ele_kin              76410
+ele_EE_EB            75002
+ele_ID               47330
+mu_all               137286
+mu_kin               76633
+mu_ID                69733
+mu_iso               64644
+Total Events         177604
+ele_all              160084
+ele_ip               137844
+ele_kin              76085
+ele_EE_EB            74717
+ele_ID               47056
+mu_all               137264
+mu_kin               76984
+mu_ID                70200
+mu_iso               65043
+Processing 100% ━━━━━━━━━━━━━━━━━━━━━━━━ 3/3 [ 0:00:29 < 0:00:00 | 0.1 chunk/s ]

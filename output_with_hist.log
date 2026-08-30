@@ -1,0 +1,93 @@
+XGBoost missing, deactivating BDT output
+Running with the following options:
+Namespace(workflow='QCD_sf', output='hists.coffea', outputdir=None, samplejson='metadata/test_Zb.json', year='2018', campaign='2018-UL', selectionModifier='', isSyst=False, ttbar_reweights='none', isArray=False, noHist=False, overwrite=True, executor='iterative', workers=3, scaleout=6, memory=4.0, disk=4, voms=None, chunk=200000, retries=25, fsize=50, index='0,0', validate=False, skipbadfiles=False, only=None, skip_structure_validation=False, validate_files_per_sample=None, limit=None, max=None)
+Dataset validation complete. 1 valid samples remaining.
+Preprocessing 100% ━━━━━━━━━━━━━━━━━━━━━━━━ 1/1 [ 0:00:01 < 0:00:00 | ? file/s ]
+Total Events         177605
+ele_all              159538
+ele_ip               137443
+ele_kin              75968
+ele_EE_EB            74571
+ele_ID               47018
+mu_all               136976
+mu_kin               76683
+mu_ID                69934
+mu_iso               64691
+Jet cutflow:
+  jet_all              20224
+  jet_ele_removed      18205
+  jet_mu_removed       15829
+  jet_ID               15702
+  subjet_req           9710
+Zee cutflow:
+  trigger    36279
+  electron   9334
+  Zmass      8837
+  MET        7475
+  jet        388
+Zmm cutflow:
+  trigger    44552
+  muon       17985
+  Zmass      0
+  MET        0
+  jet        0
+Total Events         177605
+ele_all              160403
+ele_ip               138207
+ele_kin              76410
+ele_EE_EB            75002
+ele_ID               47330
+mu_all               137286
+mu_kin               76633
+mu_ID                69733
+mu_iso               64644
+Jet cutflow:
+  jet_all              20007
+  jet_ele_removed      18049
+  jet_mu_removed       15701
+  jet_ID               15590
+  subjet_req           9640
+Zee cutflow:
+  trigger    36577
+  electron   9434
+  Zmass      8919
+  MET        7556
+  jet        387
+Zmm cutflow:
+  trigger    44723
+  muon       17916
+  Zmass      0
+  MET        0
+  jet        0
+Total Events         177604
+ele_all              160084
+ele_ip               137844
+ele_kin              76085
+ele_EE_EB            74717
+ele_ID               47056
+mu_all               137264
+mu_kin               76984
+mu_ID                70200
+mu_iso               65043
+Jet cutflow:
+  jet_all              20135
+  jet_ele_removed      18181
+  jet_mu_removed       15773
+  jet_ID               15678
+  subjet_req           9558
+Zee cutflow:
+  trigger    36457
+  electron   9291
+  Zmass      8787
+  MET        7518
+  jet        415
+Zmm cutflow:
+  trigger    44681
+  muon       18208
+  Zmass      0
+  MET        0
+  jet        0
+Processing 100% ━━━━━━━━━━━━━━━━━━━━━━━━ 3/3 [ 0:00:14 < 0:00:00 | 0.2 chunk/s ]
+Saving output to hists_QCD_sf_test_Zb/hists_QCD_sf_test_Zb.coffea
+
+[exited with code 0]

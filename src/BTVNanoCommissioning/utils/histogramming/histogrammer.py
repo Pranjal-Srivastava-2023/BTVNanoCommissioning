@@ -100,15 +100,20 @@ def histo_writter(pruned_ev, output, weights, systematics, isSyst, SF_map):
 
     if "hadronFlavour" in pruned_ev.SelJet.fields:
         isRealData = False
-        genflavor = ak.values_astype(
-            pruned_ev.SelJet.hadronFlavour
-            + 1
-            * (
-                (pruned_ev.SelJet.partonFlavour == 0)
-                & (pruned_ev.SelJet.hadronFlavour == 0)
-            ),
-            int,
-        )
+        if "partonFlavour" in pruned_ev.SelJet.fields:
+            # e.g. AK4 jets: refine gluon-matched light jets (flavour 0) using partonFlavour
+            genflavor = ak.values_astype(
+                pruned_ev.SelJet.hadronFlavour
+                + 1
+                * (
+                    (pruned_ev.SelJet.partonFlavour == 0)
+                    & (pruned_ev.SelJet.hadronFlavour == 0)
+                ),
+                int,
+            )
+        else:
+            # e.g. AK8 FatJet: no partonFlavour branch available, hadronFlavour alone
+            genflavor = ak.values_astype(pruned_ev.SelJet.hadronFlavour, int)
         if "MuonJet" in pruned_ev.fields:
             smflav = ak.values_astype(
                 1
