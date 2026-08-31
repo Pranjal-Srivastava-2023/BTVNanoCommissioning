@@ -49,9 +49,16 @@ class NanoProcessor(processor.ProcessorABC):
                 "muonTrig": ["IsoMu24"],
             },
         }
-    
-    
-    
+    # "Loose" ParticleNetMD Xbb-vs-QCD working point per year, from the old
+    # ZbAnalysis_boosted workflow's Configs/inputParameters.txt (jet_PNETL_*).
+    # Defines the Z_bjet comparison-histogram region (see fill_comparison_hists).
+    pnet_loose_wp = {
+        "2016preVFP-UL": 0.9088,
+        "2016postVFP-UL": 0.9137,
+        "2017-UL": 0.9105,
+        "2018-UL": 0.9172,
+    }
+
     # Define histograms
     def __init__(
         self,
@@ -489,6 +496,25 @@ class NanoProcessor(processor.ProcessorABC):
             }
         )
 
+        # Leading/subleading lepton of whichever Z candidate fired, and the two
+        # subjets of the leading AK8 jet -- needed to reproduce the comparison
+        # plots from the old ROOT-based ZbAnalysis_boosted workflow (see
+        # WORKFLOW_GUIDE.md). FatJet.subjets is coffea's built-in cross-reference
+        # via subJetIdx1/subJetIdx2, resolved here since jets_subjet_cut already
+        # required both indices to be valid.
+        lep0_pt = ak.where(zee_event_level, ele_req[:, 0].pt, mu_req[:, 0].pt)
+        lep0_eta = ak.where(zee_event_level, ele_req[:, 0].eta, mu_req[:, 0].eta)
+        lep1_pt = ak.where(zee_event_level, ele_req[:, 1].pt, mu_req[:, 1].pt)
+        lep1_eta = ak.where(zee_event_level, ele_req[:, 1].eta, mu_req[:, 1].eta)
+        pruned_ev["lep0"] = ak.zip(
+            {"pt": lep0_pt[event_level], "eta": lep0_eta[event_level]}
+        )
+        pruned_ev["lep1"] = ak.zip(
+            {"pt": lep1_pt[event_level], "eta": lep1_eta[event_level]}
+        )
+        pruned_ev["SubJet0"] = pruned_ev.SelJet.subjets[:, 0]
+        pruned_ev["SubJet1"] = pruned_ev.SelJet.subjets[:, 1]
+
         ####################
         #     Output       #
         ####################
@@ -511,6 +537,7 @@ class NanoProcessor(processor.ProcessorABC):
             output = histo_writter(
                 pruned_ev, output, weights, systematics, self.isSyst, None
             )
+            self.fill_comparison_hists(pruned_ev, jets_subjet_cut[event_level], output, weights)
         # Output arrays
         if self.isArray:
             array_writer(
@@ -526,6 +553,71 @@ class NanoProcessor(processor.ProcessorABC):
             )
 
         return {dataset: output}
+
+    def fill_comparison_hists(self, pruned_ev, all_seljets, output, weights):
+        """
+        Fill the cmp_* histograms added to match the old ROOT-based
+        ZbAnalysis_boosted workflow's plots (see WORKFLOW_GUIDE.md), so the two
+        can be compared directly. Filled manually rather than through the
+        shared histo_writter dispatcher because these carry an extra "region"
+        axis: "Z_jet" (all selected events, no b-tag requirement) and
+        "Z_bjet" (the same events additionally passing the loose ParticleNetMD
+        Xbb-vs-QCD working point on the leading jet -- see pnet_loose_wp).
+
+        Unlike the old code, phi_sub0/eta_sub0 (and sub1) are filled with the
+        correct quantities -- the old workflow has them swapped due to a bug in
+        Plots.cxx (h_phi_sub0 filled with Eta(), h_eta_sub0 filled with Phi()).
+        """
+        if any(f"cmp_{name}" not in output for name in ["pt_lep0"]):
+            return  # guarded off (e.g. missing subjet/tagger branches)
+
+        wp = self.pnet_loose_wp.get(self._campaign, self.pnet_loose_wp["2018-UL"])
+
+        weight = weights.weight()
+        syst = np.full(len(weight), "nominal")
+
+        fj = pruned_ev.SelJet
+        totXbb = fj.particleNetMD_Xbb + fj.particleNetMD_QCD
+        pnet_leading = ak.where(totXbb > 0, fj.particleNetMD_Xbb / totXbb, -1.0)
+        is_bjet = ak.to_numpy(pnet_leading >= wp)
+
+        region_jet = np.full(len(weight), "Z_jet")
+        region_bjet = np.full(int(is_bjet.sum()), "Z_bjet")
+
+        def fill_both(histname, values):
+            output[histname].fill(syst, region_jet, values, weight=weight)
+            output[histname].fill(
+                syst[is_bjet], region_bjet, values[is_bjet], weight=weight[is_bjet]
+            )
+
+        fill_both("cmp_pt_lep0", pruned_ev.lep0.pt)
+        fill_both("cmp_eta_lep0", pruned_ev.lep0.eta)
+        fill_both("cmp_pt_lep1", pruned_ev.lep1.pt)
+        fill_both("cmp_eta_lep1", pruned_ev.lep1.eta)
+        fill_both("cmp_mass_zcand", pruned_ev.dilep.mass)
+        fill_both("cmp_pt_zcand", pruned_ev.dilep.pt)
+        fill_both("cmp_pt_fj", fj.pt)
+        fill_both("cmp_eta_fj", fj.eta)
+        fill_both("cmp_pt_sub0", pruned_ev.SubJet0.pt)
+        fill_both("cmp_eta_sub0", pruned_ev.SubJet0.eta)
+        fill_both("cmp_phi_sub0", pruned_ev.SubJet0.phi)
+        fill_both("cmp_mass_sub0", pruned_ev.SubJet0.mass)
+        fill_both("cmp_pt_sub1", pruned_ev.SubJet1.pt)
+        fill_both("cmp_eta_sub1", pruned_ev.SubJet1.eta)
+        fill_both("cmp_phi_sub1", pruned_ev.SubJet1.phi)
+        fill_both("cmp_mass_sub1", pruned_ev.SubJet1.mass)
+        fill_both("cmp_dr_subjets", pruned_ev.SubJet0.delta_r(pruned_ev.SubJet1))
+
+        # Njet is filled unconditionally in both regions (matching the old
+        # workflow): Z_jet = count of all selected AK8 jets, Z_bjet = count of
+        # those additionally passing the loose PNet working point.
+        all_totXbb = all_seljets.particleNetMD_Xbb + all_seljets.particleNetMD_QCD
+        all_pnet = ak.where(all_totXbb > 0, all_seljets.particleNetMD_Xbb / all_totXbb, -1.0)
+        n_bjet = ak.sum(all_pnet >= wp, axis=1)
+        output["cmp_n_fj"].fill(syst, region_jet, pruned_ev.njet, weight=weight)
+        output["cmp_n_fj"].fill(
+            syst, np.full(len(weight), "Z_bjet"), n_bjet, weight=weight
+        )
 
     def postprocess(self, accumulator):
         return accumulator

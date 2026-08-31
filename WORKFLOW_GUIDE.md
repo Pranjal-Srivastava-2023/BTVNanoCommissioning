@@ -250,7 +250,69 @@ Section 5.5 stays the same — the executor and scaling machinery don't care
 how many datasets/files are in the JSON, only the `--scaleout` value you
 choose for how many parallel condor workers to use.
 
-## 7. Files added by this setup
+`metadata/QCD_sf_run2018_all.json` is exactly this for the full 2018 UL
+dataset list (21 datasets, 2826 files, MC + data), built by
+`scripts/build_2018_metadata.py` from Hsin-Wei's `FileLists_NanoUL` text
+files. It's ready to use directly with `--json metadata/QCD_sf_run2018_all.json`
+whenever a full production submission is wanted — validated already via a
+`--limit 1` run across all 21 datasets with zero errors, but not yet run at
+full scale (that submission is a deliberate later step, not something to
+launch automatically).
+
+## 7. Comparison histograms (old ROOT workflow vs. this one)
+
+Hsin-Wei's original analysis (before this coffea port) was a C++/ROOT
+framework at `ZbAnalysis_boosted` (`src/Plots.cxx`, `src/ZbSelection.cxx`),
+producing a fixed set of control plots per lepton channel (Zee/Zmm) and jet
+category (inclusive vs. b-tagged). To let the two workflows be compared
+directly, this branch reproduces the same 18 variables as coffea histograms,
+prefixed `cmp_` and added in
+[`utils/histogramming/histograms/qcd.py`](src/BTVNanoCommissioning/utils/histogramming/histograms/qcd.py),
+filled by `fill_comparison_hists()` in
+[`workflows/QCD_validation.py`](src/BTVNanoCommissioning/workflows/QCD_validation.py):
+
+| Histogram | Meaning |
+|---|---|
+| `cmp_pt_lep0` / `cmp_eta_lep0` | Leading lepton of whichever Z candidate fired |
+| `cmp_pt_lep1` / `cmp_eta_lep1` | Subleading lepton |
+| `cmp_mass_zcand` | Dilepton (Z candidate) mass, full 0–300 GeV range |
+| `cmp_pt_zcand` | Dilepton pt |
+| `cmp_pt_fj` / `cmp_eta_fj` | Leading AK8 jet kinematics |
+| `cmp_n_fj` | AK8 jet multiplicity |
+| `cmp_pt_sub0/1`, `cmp_eta_sub0/1`, `cmp_phi_sub0/1`, `cmp_mass_sub0/1` | The two subjets of the leading AK8 jet, via coffea's built-in `FatJet.subjets` cross-reference |
+| `cmp_dr_subjets` | ΔR between the two subjets |
+
+**Region axis instead of separate histogram sets.** The old workflow produced
+entirely separate histograms per jet category (`*_Z_jet` vs. `*_Z_bjet`
+files). Here, every `cmp_*` histogram instead carries a `region` axis with
+two values:
+- `"Z_jet"` — all selected events, no b-tag requirement (filled always)
+- `"Z_bjet"` — the same events, additionally passing the "loose" ParticleNetMD
+  Xbb-vs-QCD working point on the leading jet:
+  `particleNetMD_Xbb / (particleNetMD_Xbb + particleNetMD_QCD) >= 0.9172`
+  (the 2018 value from the old workflow's `Configs/inputParameters.txt`;
+  other years' values are in `pnet_loose_wp` in `QCD_validation.py`)
+
+Slice either region out of a saved `.coffea` file with
+`h[{"region": "Z_jet"}]` / `h[{"region": "Z_bjet"}]`.
+
+These are filled by a dedicated method rather than through the shared
+`histo_writter` dispatcher in `utils/histogramming/histogrammer.py`, since
+that dispatcher has no concept of a region axis and is shared across every
+workflow in the repo — adding region-axis support there would risk changing
+behavior for other analyses. `cmp_*` names were deliberately chosen to avoid
+substrings (`jet`, `dilep`, `btag`, ...) that dispatcher matches on, so it
+passes over them as a no-op instead of misfiring.
+
+**One correctness fix vs. the old code, not a reproduction of it:** `Plots.cxx`
+has a bug where `phi_sub0`/`eta_sub0` (and the `sub1` equivalents) are filled
+with each other's values swapped
+(`h_phi_sub0->Fill(SubJ1.m_lvec.Eta(), w)`, `h_eta_sub0->Fill(SubJ1.m_lvec.Phi(), w)`
+— lines 338–339 of `Plots.cxx`). `cmp_phi_sub0`/`cmp_eta_sub0` here are filled
+correctly. Worth flagging to Hsin-Wei, since it means the old workflow's
+"phi_sub0" plots are actually showing eta, and vice versa.
+
+## 8. Files added by this setup
 
 | File | Purpose |
 |---|---|
