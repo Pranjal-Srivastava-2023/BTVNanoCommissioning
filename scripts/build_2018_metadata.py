@@ -28,12 +28,22 @@ def main():
     )
     parser.add_argument("--year", default="2018", help="Year suffix to match, e.g. 2018")
     parser.add_argument("--output", required=True, help="Output metadata JSON path")
+    parser.add_argument(
+        "--exclude",
+        default="",
+        help="Comma-separated substrings; any dataset filename containing one is skipped "
+        "(e.g. 'DY_madgraphMLM-herwig7_MC,DY_minnlo_MC')",
+    )
     args = parser.parse_args()
 
+    excludes = [e.strip() for e in args.exclude.split(",") if e.strip()]
     pattern = os.path.join(args.filelists_dir, f"*_{args.year}.txt")
     fdict = {}
     for path in sorted(glob.glob(pattern)):
         sample = os.path.basename(path)[: -len(".txt")]
+        if any(ex in sample for ex in excludes):
+            print(f"{sample}: excluded")
+            continue
         with open(path) as f:
             files = [normalize(line) for line in f if line.strip()]
         fdict[sample] = files
