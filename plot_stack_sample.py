@@ -44,20 +44,22 @@ DATA_SAMPLES = ["EGamma_Run2018", "SingleMuon_Run2018"]
 COLORS = {"DY+jets": "#5790fc", "ttbar": "#f89c20", "Single top": "#e42536", "Diboson": "#964a8b", "ZH": "#9c9ca1"}
 
 
-def build_sel(h, region):
+def build_sel(h, region, channel):
     sel = {"syst": "nominal"}
     axnames = [a.name for a in h.axes]
     if "region" in axnames and region is not None:
         sel["region"] = region
+    if "channel" in axnames:
+        sel["channel"] = channel if channel is not None else sum
     if "flav" in axnames:
         sel["flav"] = sum
     return sel
 
 
-def scaled_hist(histname, region=None):
-    """Return {group_label: scaled hist (region-sliced if given)} plus the summed data hist."""
+def scaled_hist(histname, region=None, channel=None):
+    """Return {group_label: scaled hist (region/channel-sliced if given)} plus the summed data hist."""
     any_sample = GROUPS["DY+jets"][0]
-    sel = build_sel(out[any_sample][histname], region)
+    sel = build_sel(out[any_sample][histname], region, channel)
 
     group_hists = {}
     for label, samples in GROUPS.items():
@@ -82,8 +84,8 @@ def scaled_hist(histname, region=None):
     return group_hists, data_total
 
 
-def make_plot(histname, region, xlabel, ax):
-    group_hists, data_hist = scaled_hist(histname, region)
+def make_plot(histname, region, xlabel, ax, channel=None):
+    group_hists, data_hist = scaled_hist(histname, region, channel)
     order = ["Diboson", "ZH", "Single top", "ttbar", "DY+jets"]
     hep.histplot(
         [group_hists[g] for g in order],
@@ -96,7 +98,10 @@ def make_plot(histname, region, xlabel, ax):
     hep.histplot(data_hist, histtype="errorbar", color="black", label="Data", ax=ax)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(f"Events / bin")
-    ax.set_title(region if region else histname, fontsize=14)
+    title = region or histname
+    if channel:
+        title = f"{title} ({channel})"
+    ax.set_title(title, fontsize=14)
     ax.legend(fontsize=9, ncol=2)
 
 
@@ -118,3 +123,12 @@ plt.tight_layout()
 outpath2 = f"{REPO}/qcd_sf_2018_sample_stack2.png"
 plt.savefig(outpath2, dpi=130)
 print("saved", outpath2)
+
+# Zee vs Zmm split -- matches the old workflow keeping these as separate plots
+fig3, axes3 = plt.subplots(1, 2, figsize=(20, 8))
+make_plot("cmp_mass_zcand", "Z_jet", r"$m_{\ell\ell}$ [GeV]", axes3[0], channel="Zee")
+make_plot("cmp_mass_zcand", "Z_jet", r"$m_{\ell\ell}$ [GeV]", axes3[1], channel="Zmm")
+plt.tight_layout()
+outpath3 = f"{REPO}/qcd_sf_2018_sample_stack_by_channel.png"
+plt.savefig(outpath3, dpi=130)
+print("saved", outpath3)

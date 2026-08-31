@@ -514,6 +514,8 @@ class NanoProcessor(processor.ProcessorABC):
         )
         pruned_ev["SubJet0"] = pruned_ev.SelJet.subjets[:, 0]
         pruned_ev["SubJet1"] = pruned_ev.SelJet.subjets[:, 1]
+        # zee/zmm are mutually exclusive within event_level, so this is well-defined
+        pruned_ev["channel"] = ak.where(zee_event_level[event_level], "Zee", "Zmm")
 
         ####################
         #     Output       #
@@ -559,10 +561,15 @@ class NanoProcessor(processor.ProcessorABC):
         Fill the cmp_* histograms added to match the old ROOT-based
         ZbAnalysis_boosted workflow's plots (see WORKFLOW_GUIDE.md), so the two
         can be compared directly. Filled manually rather than through the
-        shared histo_writter dispatcher because these carry an extra "region"
-        axis: "Z_jet" (all selected events, no b-tag requirement) and
-        "Z_bjet" (the same events additionally passing the loose ParticleNetMD
-        Xbb-vs-QCD working point on the leading jet -- see pnet_loose_wp).
+        shared histo_writter dispatcher because these carry two extra axes the
+        dispatcher has no concept of:
+        - "channel": "Zee" or "Zmm", whichever Z candidate fired (mutually
+          exclusive per event) -- the old workflow keeps these as entirely
+          separate plots per lepton channel.
+        - "region": "Z_jet" (all selected events, no b-tag requirement) and
+          "Z_bjet" (the same events additionally passing the loose
+          ParticleNetMD Xbb-vs-QCD working point on the leading jet -- see
+          pnet_loose_wp).
 
         Unlike the old code, phi_sub0/eta_sub0 (and sub1) are filled with the
         correct quantities -- the old workflow has them swapped due to a bug in
@@ -581,13 +588,18 @@ class NanoProcessor(processor.ProcessorABC):
         pnet_leading = ak.where(totXbb > 0, fj.particleNetMD_Xbb / totXbb, -1.0)
         is_bjet = ak.to_numpy(pnet_leading >= wp)
 
+        channel = ak.to_numpy(pruned_ev.channel)
         region_jet = np.full(len(weight), "Z_jet")
         region_bjet = np.full(int(is_bjet.sum()), "Z_bjet")
 
         def fill_both(histname, values):
-            output[histname].fill(syst, region_jet, values, weight=weight)
+            output[histname].fill(syst, region_jet, channel, values, weight=weight)
             output[histname].fill(
-                syst[is_bjet], region_bjet, values[is_bjet], weight=weight[is_bjet]
+                syst[is_bjet],
+                region_bjet,
+                channel[is_bjet],
+                values[is_bjet],
+                weight=weight[is_bjet],
             )
 
         fill_both("cmp_pt_lep0", pruned_ev.lep0.pt)
@@ -614,9 +626,11 @@ class NanoProcessor(processor.ProcessorABC):
         all_totXbb = all_seljets.particleNetMD_Xbb + all_seljets.particleNetMD_QCD
         all_pnet = ak.where(all_totXbb > 0, all_seljets.particleNetMD_Xbb / all_totXbb, -1.0)
         n_bjet = ak.sum(all_pnet >= wp, axis=1)
-        output["cmp_n_fj"].fill(syst, region_jet, pruned_ev.njet, weight=weight)
         output["cmp_n_fj"].fill(
-            syst, np.full(len(weight), "Z_bjet"), n_bjet, weight=weight
+            syst, region_jet, channel, pruned_ev.njet, weight=weight
+        )
+        output["cmp_n_fj"].fill(
+            syst, np.full(len(weight), "Z_bjet"), channel, n_bjet, weight=weight
         )
 
     def postprocess(self, accumulator):

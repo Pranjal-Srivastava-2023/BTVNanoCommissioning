@@ -70,6 +70,9 @@ def get_histograms(axes, **kwargs):
         region_axis = Hist.axis.StrCategory(
             ["Z_jet", "Z_bjet"], name="region", label="jet category"
         )
+        channel_axis = Hist.axis.StrCategory(
+            ["Zee", "Zmm"], name="channel", label="lepton channel"
+        )
         wide_pt_axis = Hist.axis.Regular(
             200, 0, 1000, name="pt", label=r"$p_{T}$ [GeV]"
         )
@@ -85,7 +88,7 @@ def get_histograms(axes, **kwargs):
 
         def cmp_hist(var_axis):
             return Hist.Hist(
-                axes["syst"], region_axis, var_axis, Hist.storage.Weight()
+                axes["syst"], region_axis, channel_axis, var_axis, Hist.storage.Weight()
             )
 
         hists["cmp_pt_lep0"] = cmp_hist(lep_pt_axis)
