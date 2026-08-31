@@ -5,6 +5,18 @@ from Hsin-Wei's pre-built NanoAODUL file lists.
 Normalizes the file lists' `root:://host///store/...` URLs (extra colon,
 extra slash) to the standard `root://host//store/...` form -- uproot/coffea
 otherwise fail to open them with FileNotFoundError.
+
+Dataset keys are renamed from the short FileLists_NanoUL filenames to names
+the framework's cross-section/stacking machinery
+(helpers/xs_scaler.py:scaleSumW, scripts/plotdataMC.py) actually recognizes:
+- MC samples are renamed to their official CMS dataset name, parsed directly
+  out of each file's own xrootd path -- this must exactly match a
+  "process_name" entry in helpers/xsection.py or xsection_13TeV.py, or
+  scaleSumW raises a KeyError.
+- Data samples are renamed to include "Run" (e.g. EGamma_DATA_2018 ->
+  EGamma_Run2018), which is scaleSumW's check for "this is real data, don't
+  scale it by a cross-section". All run eras (A/B/C/D) stay combined under
+  one key -- nothing downstream needs per-era granularity here.
 """
 import argparse
 import glob
@@ -13,10 +25,24 @@ import os
 import re
 
 URL_FIX = re.compile(r"^root:+//+")
+MC_NAME_RE = re.compile(r"^root:+//[^/]+/+store/mc/[^/]+/([^/]+)/NANOAODSIM/")
+DATA_PRIMARY_RE = re.compile(r"^root:+//[^/]+/+store/data/[^/]+/([^/]+)/NANOAOD/")
 
 
 def normalize(url):
     return URL_FIX.sub("root://", url.strip(), count=1)
+
+
+def rename(sample, first_file_url):
+    if "DATA" in sample:
+        m = DATA_PRIMARY_RE.match(first_file_url)
+        if not m:
+            raise ValueError(f"Could not parse primary dataset name from {first_file_url}")
+        return f"{m.group(1)}_Run2018"
+    m = MC_NAME_RE.match(first_file_url)
+    if not m:
+        raise ValueError(f"Could not parse official dataset name from {first_file_url}")
+    return m.group(1)
 
 
 def main():
@@ -40,14 +66,20 @@ def main():
     pattern = os.path.join(args.filelists_dir, f"*_{args.year}.txt")
     fdict = {}
     for path in sorted(glob.glob(pattern)):
-        sample = os.path.basename(path)[: -len(".txt")]
-        if any(ex in sample for ex in excludes):
-            print(f"{sample}: excluded")
+        short_name = os.path.basename(path)[: -len(".txt")]
+        if any(ex in short_name for ex in excludes):
+            print(f"{short_name}: excluded")
             continue
         with open(path) as f:
             files = [normalize(line) for line in f if line.strip()]
+        sample = rename(short_name, files[0])
+        if sample in fdict:
+            raise ValueError(
+                f"{short_name} renamed to '{sample}', which already exists "
+                f"(from a different short name) -- files would be silently merged"
+            )
         fdict[sample] = files
-        print(f"{sample}: {len(files)} files")
+        print(f"{short_name:35s} -> {sample:60s} {len(files)} files")
 
     with open(args.output, "w") as f:
         json.dump(fdict, f, indent=2)

@@ -1,0 +1,19 @@
+{
+  "_source": "Values transcribed from Hsin-Wei's old ZbAnalysis_boosted workflow (Configs/config.ini, xSec_18 fields, with any *k-factor already multiplied in). Used instead of BTVNanoCommissioning's shared helpers/xsection.py database because several entries there diverge substantially from these (e.g. WW 75.9 vs 118.7 pb, WZ 27.57 vs 47.13 pb, ST s-channel 3.74 vs 10.32 pb) -- using the shared database's generic values would normalize this workflow's plots inconsistently with Hsin-Wei's established results, defeating the point of an old-vs-new comparison. Keys match the dataset names in QCD_sf_run2018_all.json.",
+  "cross_sections_pb": {
+    "DYJetsToLL_0J_TuneCP5_13TeV-amcatnloFXFX-pythia8": 4870.4271,
+    "DYJetsToLL_1J_TuneCP5_13TeV-amcatnloFXFX-pythia8": 876.1819,
+    "DYJetsToLL_2J_TuneCP5_13TeV-amcatnloFXFX-pythia8": 330.3787,
+    "TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8": 365.3,
+    "TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8": 88.2,
+    "ST_t-channel_top_4f_InclusiveDecays_TuneCP5_13TeV-powheg-madspin-pythia8": 136.02,
+    "ST_t-channel_antitop_4f_InclusiveDecays_TuneCP5_13TeV-powheg-madspin-pythia8": 80.95,
+    "ST_s-channel_4f_leptonDecays_TuneCP5_13TeV-amcatnlo-pythia8": 10.32,
+    "ST_tW_top_5f_inclusiveDecays_TuneCP5_13TeV-powheg-pythia8": 35.85,
+    "ST_tW_antitop_5f_inclusiveDecays_TuneCP5_13TeV-powheg-pythia8": 35.85,
+    "WW_TuneCP5_13TeV-pythia8": 118.7,
+    "WZ_TuneCP5_13TeV-pythia8": 47.13,
+    "ZZ_TuneCP5_13TeV-pythia8": 16.523,
+    "ZH_HToBB_ZToLL_M-125_TuneCP5_13TeV-powheg-pythia8": 0.048650253
+  }
+}
