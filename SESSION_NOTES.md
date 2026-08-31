@@ -3,7 +3,56 @@
 Working with senior postdoc Hsin-Wei Hsia (GitHub: hsinweihsia) on her
 boosted Z(bb)+jet analysis, `QCD_sf` workflow, built on BTVNanoCommissioning.
 
-## STATUS AS OF 2026-08-30, READ THIS FIRST
+## STATUS AS OF 2026-08-31, READ THIS FIRST
+
+The 2026-08-30 21:42 CDT full-scale submission (see "2026-08-30 run: what
+happened" below) died at 00:37 CDT after stalling — **not committed/pushed
+yet**, but `runner.py` has been patched locally to fix the likely causes
+before the next attempt:
+
+1. **`cluster.adapt(minimum=args.scaleout)` had no `maximum`** for the
+   `dask/lpc` executor path — despite asking for `--scaleout 50`, the
+   scheduler log showed **305 workers** connected. Uncapped autoscale
+   against a 19,028-task graph almost certainly overloaded the shared LPC
+   condor pool and is the leading suspect for the mass "91 nanny workers
+   did not shut down" stall. Fixed: now `cluster.adapt(minimum=args.scaleout,
+   maximum=args.scaleout)`.
+2. **`--workers`/`--memory`/`--disk` CLI flags were silently ignored for
+   the `lpc` executor** — every worker ran with the `lpcjobqueue` package
+   default (1 core / 2GB / 200MB) regardless of what was passed on the
+   command line (the `condor`/`slurm` branches already wired these through;
+   only `lpc` didn't). Last night's `--workers 3` had zero effect — every
+   worker was single-threaded, more exposed to a slow/blocking synchronous
+   xrootd read stalling its whole event loop (including its heartbeat).
+   Fixed: `LPCCondorCluster(...)` now passes `cores=args.workers,
+   memory=f"{args.memory}GB", disk=f"{args.disk}GB"`.
+3. **No worker-level logs were ever kept** — `lpcjobqueue`'s default
+   `log-directory` is `null`, so when workers died/hung there was nothing
+   to inspect beyond scheduler-side messages. Fixed: `LPCCondorCluster(...)`
+   now passes `log_directory=~/.lpcjobqueue_worker_logs` (must be a subpath
+   of `~`, `/uscmst1b_scratch/lpc1/3DayLifetime`, or `/uscms_data` per
+   `lpcjobqueue`'s own `schedd_safe_paths` check) so condor stdout/stderr/log
+   for every worker job is transferred back on exit or eviction and
+   available for post-mortem if this happens again.
+
+**Deliberately NOT done**: did not try to move the driver itself off the
+login node into a condor-submitted job. `lpcjobqueue`'s `schedd.py` submits
+remotely via the `htcondor.Schedd` binding using the interactive-node condor
+config (`/etc/condor/config.d/01_cmslpc_interactive`) — an execute/worker
+node's sandbox isn't set up with that config or a forwarded x509 proxy, so a
+nested condor-job driver would likely just fail to submit workers at all.
+Running the driver interactively in `tmux` on a login node (`cmslpc364`) is
+the standard, documented `lpcjobqueue` pattern; the working theory is that
+fixing the uncapped autoscale (item 1) removes the runaway resource usage
+that most plausibly got the process killed, without needing to relocate it.
+
+**Next step**: re-run the full-scale submission with the patched
+`runner.py` (same command as before — see "Reference command" further
+down), watch `~/.lpcjobqueue_worker_logs` if problems recur, and reassess if
+it stalls again. Not yet committed/pushed to `myfork` — do that once a
+successful run confirms the fix.
+
+## 2026-08-30 run: what happened (superseded by fixes above)
 
 A full-scale HTCondor submission over all 16 2018 datasets (2324 files, no
 `--limit`) is running unattended in `tmux` on **`cmslpc364.fnal.gov`**.
