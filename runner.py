@@ -15,8 +15,8 @@ from BTVNanoCommissioning.workflows import workflows
 
 def validate(file):
     try:
-        fin = uproot.open(file)
-        return fin["Events"].num_entries
+        with uproot.open(file) as fin:
+            return fin["Events"].num_entries
     except:
         print("Corrupted file: {}".format(file))
         return file
@@ -66,44 +66,44 @@ def validate_dataset_structure(fileset, max_files_per_sample=None):
         for filename in files_to_check:
             try:
                 # print(f"Validating file: {filename}")
-                file = uproot.open(filename)
-                events = file["Events"]
-                branches = set(events.keys())
+                with uproot.open(filename) as file:
+                    events = file["Events"]
+                    branches = set(events.keys())
 
-                # Check branch count
-                if len(branches) < 20:
-                    print(
-                        f"WARNING: File has too few branches ({len(branches)}): {filename}"
-                    )
-                    # print(f"Branches present: {branches}")
-                    continue
+                    # Check branch count
+                    if len(branches) < 20:
+                        print(
+                            f"WARNING: File has too few branches ({len(branches)}): {filename}"
+                        )
+                        # print(f"Branches present: {branches}")
+                        continue
 
-                # Check required branches
-                missing = [b for b in required_branches if b not in branches]
-                if missing:
-                    print(
-                        f"WARNING: File missing critical branches {missing}: {filename}"
-                    )
-                    continue
+                    # Check required branches
+                    missing = [b for b in required_branches if b not in branches]
+                    if missing:
+                        print(
+                            f"WARNING: File missing critical branches {missing}: {filename}"
+                        )
+                        continue
 
-                if not any(met in branches for met in optional_met_branches):
-                    print(
-                        "WARNING: File missing MET branch; expected one of "
-                        f"{optional_met_branches}: {filename}"
-                    )
-                    continue
+                    if not any(met in branches for met in optional_met_branches):
+                        print(
+                            "WARNING: File missing MET branch; expected one of "
+                            f"{optional_met_branches}: {filename}"
+                        )
+                        continue
 
-                # Check event count
-                if len(events) < 10:
-                    print(
-                        f"WARNING: File has too few events ({len(events)}): {filename}"
-                    )
-                    continue
+                    # Check event count
+                    if len(events) < 10:
+                        print(
+                            f"WARNING: File has too few events ({len(events)}): {filename}"
+                        )
+                        continue
 
-                # File passed all checks
-                if not fast_mode:
-                    valid_files.append(filename)
-                # print(f"File validation successful: {filename}")
+                    # File passed all checks
+                    if not fast_mode:
+                        valid_files.append(filename)
+                    # print(f"File validation successful: {filename}")
 
             except Exception as e:
                 print(f"ERROR validating file: {filename}, {e}")
