@@ -399,7 +399,7 @@ class NanoProcessor(processor.ProcessorABC):
         Zmm_mass = (mu_req[:, 0] + mu_req[:, 1]).mass
 
         req_Zmm_mass = ak.fill_none(
-        (Zmm_mass >= 71) & (Zee_mass <= 111),
+        (Zmm_mass >= 71) & (Zmm_mass <= 111),
         False,
         )
         zmm_cut.add("Zmass", req_Zmm_mass)
