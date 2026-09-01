@@ -1,0 +1,15 @@
+Running with the following options:
+Namespace(workflow='QCD_sf', output='hists.coffea', outputdir='hists_DY2J_condor', samplejson='metadata/QCD_sf_run2018_DY2J.json', year='2018', campaign='2018-UL', selectionModifier='', isSyst=False, ttbar_reweights='none', isArray=False, noHist=False, overwrite=True, executor='dask/lpc', workers=3, scaleout=8, memory=4.0, disk=4, voms=None, chunk=200000, retries=25, fsize=50, index='0,0', validate=False, skipbadfiles=True, only=None, skip_structure_validation=False, validate_files_per_sample=None, limit=None, max=None)
+Dataset validation complete. 1 valid samples remaining.
+Waiting for at least one worker...
+
+
+Saving output to hists_DY2J_condor/hists_QCD_sf_QCD_sf_run2018_DY2J/hists_QCD_sf_QCD_sf_run2018_DY2J.coffea
+Last-ditch attempt to close HTCondor job 30306402 in finalizer! You should confirm the job exits!
+Last-ditch attempt to close HTCondor job 30306403 in finalizer! You should confirm the job exits!
+Last-ditch attempt to close HTCondor job 30306404 in finalizer! You should confirm the job exits!
+Last-ditch attempt to close HTCondor job 30306405 in finalizer! You should confirm the job exits!
+Last-ditch attempt to close HTCondor job 30306406 in finalizer! You should confirm the job exits!
+Last-ditch attempt to close HTCondor job 30306407 in finalizer! You should confirm the job exits!
+Last-ditch attempt to close HTCondor job 30306408 in finalizer! You should confirm the job exits!
+Last-ditch attempt to close HTCondor job 30306409 in finalizer! You should confirm the job exits!
