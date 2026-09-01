@@ -3,6 +3,18 @@
 Working with senior postdoc Hsin-Wei Hsia (GitHub: hsinweihsia) on her
 boosted Z(bb)+jet analysis, `QCD_sf` workflow, built on BTVNanoCommissioning.
 
+**Env clarification (asked 2026-09-01): are we using micromamba?** No —
+despite the install directory being named `micromamba`
+(`/uscms_data/d3/psrivast/micromamba/`), it's actually a full
+Miniconda-style installer, not the standalone `micromamba` binary. Both
+`conda` and `mamba` binaries exist in its `bin/`, but "big mamba" has no
+activation mechanism of its own — it delegates to conda's `conda.sh` for
+`activate`/`deactivate` (confirmed: the `activate` script here is a
+conda-authored file). So `zbb-btv` is correctly called a conda env
+(matches `WORKFLOW_GUIDE.md`'s existing wording); `mamba` is only useful
+here as a faster drop-in for `mamba install`/`mamba create`, not for
+running/activating the env day to day.
+
 ## STATUS AS OF 2026-09-01 15:05 CDT, READ THIS FIRST — DY2J validated end-to-end on condor, deadlock resolved (was infra, not code)
 
 **TL;DR**: Attempt 6's deadlock is dead and gone — killed cleanly with no
