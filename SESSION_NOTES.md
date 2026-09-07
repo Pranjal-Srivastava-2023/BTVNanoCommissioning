@@ -1,5 +1,48 @@
 # Session notes: QCD_sf boosted Zbb — LPC condor scale-up
 
+## STATUS AS OF 2026-09-07 (evening) — plots now have Data/MC ratio panels; x-ranges cropped; region double-count fixed
+
+**TL;DR since the last status entry below**: three more plotting
+refinements landed on top of the completed 16-dataset run and the
+log-scale switch, all committed/pushed to `myfork/coffea_machine`
+(commits `359a2ed` → `a953577`). Full detail also written up in
+`WORKFLOW_GUIDE.md` Section 8 and `concept.md`'s status section — this
+entry is deliberately brief, see those for the complete picture.
+
+1. **x-axis ranges cropped to the actually-populated range** per
+   histogram, measured directly against the merged `.coffea` output
+   (e.g. `m_ll` → 70-110 GeV, jet pT starting at the real 200 GeV cut).
+   Several histogram axes were defined wider than the selection
+   populates, showing as blank hatched padding on the log-scale plots.
+   Commit `359a2ed`.
+2. **Fixed a `region`-axis double-counting bug** in
+   `plot_full_overview.py`: it was summing `Z_jet + Z_bjet` together for
+   most `cmp_*` histograms, but `Z_bjet` is a strict *subset* of `Z_jet`
+   (same events plus the tag requirement), not an exclusive category —
+   so b-tagged events were counted twice. Now explicitly selects
+   `region="Z_jet"`. Verified numerically: old-yield minus new-yield
+   exactly matched the independently-computed `Z_bjet`-only contribution.
+   Commit `c3cdc22`.
+3. **Added a Data/MC ratio panel below every stacked plot**, in both
+   `plot_stack_sample.py` and all 15 panels of `plot_full_overview.py`.
+   Matches the old ROOT-based `ZbAnalysis_boosted` analysis's own
+   convention — confirmed by inspecting its saved `TCanvas` macros
+   (`SubmitToCondor/condor_output_mSD/*/*.C`): 70/30 top/bottom split,
+   black error-bar ratio markers, horizontal line at 1, "Data/MC" y-axis
+   label. Implemented via nested matplotlib `GridSpec`s rather than a
+   single `Axes` per panel; ratio uncertainty combines data + MC
+   statistical uncertainty in quadrature. The ratio panels make the
+   missing-SF normalization gap (see below) directly visible as a
+   systematic offset below 1 in almost every panel, plus some
+   variable-dependent shape trends (e.g. `tau21`, `eta`) worth digging
+   into further if this gets revisited. Commit `a953577`.
+4. **Wrote up a full status summary in `concept.md`** for sharing with
+   Hsin-Wei directly (commit `8a8e21d`, and this section's changes not
+   yet folded in there — do that if resuming this thread).
+
+**Everything is committed and pushed** to `myfork/coffea_machine`;
+`.coffea` data files remain local-only (see reminder below, still true).
+
 ## STATUS AS OF 2026-09-07 (later same day) — plots now all log-scale; found root cause of data/MC normalization gap
 
 **Log-scale plots**: `plot_full_overview.py` (all 15 panels) and `plot_stack_sample.py`

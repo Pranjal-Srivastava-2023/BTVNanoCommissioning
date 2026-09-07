@@ -251,13 +251,73 @@ how many datasets/files are in the JSON, only the `--scaleout` value you
 choose for how many parallel condor workers to use.
 
 `metadata/QCD_sf_run2018_all.json` is exactly this for the full 2018 UL
-dataset list (21 datasets, 2826 files, MC + data), built by
-`scripts/build_2018_metadata.py` from Hsin-Wei's `FileLists_NanoUL` text
-files. It's ready to use directly with `--json metadata/QCD_sf_run2018_all.json`
-whenever a full production submission is wanted — validated already via a
-`--limit 1` run across all 21 datasets with zero errors, but not yet run at
-full scale (that submission is a deliberate later step, not something to
-launch automatically).
+dataset list — **16 datasets, 2324 files** (14 MC + `EGamma_Run2018` +
+`SingleMuon_Run2018`; an earlier draft of this guide said 21/2826, which
+was stale/wrong), built by `scripts/build_2018_metadata.py` from
+Hsin-Wei's `FileLists_NanoUL` text files.
+
+**Status as of 2026-09-07: this has been run at full scale, successfully,
+for every dataset.** See Section 6.1 below for how, and `SESSION_NOTES.md`
+/ `concept.md` for the full narrative. `--json metadata/QCD_sf_run2018_all.json`
+with `--only <dataset>` (not a bare full-JSON submission — see 6.1) is now
+the validated way to reproduce this.
+
+### 6.1 Per-dataset submission (the resilient way to run this at scale)
+
+The first attempts at running all 16 datasets submitted them as a single
+combined `dask/lpc` job (`--json metadata/QCD_sf_run2018_all.json` with no
+`--only`). This works, but is fragile: dask/lpcjobqueue has a recurring
+deadlock (cluster and all workers simultaneously freeze at ~99% complete,
+cause still unknown — no dashboard was ever enabled to diagnose it further)
+that, in a combined run, wipes out the *entire* multi-hour job when it hits,
+since coffea's accumulator only writes output once every task in the graph
+reports done — there's no partial-result recovery.
+
+Following a suggestion from Hsin-Wei, the fix isn't to avoid the deadlock
+(root cause still unknown) but to shrink its blast radius: submit each
+dataset as its own **independent** job, using the `--only <dataset>` flag
+`runner.py` already has (`runner.py:373` — filters `sample_dict` down to one
+dataset *before* validation touches any files, so it's a fully isolated run,
+own dask cluster, own condor jobs, own output file). No new metadata JSON
+files needed.
+
+```bash
+python -u runner.py --workflow QCD_sf \
+  --json metadata/QCD_sf_run2018_all.json \
+  --campaign 2018-UL --year 2018 \
+  --executor dask/lpc --scaleout 8 \
+  --only <dataset-name> --skipbadfiles --overwrite
+```
+
+Two helper scripts (repo root) wrap this:
+- **`submit_qcd_sf_per_dataset.sh`** — loops over dataset keys sequentially,
+  one `--only` job at a time, logging each to `logs_qcd_sf_split/<dataset>.log`
+  and a running `logs_qcd_sf_split/summary.log`. On a hang, kill the current
+  job (`SIGINT` — tears the cluster down cleanly, confirmed via `condor_q`)
+  and either let the loop continue to the next dataset or retry the killed
+  one on its own; either way, no other dataset's job is affected.
+- **`merge_qcd_sf_outputs.py`** — combines the per-dataset `.coffea` outputs
+  back into the single file `plot_stack_sample.py`/`plot_full_overview.py`
+  expect (`hists_QCD_sf_QCD_sf_run2018_all/hists_QCD_sf_QCD_sf_run2018_all.coffea`).
+  Safe as a plain dict union (asserted, not just assumed): each dataset is
+  its own disjoint top-level key in the workflow's output
+  (`{dataset: {histograms...}}`), so no bin-level histogram addition is
+  needed and no double-counting risk exists as long as each dataset's file
+  is only merged once.
+
+**Result of the actual full run** (2026-09-06/07): 13 of 16 datasets
+succeeded cleanly on the first `--only` submission. 3
+(`DYJetsToLL_0J`, `DYJetsToLL_1J`, `TTToSemiLeptonic`) hit the deadlock —
+confirmed via the same method as the original combined-run deadlock
+(`condor_ssh_to_job` into a worker, compare CPU time before/after a short
+wait — identical means genuinely frozen, not just slow), killed cleanly,
+retried individually, all 3 succeeded on retry (10-76 minutes each). Total
+wall time for the full 16-dataset run: roughly 9 hours across two
+sequential submission passes, almost entirely condor-queue/processing time
+rather than debugging. **New finding from this run**: the deadlock is not
+tied to combined-run scale — it recurred on single, isolated dataset jobs
+too, so whatever causes it is a dask/lpcjobqueue-level issue independent of
+job size. Root cause is still unknown.
 
 ## 7. Comparison histograms (old ROOT workflow vs. this one)
 
@@ -312,7 +372,63 @@ with each other's values swapped
 correctly. Worth flagging to Hsin-Wei, since it means the old workflow's
 "phi_sub0" plots are actually showing eta, and vice versa.
 
-## 8. Files added by this setup
+## 8. Plotting and known analysis-level issues
+
+Three plotting scripts (repo root), all pointed at the merged combined
+output and needing no arguments:
+
+- **`plot_stack_sample.py`** — targeted plots: Z-candidate mass (`Z_jet` vs
+  `Z_bjet` side by side, and separately split by Zee/Zmm channel), leading
+  AK8 jet pT, ParticleNetMD Xbb score.
+- **`plot_full_overview.py`** — a 15-panel grid covering every key
+  kinematic/substructure variable (masses, pTs, tau21/tau32/N2, ΔR between
+  subjets, η, jet multiplicity), same xsec-scaling/grouping treatment.
+- Both stack by physics-process group (`DY+jets`/`ttbar`/`Single top`/
+  `Diboson`/`ZH`, xsec × luminosity / `sumw` scaled) with a `Data` overlay
+  (`EGamma_Run2018` + `SingleMuon_Run2018`, unscaled).
+
+**Standing style conventions for these scripts** (established 2026-09-07,
+keep going forward, don't revert):
+- **Log-scale y-axis** on every panel — linear scale hid the sub-dominant
+  backgrounds almost completely under DY+jets.
+- **x-axis cropped to the actually-populated range** per histogram (e.g.
+  `m_ll` to 70–110 GeV, jet pT starting at the real 200 GeV cut) rather than
+  each histogram's wider default axis definition — avoids blank
+  zero-content padding.
+- **A Data/MC ratio sub-panel below every stack** (70/30 height split,
+  black error-bar markers, horizontal line at 1, y-axis labeled
+  "Data/MC") — matches the convention used by the old ROOT-based
+  `ZbAnalysis_boosted` analysis's own plots (confirmed by inspecting its
+  saved `TCanvas` macros, e.g.
+  `SubmitToCondor/condor_output_mSD/*/*.C`). Implemented via nested
+  matplotlib `GridSpec`s (`outer_cell.subgridspec(2, 1, height_ratios=[3,
+  1])`) rather than a single `Axes` per panel; ratio uncertainty combines
+  data and MC statistical uncertainty in quadrature via each histogram's
+  tracked `.variances()`.
+- The `region` axis on `cmp_*` histograms must be **selected**
+  (`region="Z_jet"`), never **summed** — `Z_bjet` is a strict *subset* of
+  `Z_jet` (same events plus the tag requirement), not an exclusive
+  category, so summing both double-counts every b-tagged event. (This was
+  a real bug in an early version of `plot_full_overview.py`, since fixed.)
+
+**Known open issue: no scale factors are applied anywhere in `QCD_sf`.**
+`QCD_validation.py:83` has `self.SF_map = load_SF(...)` **commented out**,
+so `weight_manager()` (`utils/correction.py:3924`) receives `SF_map=None`
+and returns immediately after adding only `genWeight` to every MC event's
+weight. Concretely disabled: pileup reweighting, muon/electron
+ID-iso-trigger SFs, b-tagging SFs — all fully implemented elsewhere in the
+framework (`puwei`, `muSFs`, `eleSFs`, `btagSFs`), just not wired into this
+workflow. No golden-JSON/certified-lumi mask is applied to data either.
+This is the concrete root cause of the ~16% MC-over-data normalization gap
+found when comparing scaled yields, and shows up clearly as a systematic
+offset in every Data/MC ratio panel. Top-pT reweighting for `ttbar` is only
+partially applied — folded into the `sumw` normalization denominator
+(`utils/correction.py:3975`), not into the actual per-event histogram-fill
+weight. **Not fixed** — flagged as a decision for Hsin-Wei, since it
+changes the physics normalization; would also need confirming the 2018-UL
+correction JSONs exist before enabling.
+
+## 9. Files added by this setup
 
 | File | Purpose |
 |---|---|
@@ -321,7 +437,21 @@ correctly. Worth flagging to Hsin-Wei, since it means the old workflow's
 | `.bashrc` | Container shell rc file; creates/activates `.env/` on first use |
 | `.cmslpc-local-conf` | Helper used by the container bind-mount config for local condor config discovery |
 | `.env/` (gitignored) | Generated virtualenv — `lpcjobqueue` + this repo, editable-installed |
-| `SESSION_NOTES.md` | Narrative notes from the histogram-fix session |
+| `SESSION_NOTES.md` | Narrative notes from the histogram-fix session and the full-scale run |
+| `concept.md` | Mechanics explainers (how variables get filled, etc.) plus a status summary for sharing with Hsin-Wei |
+| `submit_qcd_sf_per_dataset.sh` | Sequential per-dataset `--only` submission wrapper (see Section 6.1) |
+| `merge_qcd_sf_outputs.py` | Combines per-dataset `.coffea` outputs into the single merged file the plotting scripts expect |
+| `plot_stack_sample.py`, `plot_full_overview.py` | The two plotting scripts described in Section 8 |
+| `cutflow_full_16dataset_run.log` | Full cutflow (general + Zee + Zmm chains) dumped from the merged `.coffea` output, all 16 datasets |
 | `fix_qcd_histograms.patch` | `git diff` of the histogram fix, for sharing outside this fork if needed |
 | `output.log`, `output_with_hist.log` | Cutflow logs from `--executor iterative` runs (before/after histogram fix) |
-| `plot_hists.py`, `qcd_hists_overview.png` | Quick-look plot of the filled histograms and the script that made it |
+| `plot_hists.py`, `qcd_hists_overview.png` | Quick-look plot of the filled histograms and the script that made it (early, single-sample; superseded by Section 8's scripts for the full run) |
+
+**Note on `.coffea` output files**: the actual histogram data
+(`hists_QCD_sf_QCD_sf_run2018_all/`, 16 individual + 1 merged file, 12MB
+total) is **not** committed — excluded by this repo's existing
+`.gitignore` rules (`*.coffea`, `hists_*`). It currently exists only on
+local LPC `nobackup` disk. Regenerate the merge anytime with
+`python3 merge_qcd_sf_outputs.py` as long as the per-dataset outputs are
+still present; re-running the full per-dataset submission from scratch
+(Section 6.1) is the fallback if they aren't.

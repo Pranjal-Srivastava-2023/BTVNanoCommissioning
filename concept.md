@@ -136,9 +136,27 @@ share externally.
 - **Not fixed yet** — flagged as a decision that should go through
   Hsin-Wei first, since it changes the physics normalization.
 
-**7. Everything is committed and pushed**
+**7. Further plot refinements (same day, after the above)**
+- Cropped every plot's x-axis range to where events actually populate
+  (measured directly against the merged output) — several histogram
+  axes were defined wider than the selection populates, showing as
+  blank hatched padding at the edges.
+- Found and fixed a `region`-axis double-counting bug in
+  `plot_full_overview.py`: it was summing `Z_jet + Z_bjet` together for
+  most variables, but `Z_bjet` is a strict *subset* of `Z_jet`, not a
+  separate category, so b-tagged events were being counted twice.
+  Verified the fix numerically.
+- **Added a Data/MC ratio panel below every stacked plot**, in both
+  plotting scripts. Matches the old ROOT-based `ZbAnalysis_boosted`
+  analysis's own convention (checked its saved canvas macros directly):
+  70/30 top/bottom split, black error-bar ratio markers, horizontal
+  line at 1, "Data/MC" y-axis label. The ratio panels make the
+  missing-SF normalization gap (item 6 above) directly visible as a
+  systematic offset in almost every panel.
+
+**8. Everything is committed and pushed**
 - All code, session notes, and plots are on `myfork/coffea_machine`
-  (5 commits: `5037179` → `c3cdc22`).
+  (9 commits: `5037179` → `a953577`).
 - One caveat: the actual `.coffea` histogram output files (16 individual
   + 1 merged, 12MB total) are excluded from git by this repo's existing
   conventions (`*.coffea`/`hists_*` in `.gitignore`), so they currently

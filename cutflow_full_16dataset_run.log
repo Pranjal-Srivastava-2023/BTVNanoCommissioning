@@ -1,0 +1,500 @@
+Full cutflow for all 16 datasets
+Source: hists_QCD_sf_QCD_sf_run2018_all/hists_QCD_sf_QCD_sf_run2018_all.coffea, merged 2026-09-07
+======================================================================
+
+=== DYJetsToLL_0J_TuneCP5_13TeV-amcatnloFXFX-pythia8 ===
+sumw = 4.998e+11
+Total Events              85,575,224
+ele_all                   49,217,435
+ele_ip                    37,998,223
+ele_kin                   24,477,125
+ele_EE_EB                 24,049,640
+ele_ID                    17,505,563
+mu_all                    53,419,857
+mu_kin                    29,654,685
+mu_ID                     27,212,568
+mu_iso                    25,871,094
+Jet cutflow:
+  jet_all                     32,792
+  jet_ele_removed             27,101
+  jet_mu_removed              18,353
+  jet_ID                      17,902
+  subjet_req                   7,920
+Zee cutflow:
+  trigger         11,065,657
+  electron         3,788,939
+  Zmass            3,674,511
+  MET              3,294,555
+  jet                     13
+Zmm cutflow:
+  trigger         16,875,804
+  muon             7,537,576
+  Zmass            7,317,752
+  MET              6,560,759
+  jet                    211
+
+=== DYJetsToLL_1J_TuneCP5_13TeV-amcatnloFXFX-pythia8 ===
+sumw = 4.232e+11
+Total Events              92,267,238
+ele_all                   69,240,774
+ele_ip                    58,623,146
+ele_kin                   35,095,466
+ele_EE_EB                 34,471,759
+ele_ID                    24,156,081
+mu_all                    66,210,598
+mu_kin                    38,588,859
+mu_ID                     35,623,252
+mu_iso                    33,715,589
+Jet cutflow:
+  jet_all                  1,211,660
+  jet_ele_removed          1,032,188
+  jet_mu_removed             812,147
+  jet_ID                     800,850
+  subjet_req                 404,456
+Zee cutflow:
+  trigger         18,238,371
+  electron         4,833,430
+  Zmass            4,589,790
+  MET              4,031,269
+  jet                 25,783
+Zmm cutflow:
+  trigger         23,205,952
+  muon             9,402,246
+  Zmass            8,950,233
+  MET              7,869,259
+  jet                 40,667
+
+=== DYJetsToLL_2J_TuneCP5_13TeV-amcatnloFXFX-pythia8 ===
+sumw = 1.137e+11
+Total Events              44,484,852
+ele_all                   40,219,625
+ele_ip                    34,657,847
+ele_kin                   19,160,750
+ele_EE_EB                 18,811,165
+ele_ID                    11,866,006
+mu_all                    34,340,066
+mu_kin                    19,223,407
+mu_ID                     17,502,842
+mu_iso                    16,205,409
+Jet cutflow:
+  jet_all                  5,056,396
+  jet_ele_removed          4,562,049
+  jet_mu_removed           3,963,155
+  jet_ID                   3,937,936
+  subjet_req               2,426,917
+Zee cutflow:
+  trigger          9,155,157
+  electron         2,366,467
+  Zmass            2,235,117
+  MET              1,896,648
+  jet                 99,115
+Zmm cutflow:
+  trigger         11,219,168
+  muon             4,473,973
+  Zmass            4,232,646
+  MET              3,598,147
+  jet                164,533
+
+=== EGamma_Run2018 ===
+sumw = 1.381e+09
+Total Events           1,381,013,575
+ele_all                1,443,922,232
+ele_ip                 1,109,408,293
+ele_kin                  831,684,197
+ele_EE_EB                818,460,105
+ele_ID                   338,997,195
+mu_all                   310,110,005
+mu_kin                    50,230,743
+mu_ID                      3,373,823
+mu_iso                       939,911
+Jet cutflow:
+  jet_all                303,724,591
+  jet_ele_removed        300,054,537
+  jet_mu_removed         299,532,684
+  jet_ID                 289,553,260
+  subjet_req             193,079,861
+Zee cutflow:
+  trigger        597,847,838
+  electron        15,547,984
+  Zmass           14,820,349
+  MET             12,778,024
+  jet                 59,492
+Zmm cutflow:
+  trigger            867,015
+  muon                20,526
+  Zmass               13,713
+  MET                  8,936
+  jet                  2,387
+
+=== ST_s-channel_4f_leptonDecays_TuneCP5_13TeV-amcatnlo-pythia8 ===
+sumw = 6.877e+07
+Total Events              19,365,999
+ele_all                   14,949,053
+ele_ip                    11,893,791
+ele_kin                    5,103,936
+ele_EE_EB                  5,011,976
+ele_ID                     2,567,279
+mu_all                    15,069,218
+mu_kin                     5,368,797
+mu_ID                      4,593,497
+mu_iso                     3,649,569
+Jet cutflow:
+  jet_all                  2,732,340
+  jet_ele_removed          2,656,158
+  jet_mu_removed           2,549,224
+  jet_ID                   2,547,315
+  subjet_req               1,783,644
+Zee cutflow:
+  trigger          2,290,522
+  electron               754
+  Zmass                  356
+  MET                    186
+  jet                      4
+Zmm cutflow:
+  trigger          3,519,019
+  muon                 6,488
+  Zmass                2,914
+  MET                  1,435
+  jet                     18
+
+=== ST_t-channel_antitop_4f_InclusiveDecays_TuneCP5_13TeV-powheg-madspin-pythia8 ===
+sumw = 6.097e+09
+Total Events              95,351,000
+ele_all                   65,357,502
+ele_ip                    50,492,673
+ele_kin                   15,065,296
+ele_EE_EB                 14,824,409
+ele_ID                     4,556,351
+mu_all                    54,921,944
+mu_kin                    13,117,778
+mu_ID                     10,016,910
+mu_iso                     7,490,024
+Jet cutflow:
+  jet_all                 10,866,713
+  jet_ele_removed         10,781,148
+  jet_mu_removed          10,635,154
+  jet_ID                  10,618,356
+  subjet_req               6,548,544
+Zee cutflow:
+  trigger          3,988,109
+  electron             1,042
+  Zmass                  555
+  MET                    276
+  jet                      4
+Zmm cutflow:
+  trigger          7,262,476
+  muon                 8,815
+  Zmass                4,512
+  MET                  2,301
+  jet                     37
+
+=== ST_t-channel_top_4f_InclusiveDecays_TuneCP5_13TeV-powheg-madspin-pythia8 ===
+sumw = 1.896e+10
+Total Events             178,336,000
+ele_all                  119,756,479
+ele_ip                    91,941,139
+ele_kin                   27,691,507
+ele_EE_EB                 27,230,872
+ele_ID                     8,056,337
+mu_all                   101,806,614
+mu_kin                    24,155,207
+mu_ID                     18,189,950
+mu_iso                    13,413,534
+Jet cutflow:
+  jet_all                 24,262,768
+  jet_ele_removed         24,078,586
+  jet_mu_removed          23,763,142
+  jet_ID                  23,712,656
+  subjet_req              14,156,161
+Zee cutflow:
+  trigger          7,089,093
+  electron             1,877
+  Zmass                  983
+  MET                    499
+  jet                     11
+Zmm cutflow:
+  trigger         12,926,314
+  muon                16,365
+  Zmass                8,309
+  MET                  4,122
+  jet                     87
+
+=== ST_tW_antitop_5f_inclusiveDecays_TuneCP5_13TeV-powheg-pythia8 ===
+sumw = 2.446e+08
+Total Events               7,524,000
+ele_all                    7,069,868
+ele_ip                     5,802,372
+ele_kin                    2,269,230
+ele_EE_EB                  2,234,414
+ele_ID                       860,363
+mu_all                     5,566,269
+mu_kin                     1,821,334
+mu_ID                      1,470,798
+mu_iso                     1,154,232
+Jet cutflow:
+  jet_all                  2,120,788
+  jet_ele_removed          2,043,121
+  jet_mu_removed           1,946,161
+  jet_ID                   1,943,455
+  subjet_req               1,448,888
+Zee cutflow:
+  trigger            795,545
+  electron            24,181
+  Zmass                6,238
+  MET                  2,192
+  jet                     43
+Zmm cutflow:
+  trigger          1,080,903
+  muon                44,117
+  Zmass               11,998
+  MET                  4,122
+  jet                     79
+
+=== ST_tW_top_5f_inclusiveDecays_TuneCP5_13TeV-powheg-pythia8 ===
+sumw = 2.217e+08
+Total Events               6,833,000
+ele_all                    6,421,485
+ele_ip                     5,272,303
+ele_kin                    2,063,773
+ele_EE_EB                  2,032,016
+ele_ID                       781,372
+mu_all                     5,048,798
+mu_kin                     1,651,143
+mu_ID                      1,333,676
+mu_iso                     1,046,860
+Jet cutflow:
+  jet_all                  1,931,981
+  jet_ele_removed          1,860,776
+  jet_mu_removed           1,772,513
+  jet_ID                   1,770,137
+  subjet_req               1,320,059
+Zee cutflow:
+  trigger            723,141
+  electron            21,773
+  Zmass                5,624
+  MET                  1,906
+  jet                     35
+Zmm cutflow:
+  trigger            980,580
+  muon                40,218
+  Zmass               10,983
+  MET                  3,827
+  jet                     57
+
+=== SingleMuon_Run2018 ===
+sumw = 9.830e+08
+Total Events             982,970,044
+ele_all                  196,883,045
+ele_ip                   112,917,112
+ele_kin                   26,732,307
+ele_EE_EB                 26,242,121
+ele_ID                       888,354
+mu_all                 1,285,633,781
+mu_kin                   930,661,547
+mu_ID                    838,054,476
+mu_iso                   668,528,848
+Jet cutflow:
+  jet_all                118,438,611
+  jet_ele_removed        118,317,785
+  jet_mu_removed         114,515,561
+  jet_ID                 114,321,849
+  subjet_req              80,944,377
+Zee cutflow:
+  trigger            870,447
+  electron            10,734
+  Zmass                5,877
+  MET                  2,696
+  jet                    672
+Zmm cutflow:
+  trigger        787,284,357
+  muon            34,466,659
+  Zmass           32,555,375
+  MET             28,053,156
+  jet                104,238
+
+=== TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8 ===
+sumw = 1.017e+10
+Total Events             142,504,397
+ele_all                  183,607,114
+ele_ip                   158,626,590
+ele_kin                   83,934,696
+ele_EE_EB                 82,615,054
+ele_ID                    47,661,612
+mu_all                   178,040,390
+mu_kin                    84,373,482
+mu_ID                     76,664,891
+mu_iso                    63,970,454
+Jet cutflow:
+  jet_all                 37,537,609
+  jet_ele_removed         33,284,259
+  jet_mu_removed          28,032,989
+  jet_ID                  27,979,818
+  subjet_req              18,746,637
+Zee cutflow:
+  trigger         41,051,385
+  electron         3,776,139
+  Zmass            1,022,471
+  MET                313,615
+  jet                 10,933
+Zmm cutflow:
+  trigger         55,566,802
+  muon             6,906,451
+  Zmass            1,939,194
+  MET                598,230
+  jet                 19,700
+
+=== TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8 ===
+sumw = 1.413e+11
+Total Events             474,716,860
+ele_all                  552,973,242
+ele_ip                   460,761,746
+ele_kin                  191,543,918
+ele_EE_EB                188,540,638
+ele_ID                    77,397,155
+mu_all                   459,876,766
+mu_kin                   163,214,363
+mu_ID                    138,652,828
+mu_iso                   104,163,657
+Jet cutflow:
+  jet_all                158,663,048
+  jet_ele_removed        151,507,095
+  jet_mu_removed         142,375,740
+  jet_ID                 142,250,549
+  subjet_req             101,025,394
+Zee cutflow:
+  trigger         73,565,145
+  electron            27,007
+  Zmass               10,721
+  MET                  4,688
+  jet                    276
+Zmm cutflow:
+  trigger        102,766,624
+  muon               187,212
+  Zmass               74,955
+  MET                 31,707
+  jet                  1,965
+
+=== WW_TuneCP5_13TeV-pythia8 ===
+sumw = 1.568e+07
+Total Events              15,679,000
+ele_all                    8,655,901
+ele_ip                     6,764,849
+ele_kin                    2,708,506
+ele_EE_EB                  2,661,622
+ele_ID                     1,389,014
+mu_all                     6,404,480
+mu_kin                     2,538,231
+mu_ID                      2,099,269
+mu_iso                     1,940,232
+Jet cutflow:
+  jet_all                  1,100,528
+  jet_ele_removed          1,058,346
+  jet_mu_removed           1,006,077
+  jet_ID                   1,001,448
+  subjet_req                 698,591
+Zee cutflow:
+  trigger          1,230,130
+  electron            32,751
+  Zmass               10,171
+  MET                  5,577
+  jet                     19
+Zmm cutflow:
+  trigger          1,807,635
+  muon                61,462
+  Zmass               20,001
+  MET                 11,170
+  jet                     23
+
+=== WZ_TuneCP5_13TeV-pythia8 ===
+sumw = 4.794e+06
+Total Events               4,794,114
+ele_all                    2,606,309
+ele_ip                     2,017,198
+ele_kin                      757,985
+ele_EE_EB                    744,854
+ele_ID                       358,406
+mu_all                     1,946,594
+mu_kin                       679,723
+mu_ID                        544,194
+mu_iso                       496,831
+Jet cutflow:
+  jet_all                    384,123
+  jet_ele_removed            372,170
+  jet_mu_removed             357,861
+  jet_ID                     356,322
+  subjet_req                 251,114
+Zee cutflow:
+  trigger            295,347
+  electron            36,327
+  Zmass               31,562
+  MET                 22,888
+  jet                    965
+Zmm cutflow:
+  trigger            410,987
+  muon                65,873
+  Zmass               57,922
+  MET                 42,548
+  jet                  1,489
+
+=== ZH_HToBB_ZToLL_M-125_TuneCP5_13TeV-powheg-pythia8 ===
+sumw = 3.503e+05
+Total Events               4,392,410
+ele_all                    4,951,718
+ele_ip                     4,208,158
+ele_kin                    2,368,800
+ele_EE_EB                  2,325,332
+ele_ID                     1,424,834
+mu_all                     4,846,422
+mu_kin                     2,433,849
+mu_ID                      2,221,665
+mu_iso                     1,935,791
+Jet cutflow:
+  jet_all                    791,806
+  jet_ele_removed            683,076
+  jet_mu_removed             555,885
+  jet_ID                     553,463
+  subjet_req                 370,070
+Zee cutflow:
+  trigger          1,092,435
+  electron           316,769
+  Zmass              306,208
+  MET                243,407
+  jet                 21,948
+Zmm cutflow:
+  trigger          1,301,566
+  muon               579,788
+  Zmass              558,734
+  MET                447,886
+  jet                 34,991
+
+=== ZZ_TuneCP5_13TeV-pythia8 ===
+sumw = 3.241e+06
+Total Events               3,241,000
+ele_all                    1,741,855
+ele_ip                     1,337,549
+ele_kin                      472,921
+ele_EE_EB                    464,784
+ele_ID                       205,400
+mu_all                     1,345,624
+mu_kin                       411,295
+mu_ID                        320,234
+mu_iso                       282,337
+Jet cutflow:
+  jet_all                    249,708
+  jet_ele_removed            241,342
+  jet_mu_removed             231,164
+  jet_ID                     230,420
+  subjet_req                 158,143
+Zee cutflow:
+  trigger            152,373
+  electron            44,363
+  Zmass               40,319
+  MET                 30,234
+  jet                  1,041
+Zmm cutflow:
+  trigger            188,876
+  muon                82,734
+  Zmass               75,736
+  MET                 57,334
+  jet                  1,675
+
