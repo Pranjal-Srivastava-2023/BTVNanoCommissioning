@@ -1,5 +1,27 @@
 # Session notes: QCD_sf boosted Zbb — LPC condor scale-up
 
+## PLANNED (not started) — extend to 2016preVFP, 2016postVFP, 2017
+
+Next round of scale-up work: add the `2016preVFP-UL`, `2016postVFP-UL`,
+and `2017-UL` datasets (same 16-dataset-style fileset per era, MC + data).
+**Explicit decision: keep each era's results completely separate — do
+NOT merge multiple years into one combined output/plot.** This matches
+the old ROOT-based `ZbAnalysis_boosted` analysis's own convention at
+`~/nobackup/ZbExercize/.../ZbAnalysis_boosted/plots/`, which keeps one
+subdirectory per era (`20preVFP2016/`, `20postVFP2016/`, `2017/`,
+`2018/`) — note that old analysis *also* has an `All/` combined folder,
+but we are deliberately not doing that (at least not yet/not without
+being asked).
+
+Before starting this: per the "is the code ready for more datasets"
+discussion, `submit_qcd_sf_per_dataset.sh`, `merge_qcd_sf_outputs.py`,
+and both plot scripts all currently hardcode `2018`/`run2018_all`
+(json path, `--campaign`/`--year` flags, output file naming, `LUMI_PB`,
+the xsections JSON) — these need to be parameterized (or duplicated
+per-era) before a second year can be run without overwriting/colliding
+with the 2018 outputs. Not done yet — explicitly deferred ("not yet") as
+of this note.
+
 ## STATUS AS OF 2026-09-07 (evening) — plots now have Data/MC ratio panels; x-ranges cropped; region double-count fixed
 
 **TL;DR since the last status entry below**: three more plotting
