@@ -10,6 +10,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import mplhep as hep
+import numpy as np
 from coffea.util import load
 
 hep.style.use("CMS")
@@ -116,11 +117,29 @@ def scaled_group_hists(histname, sel, sumaxes):
     return group_hists, data_total
 
 
-fig, axes = plt.subplots(3, 5, figsize=(30, 18))
-axes = axes.flatten()
+def data_mc_ratio(mc_total, data_hist):
+    """Data/MC ratio with data+MC statistical uncertainty combined in quadrature."""
+    mc_vals, mc_vars = mc_total.values(), mc_total.variances()
+    data_vals, data_vars = data_hist.values(), data_hist.variances()
+    with np.errstate(divide="ignore", invalid="ignore"):
+        ratio = np.where(mc_vals > 0, data_vals / mc_vals, np.nan)
+        rel_err2 = np.where(data_vals > 0, data_vars / data_vals**2, 0.0) + np.where(
+            mc_vals > 0, mc_vars / mc_vals**2, 0.0
+        )
+        ratio_err = np.abs(ratio) * np.sqrt(rel_err2)
+    return ratio, ratio_err
 
-for ax, (name, sel, sumaxes, title, logy, xlim) in zip(axes, PLOTS):
+
+fig = plt.figure(figsize=(30, 21))
+gs_outer = fig.add_gridspec(3, 5, wspace=0.32, hspace=0.35)
+
+for i, (name, sel, sumaxes, title, logy, xlim) in enumerate(PLOTS):
     group_hists, data_hist = scaled_group_hists(name, sel, sumaxes)
+
+    gs = gs_outer[i // 5, i % 5].subgridspec(2, 1, height_ratios=[3, 1], hspace=0.06)
+    ax = fig.add_subplot(gs[0])
+    ax_ratio = fig.add_subplot(gs[1], sharex=ax)
+
     hep.histplot(
         [group_hists[g] for g in ORDER],
         stack=True,
@@ -135,9 +154,23 @@ for ax, (name, sel, sumaxes, title, logy, xlim) in zip(axes, PLOTS):
     if xlim:
         ax.set_xlim(*xlim)
     ax.set_title(title, fontsize=14)
+    ax.set_xlabel("")
+    plt.setp(ax.get_xticklabels(), visible=False)
+    if i == 0:
+        ax.legend(fontsize=8, ncol=2)
 
-axes[0].legend(fontsize=8, ncol=2)
-plt.tight_layout()
+    mc_total = None
+    for g in ORDER:
+        mc_total = group_hists[g] if mc_total is None else mc_total + group_hists[g]
+    ratio, ratio_err = data_mc_ratio(mc_total, data_hist)
+    centers = mc_total.axes[0].centers
+    ax_ratio.errorbar(centers, ratio, yerr=ratio_err, fmt="o", color="black", markersize=3)
+    ax_ratio.axhline(1.0, color="gray", linestyle="--", linewidth=1)
+    ax_ratio.set_ylim(0.4, 1.6)
+    if xlim:
+        ax_ratio.set_xlim(*xlim)
+    ax_ratio.set_ylabel("Data/MC", fontsize=9)
+    ax_ratio.tick_params(axis="both", labelsize=8)
 
 outpath = f"{REPO}/qcd_sf_2018_full_overview.png"
 plt.savefig(outpath, dpi=110)
