@@ -84,7 +84,7 @@ def scaled_hist(histname, region=None, channel=None):
     return group_hists, data_total
 
 
-def make_plot(histname, region, xlabel, ax, channel=None):
+def make_plot(histname, region, xlabel, ax, channel=None, logy=True):
     group_hists, data_hist = scaled_hist(histname, region, channel)
     order = ["Diboson", "ZH", "Single top", "ttbar", "DY+jets"]
     hep.histplot(
@@ -96,6 +96,8 @@ def make_plot(histname, region, xlabel, ax, channel=None):
         ax=ax,
     )
     hep.histplot(data_hist, histtype="errorbar", color="black", label="Data", ax=ax)
+    if logy:
+        ax.set_yscale("log")
     ax.set_xlabel(xlabel)
     ax.set_ylabel(f"Events / bin")
     title = region or histname
@@ -117,7 +119,7 @@ plt.savefig(outpath, dpi=130)
 print("saved", outpath)
 
 fig2, axes2 = plt.subplots(1, 2, figsize=(20, 8))
-make_plot("cmp_pt_fj", "Z_jet", r"Leading AK8 jet $p_{T}$ [GeV]", axes2[0])
+make_plot("cmp_pt_fj", "Z_jet", r"Leading AK8 jet $p_{T}$ [GeV]", axes2[0], logy=True)
 make_plot("jet0_particleNetMD_Xbb", None, "ParticleNetMD Xbb score", axes2[1])
 plt.tight_layout()
 outpath2 = f"{REPO}/qcd_sf_2018_sample_stack2.png"

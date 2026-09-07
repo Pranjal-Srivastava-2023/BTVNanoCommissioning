@@ -48,23 +48,23 @@ DATA_SAMPLES = ["EGamma_Run2018", "SingleMuon_Run2018"]
 COLORS = {"DY+jets": "#5790fc", "ttbar": "#f89c20", "Single top": "#e42536", "Diboson": "#964a8b", "ZH": "#9c9ca1"}
 ORDER = ["Diboson", "ZH", "Single top", "ttbar", "DY+jets"]
 
-# (histogram name, extra axis selections, axes to sum over, title)
+# (histogram name, extra axis selections, axes to sum over, title, log-scale y-axis)
 PLOTS = [
-    ("cmp_mass_zcand", {"channel": "Zee"}, ["region"], "Zee candidate mass"),
-    ("cmp_mass_zcand", {"channel": "Zmm"}, ["region"], "Zmm candidate mass"),
-    ("jet0_msoftdrop", {}, ["flav"], "Leading AK8 jet softdrop mass"),
-    ("jet0_pt", {}, ["flav"], "Leading AK8 jet pT"),
-    ("cmp_pt_zcand", {}, ["region", "channel"], "Z candidate pT"),
-    ("cmp_pt_lep0", {}, ["region", "channel"], "Leading lepton pT"),
-    ("cmp_pt_lep1", {}, ["region", "channel"], "Subleading lepton pT"),
-    ("cmp_pt_sub0", {}, ["region", "channel"], "Leading subjet pT"),
-    ("cmp_pt_sub1", {}, ["region", "channel"], "Subleading subjet pT"),
-    ("jet0_tau21", {}, ["flav"], "tau21 = tau2/tau1"),
-    ("jet0_tau32", {}, ["flav"], "tau32 = tau3/tau2"),
-    ("jet0_n2b1", {}, ["flav"], "N2 (b1) subjettiness variable"),
-    ("cmp_dr_subjets", {}, ["region", "channel"], "Delta R between subjets"),
-    ("jet0_eta", {}, ["flav"], "Leading AK8 jet eta"),
-    ("njet", {}, [], "N selected AK8 jets"),
+    ("cmp_mass_zcand", {"channel": "Zee"}, ["region"], "Zee candidate mass", True),
+    ("cmp_mass_zcand", {"channel": "Zmm"}, ["region"], "Zmm candidate mass", True),
+    ("jet0_msoftdrop", {}, ["flav"], "Leading AK8 jet softdrop mass", True),
+    ("jet0_pt", {}, ["flav"], "Leading AK8 jet pT", True),
+    ("cmp_pt_zcand", {}, ["region", "channel"], "Z candidate pT", True),
+    ("cmp_pt_lep0", {}, ["region", "channel"], "Leading lepton pT", True),
+    ("cmp_pt_lep1", {}, ["region", "channel"], "Subleading lepton pT", True),
+    ("cmp_pt_sub0", {}, ["region", "channel"], "Leading subjet pT", True),
+    ("cmp_pt_sub1", {}, ["region", "channel"], "Subleading subjet pT", True),
+    ("jet0_tau21", {}, ["flav"], "tau21 = tau2/tau1", True),
+    ("jet0_tau32", {}, ["flav"], "tau32 = tau3/tau2", True),
+    ("jet0_n2b1", {}, ["flav"], "N2 (b1) subjettiness variable", True),
+    ("cmp_dr_subjets", {}, ["region", "channel"], "Delta R between subjets", True),
+    ("jet0_eta", {}, ["flav"], "Leading AK8 jet eta", True),
+    ("njet", {}, [], "N selected AK8 jets", True),
 ]
 
 
@@ -109,7 +109,7 @@ def scaled_group_hists(histname, sel, sumaxes):
 fig, axes = plt.subplots(3, 5, figsize=(30, 18))
 axes = axes.flatten()
 
-for ax, (name, sel, sumaxes, title) in zip(axes, PLOTS):
+for ax, (name, sel, sumaxes, title, logy) in zip(axes, PLOTS):
     group_hists, data_hist = scaled_group_hists(name, sel, sumaxes)
     hep.histplot(
         [group_hists[g] for g in ORDER],
@@ -120,6 +120,8 @@ for ax, (name, sel, sumaxes, title) in zip(axes, PLOTS):
         ax=ax,
     )
     hep.histplot(data_hist, histtype="errorbar", color="black", label="Data", ax=ax)
+    if logy:
+        ax.set_yscale("log")
     ax.set_title(title, fontsize=14)
 
 axes[0].legend(fontsize=8, ncol=2)

@@ -1,6 +1,67 @@
 # Session notes: QCD_sf boosted Zbb — LPC condor scale-up
 
-## STATUS AS OF 2026-09-07 03:00 CDT, READ THIS FIRST — full 16-dataset run COMPLETE via per-dataset split
+## STATUS AS OF 2026-09-07 (later same day) — plots now all log-scale; found root cause of data/MC normalization gap
+
+**Log-scale plots**: `plot_full_overview.py` (all 15 panels) and `plot_stack_sample.py`
+(all panels, `make_plot(..., logy=True)` now the default) were switched to
+log-scale y-axes. This is now the standing default for these two scripts —
+keep it log-scale going forward, don't revert to linear. Linear scale was
+hiding the sub-dominant backgrounds (ttbar, single top, diboson, ZH)
+almost completely under DY+jets; log-scale reveals them clearly across the
+full range, including down in the `Z_bjet` (b-tagged) region where ttbar
+and diboson become much more comparable to DY, as physically expected.
+
+**Root cause found for the data/MC normalization gap** (MC ~16% high vs.
+data, first noticed comparing total scaled yields): in
+`src/BTVNanoCommissioning/workflows/QCD_validation.py:83`, the line
+```python
+#self.SF_map = load_SF(self._year, self._campaign)
+```
+is commented out. This means `self.SF_map` is never set, and
+`weight_manager()` (`utils/correction.py:3924`) receives `SF_map=None`,
+which makes it return immediately after adding only `genweight` to the
+event weight:
+```python
+if "genWeight" in pruned_ev.fields:
+    weights.add("genweight", pruned_ev.genWeight)
+if SF_map is None:
+    return weights
+```
+So **no pileup reweighting, no muon/electron ID-iso-trigger SFs, and no
+b-tagging SFs are applied anywhere in this workflow** — every MC event's
+weight is just its raw `genWeight`. The framework already has `puwei`,
+`muSFs`, `eleSFs`, `btagSFs` fully implemented and ready to use, just not
+wired in for `QCD_sf`. This is the concrete, code-level explanation for
+the MC/data normalization offset, and likely also contributes to shape-
+level mismatches (anything correlated with pileup or lepton kinematics).
+Also confirmed: no golden-JSON/certified-lumi mask (`LumiMask`, exists in
+`utils/correction.py`) is applied to the data samples either — a smaller
+but real additional gap.
+**Not yet fixed** — flagged to the user as a workflow-design decision
+(whether/how to enable `load_SF` for `QCD_sf`) rather than acted on
+unilaterally; likely worth raising with Hsin-Wei before touching it, since
+enabling it might require correction-JSON files that need to be confirmed
+present for 2018-UL.
+
+**Cutflow reference file**: `cutflow_full_16dataset_run.log` (repo root,
+regenerated from the merged `.coffea`, not committed — see `.gitignore`
+note below) reproduces the same format as the earlier `output_with_hist.log`
+per-chunk printout, but aggregated over the full merged run: general
+cutflow (`Total Events` → `ele_*`/`mu_*` preselection → `Jet cutflow:`
+block) plus separate `Zee cutflow:` and `Zmm cutflow:` blocks per dataset,
+plus `sumw`. Regenerate anytime via `coffea.util.load` on the merged
+output — see the merge script's docstring/[[zbb_boosted_qcd_task]] memory
+for the exact snippet.
+
+**Reminder — `.coffea` outputs are gitignored, local-only**: the merged
+and per-dataset `.coffea` files (`hists_QCD_sf_QCD_sf_run2018_all/`) are
+excluded from git by this repo's existing `*.coffea`/`hists_*` rules, so
+they are **not** part of any commit — only the code and PNG plots are
+version-controlled. They currently exist only on this LPC `nobackup` disk.
+See exact paths in the `zbb_boosted_qcd_task` Claude memory entry if
+picking this up in a fresh session.
+
+## STATUS AS OF 2026-09-07 03:00 CDT (superseded by above) — full 16-dataset run COMPLETE via per-dataset split
 
 **TL;DR**: Following a suggestion from Hsin-Wei, restructured the full-scale
 submission from one combined 16-dataset job into 16 independent per-dataset
