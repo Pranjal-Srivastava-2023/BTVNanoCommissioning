@@ -52,21 +52,28 @@ ORDER = ["Diboson", "ZH", "Single top", "ttbar", "DY+jets"]
 # xlim values are the actual populated range summed across all 16 datasets (checked directly
 # against the merged .coffea output) -- crops the padding of zero-content bins left over from
 # each histogram's wider default axis definition, without touching the underlying binning/data.
+#
+# region is always explicitly selected as "Z_jet" (the inclusive selection, no b-tag requirement)
+# rather than summed over: "Z_bjet" is a strict *subset* of "Z_jet" (same events, plus the
+# ParticleNetMD Xbb tag requirement -- see QCD_validation.py's fill_comparison_hists), so summing
+# both together would double-count every b-tagged event.
 PLOTS = [
-    ("cmp_mass_zcand", {"channel": "Zee"}, ["region"], "Zee candidate mass", True, (70, 110)),
-    ("cmp_mass_zcand", {"channel": "Zmm"}, ["region"], "Zmm candidate mass", True, (70, 110)),
+    ("cmp_mass_zcand", {"channel": "Zee", "region": "Z_jet"}, [], "Zee candidate mass", True, (70, 110)),
+    ("cmp_mass_zcand", {"channel": "Zmm", "region": "Z_jet"}, [], "Zmm candidate mass", True, (70, 110)),
     ("jet0_msoftdrop", {}, ["flav"], "Leading AK8 jet softdrop mass", True, None),
     ("jet0_pt", {}, ["flav"], "Leading AK8 jet pT", True, None),
-    ("cmp_pt_zcand", {}, ["region", "channel"], "Z candidate pT", True, None),
-    ("cmp_pt_lep0", {}, ["region", "channel"], "Leading lepton pT", True, (25, 700)),
-    ("cmp_pt_lep1", {}, ["region", "channel"], "Subleading lepton pT", True, (20, 350)),
-    ("cmp_pt_sub0", {}, ["region", "channel"], "Leading subjet pT", True, (45, 900)),
-    ("cmp_pt_sub1", {}, ["region", "channel"], "Subleading subjet pT", True, (5, 350)),
+    ("cmp_pt_zcand", {"region": "Z_jet"}, ["channel"], "Z candidate pT", True, None),
+    ("cmp_pt_lep0", {"region": "Z_jet"}, ["channel"], "Leading lepton pT", True, (25, 700)),
+    ("cmp_pt_lep1", {"region": "Z_jet"}, ["channel"], "Subleading lepton pT", True, (20, 350)),
+    ("cmp_pt_sub0", {"region": "Z_jet"}, ["channel"], "Leading subjet pT", True, (45, 900)),
+    ("cmp_pt_sub1", {"region": "Z_jet"}, ["channel"], "Subleading subjet pT", True, (5, 350)),
     ("jet0_tau21", {}, ["flav"], "tau21 = tau2/tau1", True, None),
     ("jet0_tau32", {}, ["flav"], "tau32 = tau3/tau2", True, None),
     ("jet0_n2b1", {}, ["flav"], "N2 (b1) subjettiness variable", True, (0, 0.45)),
-    ("cmp_dr_subjets", {}, ["region", "channel"], "Delta R between subjets", True, (0, 1.1)),
+    ("cmp_dr_subjets", {"region": "Z_jet"}, ["channel"], "Delta R between subjets", True, (0, 1.1)),
     ("jet0_eta", {}, ["flav"], "Leading AK8 jet eta", True, None),
+    # njet has no "region" axis to select (its axes are just ["syst", "n"]) -- its Z_jet/Z_bjet
+    # split happens differently in QCD_validation.py and isn't separable here; left as-is.
     ("njet", {}, [], "N selected AK8 jets", True, (0.5, 6.5)),
 ]
 
