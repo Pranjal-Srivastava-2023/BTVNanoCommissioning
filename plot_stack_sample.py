@@ -84,7 +84,7 @@ def scaled_hist(histname, region=None, channel=None):
     return group_hists, data_total
 
 
-def make_plot(histname, region, xlabel, ax, channel=None, logy=True):
+def make_plot(histname, region, xlabel, ax, channel=None, logy=True, xlim=None):
     group_hists, data_hist = scaled_hist(histname, region, channel)
     order = ["Diboson", "ZH", "Single top", "ttbar", "DY+jets"]
     hep.histplot(
@@ -98,6 +98,8 @@ def make_plot(histname, region, xlabel, ax, channel=None, logy=True):
     hep.histplot(data_hist, histtype="errorbar", color="black", label="Data", ax=ax)
     if logy:
         ax.set_yscale("log")
+    if xlim:
+        ax.set_xlim(*xlim)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(f"Events / bin")
     title = region or histname
@@ -108,8 +110,8 @@ def make_plot(histname, region, xlabel, ax, channel=None, logy=True):
 
 
 fig, axes = plt.subplots(1, 2, figsize=(20, 8))
-make_plot("cmp_mass_zcand", "Z_jet", r"$m_{\ell\ell}$ [GeV]", axes[0])
-make_plot("cmp_mass_zcand", "Z_bjet", r"$m_{\ell\ell}$ [GeV]", axes[1])
+make_plot("cmp_mass_zcand", "Z_jet", r"$m_{\ell\ell}$ [GeV]", axes[0], xlim=(70, 110))
+make_plot("cmp_mass_zcand", "Z_bjet", r"$m_{\ell\ell}$ [GeV]", axes[1], xlim=(70, 110))
 hep.cms.label("Preliminary", data=True, lumi=LUMI_PB / 1000.0, year=2018, ax=axes[0])
 hep.cms.label("Preliminary", data=True, lumi=LUMI_PB / 1000.0, year=2018, ax=axes[1])
 plt.tight_layout()
@@ -119,7 +121,7 @@ plt.savefig(outpath, dpi=130)
 print("saved", outpath)
 
 fig2, axes2 = plt.subplots(1, 2, figsize=(20, 8))
-make_plot("cmp_pt_fj", "Z_jet", r"Leading AK8 jet $p_{T}$ [GeV]", axes2[0], logy=True)
+make_plot("cmp_pt_fj", "Z_jet", r"Leading AK8 jet $p_{T}$ [GeV]", axes2[0], logy=True, xlim=(195, 900))
 make_plot("jet0_particleNetMD_Xbb", None, "ParticleNetMD Xbb score", axes2[1])
 plt.tight_layout()
 outpath2 = f"{REPO}/qcd_sf_2018_sample_stack2.png"
@@ -128,8 +130,8 @@ print("saved", outpath2)
 
 # Zee vs Zmm split -- matches the old workflow keeping these as separate plots
 fig3, axes3 = plt.subplots(1, 2, figsize=(20, 8))
-make_plot("cmp_mass_zcand", "Z_jet", r"$m_{\ell\ell}$ [GeV]", axes3[0], channel="Zee")
-make_plot("cmp_mass_zcand", "Z_jet", r"$m_{\ell\ell}$ [GeV]", axes3[1], channel="Zmm")
+make_plot("cmp_mass_zcand", "Z_jet", r"$m_{\ell\ell}$ [GeV]", axes3[0], channel="Zee", xlim=(70, 110))
+make_plot("cmp_mass_zcand", "Z_jet", r"$m_{\ell\ell}$ [GeV]", axes3[1], channel="Zmm", xlim=(70, 110))
 plt.tight_layout()
 outpath3 = f"{REPO}/qcd_sf_2018_sample_stack_by_channel.png"
 plt.savefig(outpath3, dpi=130)
