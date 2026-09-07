@@ -1,5 +1,93 @@
 # Session notes: QCD_sf boosted Zbb — LPC condor scale-up
 
+## STATUS AS OF 2026-09-07 03:00 CDT, READ THIS FIRST — full 16-dataset run COMPLETE via per-dataset split
+
+**TL;DR**: Following a suggestion from Hsin-Wei, restructured the full-scale
+submission from one combined 16-dataset job into 16 independent per-dataset
+condor jobs, run sequentially. Result: **all 16 datasets now complete and
+merged**, full-statistics stacked plots regenerated and look physically
+sane. This is the successful conclusion of the multi-day scale-up effort
+described below.
+
+**Mechanism**: no new metadata files or code changes needed. `runner.py`
+already has an `--only <dataset>` flag (existed already, just unused for
+this purpose before) that filters the existing combined
+`metadata/QCD_sf_run2018_all.json` down to one dataset *before*
+validation touches any files — so each `--only` invocation is a fully
+independent job (own dask cluster, own condor jobs, own `.coffea` output
+`hists_QCD_sf_QCD_sf_run2018_all/hists_QCD_sf_QCD_sf_run2018_all_<dataset>.coffea`),
+with zero risk of one dataset's failure affecting another. New scripts
+added: `submit_qcd_sf_per_dataset.sh` (sequential wrapper, one dataset at
+a time, `--scaleout 8`, logs to `logs_qcd_sf_split/<dataset>.log` +
+running `logs_qcd_sf_split/summary.log`) and `merge_qcd_sf_outputs.py`
+(dict-unions the per-dataset `.coffea` outputs into the single combined
+file `plot_stack_sample.py` already expects — safe because each dataset
+is a disjoint top-level key in the workflow's output dict, so merging is
+a plain union, not a histogram-level sum).
+
+**Validated the mechanism first** on the smallest untested dataset (`ZZ`,
+6 files) before committing to the full run — ran clean, isolated,
+correct output.
+
+**Ran the remaining 14 datasets sequentially** (all of `all.json` except
+`DYJetsToLL_2J`, already validated 2026-09-01). Result: **13/14 succeeded
+cleanly** on the first pass (`WZ`, `ST_s-channel`, `ST_tW_antitop`,
+`ZH_HToBB`, `WW`, `ST_tW_top`, `ST_t-channel_antitop`, `ST_t-channel_top`,
+`TTTo2L2Nu`, `SingleMuon_Run2018`, `EGamma_Run2018` — plus `ZZ` from the
+validation step). **3 hit the same dask/lpcjobqueue deadlock described
+below** (`DYJetsToLL_0J`, `DYJetsToLL_1J`, `TTToSemiLeptonic` — each
+stuck at 98-99% with driver+worker CPU time frozen, confirmed via the
+same `condor_ssh_to_job` CPU-time-before/after-a-wait method used to
+diagnose attempt 6). Each was killed cleanly with `SIGINT` (same clean
+teardown behavior as before — condor jobs cleared, no `condor_rm`
+needed) and **did not affect the other datasets already running/queued**
+— exactly the resilience the restructuring was meant to provide. This is
+useful new information: the deadlock is real and can recur even at
+much smaller per-dataset scale (not just the old full 16-dataset combined
+run), so it's some kind of dask/lpcjobqueue-level issue, not something
+tied to combined-run scale specifically. Root cause of the deadlock
+itself is still not understood (see "Next steps" further below — the
+dashboard-enabling suggestion from the original investigation was never
+acted on).
+
+**All 3 retried individually afterward** — all 3 succeeded on the second
+attempt (`DYJetsToLL_0J` in 10min, `DYJetsToLL_1J` in 14min,
+`TTToSemiLeptonic` in 76min — no deadlock recurrence on retry).
+
+**Merge**: `merge_qcd_sf_outputs.py` initially only found 15/16 (missed
+`DYJetsToLL_2J` — its default search pattern pointed at a path that
+didn't actually exist). Found the correct file among several stale
+candidates left over from earlier sessions
+(`hists_DY2J_condor_rebin/hists_QCD_sf_QCD_sf_run2018_DY2J/hists_QCD_sf_QCD_sf_run2018_DY2J.coffea`
+— verified as the correct one via cutflow total events matching the
+documented 44,484,852 exactly, and via histogram binning matching
+today's fresh outputs, since it postdates the 2026-09-01 rebin commit
+`8b39021` while the other DY2J candidates lying around predate it or are
+small sanity-test runs). Fixed the script's default pattern to this path.
+Final merge: **16/16 dataset keys**, all with non-trivial, proportionally
+sensible statistics (3.2M events for `ZZ` up to 1.38B for `EGamma_Run2018`).
+
+**Plots regenerated** via the existing `plot_stack_sample.py` (no changes
+needed — already pointed at the correct combined output path). All three
+plot sets look physically sane at full statistics:
+`qcd_sf_2018_sample_stack.png` (Z-candidate mass, sharp ~90 GeV peak in
+both `Z_jet`/`Z_bjet` regions), `qcd_sf_2018_sample_stack2.png` (leading
+AK8 jet pT falling spectrum from the 200 GeV cut, ParticleNetMD Xbb score
+piling near 0 as expected for DY+jets background),
+`qcd_sf_2018_sample_stack_by_channel.png` (Zee vs Zmm both healthy and
+non-empty, confirming the 2026-09-01 Zmm mass-window bug fix holds at
+full scale).
+
+**Not yet done**: none of this session's new files
+(`submit_qcd_sf_per_dataset.sh`, `merge_qcd_sf_outputs.py`, this note
+update) or the new plots have been committed/pushed to `myfork` yet.
+
+**Next steps**: commit/push; decide what to share with Hsin-Wei (the
+successful per-dataset restructuring result, and the still-unresolved
+dask deadlock as a known recurring issue worth further investigation per
+the original attempt-6 root-cause notes below — dashboards were never
+enabled to see *why* it deadlocks).
+
 Working with senior postdoc Hsin-Wei Hsia (GitHub: hsinweihsia) on her
 boosted Z(bb)+jet analysis, `QCD_sf` workflow, built on BTVNanoCommissioning.
 
