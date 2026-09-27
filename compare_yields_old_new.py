@@ -8,7 +8,7 @@ data only from SingleMuon, so events present in both are not double-counted.
 Old yields are parsed from the old framework's event_counts_<region>_amcnlo.txt.
 
 Usage:
-    python3 compare_yields_old_new.py --new <merged.coffea> [--era 18]
+    python3 compare_yields_old_new.py --new <merged.coffea> [--era {preVFP2016,postVFP2016,17,18}]
 """
 import argparse
 import json
@@ -21,6 +21,9 @@ OLD_DIR = (
 )
 # era label in the old tables -> (lumi in /pb from old Configs/config.ini, xsec json)
 ERAS = {
+    "preVFP2016": (19648.0, "metadata/QCD_sf_xsections_2016preVFP.json"),
+    "postVFP2016": (16978.0, "metadata/QCD_sf_xsections_2016postVFP.json"),
+    "17": (41480.0, "metadata/QCD_sf_xsections_2017.json"),
     "18": (59832.0, "metadata/QCD_sf_xsections_2018.json"),
 }
 GROUPS = {

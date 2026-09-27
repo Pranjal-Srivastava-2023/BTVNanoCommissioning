@@ -1,0 +1,121 @@
+"""Build the QCD_sf fileset and cross-section JSONs for one era from the old
+ROOT-based ZbAnalysis_boosted framework's inputs, so both frameworks run on the
+same files with the same normalization:
+
+- file lists: <old>/FileLists_NanoUL/<stem>_<era>.txt (the lists its condor
+  jobs were launched from, SubmitToCondor/condor_run_<stem>_<era>_test)
+- cross sections: <old>/Configs/config.ini, field xSec_<era label>
+
+Writes metadata/QCD_sf_run<era>_all.json and metadata/QCD_sf_xsections_<era>.json.
+
+Deliberate deviation from the old inputs: the old postVFP2016 TTToSemiLeptonic
+list is a copy of the preVFP (APV) list. We use the real postVFP dataset instead
+(--tt-semi-postvfp, a plain list of /store/... paths from DAS).
+
+Usage:
+    python3 make_qcd_sf_fileset.py --era 2017
+    python3 make_qcd_sf_fileset.py --era 2016postVFP --tt-semi-postvfp tt_semi_postVFP.txt
+"""
+import argparse
+import configparser
+import json
+
+OLD = (
+    "/uscms/home/psrivast/nobackup/ZbExercize/CMSSW_14_0_6/src/Zb/CMSSW_14_0_6/src/"
+    "ZbAnalysis_boosted"
+)
+XROOTD = "root://cmsxrootd.fnal.gov//"
+
+# era -> (file-list suffix, config.ini suffix, data primary datasets)
+ERAS = {
+    "2016preVFP": ("MC_preVFP2016", "preVFP2016", ("SingleElectron", "SingleMuon")),
+    "2016postVFP": ("MC_postVFP2016", "postVFP2016", ("SingleElectron", "SingleMuon")),
+    "2017": ("MC_2017", "17", ("SingleElectron", "SingleMuon")),
+    "2018": ("MC_2018", "18", ("EGamma", "SingleMuon")),
+}
+
+# dataset name -> (old file-list stem, config.ini section, index in its xSec list)
+MC = {
+    "DYJetsToLL_0J_TuneCP5_13TeV-amcatnloFXFX-pythia8": ("DY_0J_amcatnlo", "DY_0J", 0),
+    "DYJetsToLL_1J_TuneCP5_13TeV-amcatnloFXFX-pythia8": ("DY_1J_amcatnlo", "DY_1J", 0),
+    "DYJetsToLL_2J_TuneCP5_13TeV-amcatnloFXFX-pythia8": ("DY_2J_amcatnlo", "DY_2J", 0),
+    "TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8": ("TT_semi_powheg", "TT", 0),
+    "TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8": ("TT_dilep_powheg", "TT", 1),
+    "ST_t-channel_top_4f_InclusiveDecays_TuneCP5_13TeV-powheg-madspin-pythia8": ("ST_tchan_top", "ST", 0),
+    "ST_t-channel_antitop_4f_InclusiveDecays_TuneCP5_13TeV-powheg-madspin-pythia8": ("ST_tchan_antitop", "ST", 1),
+    "ST_s-channel_4f_leptonDecays_TuneCP5_13TeV-amcatnlo-pythia8": ("ST_schan", "ST", 2),
+    "ST_tW_top_5f_inclusiveDecays_TuneCP5_13TeV-powheg-pythia8": ("ST_tW_top", "ST", 3),
+    "ST_tW_antitop_5f_inclusiveDecays_TuneCP5_13TeV-powheg-pythia8": ("ST_tW_antitop", "ST", 4),
+    "WW_TuneCP5_13TeV-pythia8": ("WW", "WW", 0),
+    "WZ_TuneCP5_13TeV-pythia8": ("WZ", "WZ", 0),
+    "ZZ_TuneCP5_13TeV-pythia8": ("ZZ", "ZZ", 0),
+    "ZH_HToBB_ZToLL_M-125_TuneCP5_13TeV-powheg-pythia8": ("ZH", "ZH", 0),
+}
+
+
+def read_list(path):
+    files = []
+    for line in open(path):
+        line = line.strip()
+        if not line:
+            continue
+        # old lists spell the scheme "root::" (sic)
+        line = line.replace("root:://", "root://")
+        if line.startswith("/store/"):
+            line = XROOTD + line
+        files.append(line)
+    return files
+
+
+def xsec(cfg, section, key, idx):
+    # values are either a number, an expression like 5313*0.9167, or a
+    # comma-separated list (one per sample in the section)
+    expr = cfg[section][key].split(",")[idx].strip()
+    a, _, b = expr.partition("*")
+    return float(a) * (float(b) if b else 1.0)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--era", required=True, choices=list(ERAS))
+    parser.add_argument("--old-dir", default=OLD)
+    parser.add_argument("--tt-semi-postvfp", help="real postVFP2016 TTToSemiLeptonic file list")
+    args = parser.parse_args()
+
+    list_sfx, cfg_sfx, data_pds = ERAS[args.era]
+    data_sfx = list_sfx.replace("MC_", "DATA_")
+    cfg = configparser.ConfigParser(inline_comment_prefixes=("#",))
+    cfg.read(f"{args.old_dir}/Configs/config.ini")
+
+    fileset, xsecs = {}, {}
+    for name, (stem, section, idx) in MC.items():
+        if args.era == "2016postVFP" and name.startswith("TTToSemiLeptonic"):
+            if not args.tt_semi_postvfp:
+                parser.error("2016postVFP needs --tt-semi-postvfp (old list is the preVFP one)")
+            fileset[name] = read_list(args.tt_semi_postvfp)
+        else:
+            fileset[name] = read_list(f"{args.old_dir}/FileLists_NanoUL/{stem}_{list_sfx}.txt")
+        xsecs[name] = xsec(cfg, section, f"xSec_{cfg_sfx}", idx)
+    for pd in data_pds:
+        fileset[f"{pd}_Run{args.era}"] = read_list(f"{args.old_dir}/FileLists_NanoUL/{pd}_{data_sfx}.txt")
+
+    fileset = dict(sorted(fileset.items()))
+    with open(f"metadata/QCD_sf_run{args.era}_all.json", "w") as f:
+        json.dump(fileset, f, indent=4)
+    with open(f"metadata/QCD_sf_xsections_{args.era}.json", "w") as f:
+        json.dump(
+            {
+                "_source": (
+                    f"Generated by make_qcd_sf_fileset.py from the old ZbAnalysis_boosted "
+                    f"Configs/config.ini, xSec_{cfg_sfx} fields (k-factors multiplied in). "
+                    f"Keys match metadata/QCD_sf_run{args.era}_all.json."
+                ),
+                "lumi_pb": float(cfg["General"][f"lumi_{cfg_sfx}"]),
+                "cross_sections_pb": xsecs,
+            },
+            f,
+            indent=2,
+        )
+    for k, v in fileset.items():
+        print(f"{len(v):5d}  {xsecs.get(k, ''):<12}  {k}")
+    print(f"total {sum(map(len, fileset.values()))} files")

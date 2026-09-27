@@ -26,28 +26,62 @@ import uproot
 _DATA = os.path.join(os.path.dirname(__file__), "..", "data", "ZbOld")
 
 # (file, histogram name) per SF, per campaign -- see Ana.cxx / Selector.cxx
+# (SetEleEffCorr, SetMuonEffCorr). Electron histograms are all EGamma_SF2D;
+# the muon ID/iso/reco histogram names are the same in every era, only the
+# muon trigger histogram name changes.
+def _era_files(ele_trig, ele_reco, ele_id, mu_trig, mu_trig_hist, mu_id, mu_iso, mu_reco):
+    return {
+        "ele_trig": (ele_trig, "EGamma_SF2D"),
+        "ele_reco": (ele_reco, "EGamma_SF2D"),
+        "ele_id": (ele_id, "EGamma_SF2D"),
+        "mu_trig": (mu_trig, mu_trig_hist),
+        "mu_id": (mu_id, "NUM_MediumID_DEN_TrackerMuons_abseta_pt_syst"),
+        "mu_iso": (mu_iso, "NUM_TightRelIso_DEN_MediumID_abseta_pt_syst"),
+        "mu_reco": (mu_reco, "NUM_TrackerMuons_DEN_genTracks"),
+    }
+
+
 SF_FILES = {
-    "2018-UL": {
-        "ele_trig": ("egammaTrigEffi_wp90noiso_EGM2D_2018.root", "EGamma_SF2D"),
-        "ele_reco": ("egammaEffi_ptAbove20.txt_EGM2D_UL2018.root", "EGamma_SF2D"),
-        "ele_id": ("egammaEffi.txt_Ele_Tight_EGM2D.root", "EGamma_SF2D"),
-        "mu_trig": (
-            "Efficiencies_muon_generalTracks_Z_Run2018_UL_SingleMuonTriggers.root",
-            "NUM_IsoMu24_DEN_CutBasedIdMedium_and_PFIsoMedium_abseta_pt",
-        ),
-        "mu_id": (
-            "Efficiencies_muon_generalTracks_Z_Run2018_UL_ID.root",
-            "NUM_MediumID_DEN_TrackerMuons_abseta_pt_syst",
-        ),
-        "mu_iso": (
-            "Efficiencies_muon_generalTracks_Z_Run2018_UL_ISO.root",
-            "NUM_TightRelIso_DEN_MediumID_abseta_pt_syst",
-        ),
-        "mu_reco": (
-            "Efficiency_muon_generalTracks_Run2018_UL_trackerMuon.root",
-            "NUM_TrackerMuons_DEN_genTracks",
-        ),
-    },
+    "2016preVFP-UL": _era_files(
+        "egammaTrigEffi_wp90noiso_preVFP_EGM2D_2016.root",
+        "egammaEffi_ptAbove20.txt_EGM2D_UL2016preVFP.root",
+        "egammaEffi.txt_Ele_Tight_preVFP_EGM2D.root",
+        "Efficiencies_muon_generalTracks_Z_Run2016_UL_HIPM_SingleMuonTriggers.root",
+        "NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdMedium_and_PFIsoMedium_abseta_pt",
+        "Efficiencies_muon_generalTracks_Z_Run2016_UL_HIPM_ID.root",
+        "Efficiencies_muon_generalTracks_Z_Run2016_UL_HIPM_ISO.root",
+        "Efficiency_muon_generalTracks_Run2016preVFP_UL_trackerMuon.root",
+    ),
+    "2016postVFP-UL": _era_files(
+        "egammaTrigEffi_wp90noiso_postVFP_EGM2D_2016.root",
+        "egammaEffi_ptAbove20.txt_EGM2D_UL2016postVFP.root",
+        "egammaEffi.txt_Ele_Tight_postVFP_EGM2D.root",
+        "Efficiencies_muon_generalTracks_Z_Run2016_UL_SingleMuonTriggers.root",
+        "NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdMedium_and_PFIsoMedium_abseta_pt",
+        "Efficiencies_muon_generalTracks_Z_Run2016_UL_ID.root",
+        "Efficiencies_muon_generalTracks_Z_Run2016_UL_ISO.root",
+        "Efficiency_muon_generalTracks_Run2016postVFP_UL_trackerMuon.root",
+    ),
+    "2017-UL": _era_files(
+        "egammaTrigEffi_wp90noiso_EGM2D_2017.root",
+        "egammaEffi_ptAbove20.txt_EGM2D_UL2017.root",
+        "egammaEffi.txt_EGM2D_Tight_UL17.root",
+        "Efficiencies_muon_generalTracks_Z_Run2017_UL_SingleMuonTriggers.root",
+        "NUM_IsoMu27_DEN_CutBasedIdMedium_and_PFIsoMedium_abseta_pt",
+        "Efficiencies_muon_generalTracks_Z_Run2017_UL_ID.root",
+        "Efficiencies_muon_generalTracks_Z_Run2017_UL_ISO.root",
+        "Efficiency_muon_generalTracks_Run2017_UL_trackerMuon.root",
+    ),
+    "2018-UL": _era_files(
+        "egammaTrigEffi_wp90noiso_EGM2D_2018.root",
+        "egammaEffi_ptAbove20.txt_EGM2D_UL2018.root",
+        "egammaEffi.txt_Ele_Tight_EGM2D.root",
+        "Efficiencies_muon_generalTracks_Z_Run2018_UL_SingleMuonTriggers.root",
+        "NUM_IsoMu24_DEN_CutBasedIdMedium_and_PFIsoMedium_abseta_pt",
+        "Efficiencies_muon_generalTracks_Z_Run2018_UL_ID.root",
+        "Efficiencies_muon_generalTracks_Z_Run2018_UL_ISO.root",
+        "Efficiency_muon_generalTracks_Run2018_UL_trackerMuon.root",
+    ),
 }
 
 # Trigger-object matching: (filterBits mask, pT threshold) per flavour, from

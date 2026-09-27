@@ -19,6 +19,7 @@ from BTVNanoCommissioning.utils.correction import (
 from BTVNanoCommissioning.utils.selection import *
 from BTVNanoCommissioning.utils.zb_old_sf import load_zb_old_sf, zee_sf, zmm_sf
 from coffea.analysis_tools import PackedSelection
+from coffea.lumi_tools import LumiMask
 import correctionlib
 
 
@@ -78,7 +79,17 @@ class NanoProcessor(processor.ProcessorABC):
         self.isSyst = isSyst
         self.isArray = isArray
         self.noHist = noHist
-        self.lumiMask = load_lumi(self._campaign)
+        # 2017: the framework default is the Muon JSON; the old ZbAnalysis_boosted
+        # framework uses the Golden JSON for both channels.
+        if self._campaign == "2017-UL":
+            self.lumiMask = LumiMask(
+                os.path.join(
+                    os.path.dirname(__file__), "..", "data", "DC",
+                    "Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSON.txt",
+                )
+            )
+        else:
+            self.lumiMask = load_lumi(self._campaign)
         self.chunksize = chunksize
         ## Load corrections FIX LATER
         #self.SF_map = load_SF(self._year, self._campaign)
@@ -479,12 +490,15 @@ class NanoProcessor(processor.ProcessorABC):
         # event can in principle pass both.
         jet_level = zee_event_level | zmm_event_level
 
-        # Per-channel MC weight: genWeight x lepton ID/iso/reco x trigger SFs
+        # Per-channel MC weight: genWeight x L1 prefiring (2016/2017 only, as in
+        # the old framework) x lepton ID/iso/reco x trigger SFs
         sf_zee = np.ones(len(events))
         sf_zmm = np.ones(len(events))
         genw = np.ones(len(events))
         if not isRealData:
             genw = ak.to_numpy(events.genWeight).astype(float)
+            if self._campaign in ("2016preVFP-UL", "2016postVFP-UL", "2017-UL"):
+                genw = genw * ak.to_numpy(events.L1PreFiringWeight.Nom).astype(float)
             if self.lep_sfs is not None:
                 sf_zee = zee_sf(self.lep_sfs, events, ele_req[:, 0], ele_req[:, 1], self._campaign)
                 sf_zmm = zmm_sf(self.lep_sfs, events, mu_req[:, 0], mu_req[:, 1], self._campaign)
