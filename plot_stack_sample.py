@@ -107,3 +107,36 @@ hep.cms.label("Preliminary", data=True, lumi=lumi_fb, year=era.cfg["year"], ax=a
 outpath4 = f"{args.outdir}/{tag}_msoftdrop.png"
 plt.savefig(outpath4, dpi=130)
 print("saved", outpath4)
+
+# The 15-panel overview's variables as single plots, one per channel (Z_jet), for
+# the side-by-side comparison with the old framework's per-channel plots. N2 and
+# the Xbb score have no old counterpart and are not made here; mSD is above.
+# tau21/tau32 are jet0_* histograms without a channel axis: Zee + Zmm combined.
+PANELS = [
+    ("cmp_mass_zcand", r"$m_{\ell\ell}$ [GeV]", (70, 110), "mass_zcand"),
+    ("cmp_pt_fj", r"Leading AK8 jet $p_{T}$ [GeV]", (195, 900), "pt_fj"),
+    ("cmp_pt_zcand", r"Z candidate $p_{T}$ [GeV]", None, "pt_zcand"),
+    ("cmp_pt_lep0", r"Leading lepton $p_{T}$ [GeV]", (25, 700), "pt_lep0"),
+    ("cmp_pt_lep1", r"Subleading lepton $p_{T}$ [GeV]", (20, 350), "pt_lep1"),
+    ("cmp_pt_sub0", r"Leading subjet $p_{T}$ [GeV]", (45, 900), "pt_sub0"),
+    ("cmp_pt_sub1", r"Subleading subjet $p_{T}$ [GeV]", (5, 350), "pt_sub1"),
+    ("cmp_dr_subjets", r"$\Delta R$ between subjets", (0, 1.1), "dr_subjets"),
+    ("cmp_eta_fj", r"Leading AK8 jet $\eta$", None, "eta_fj"),
+    ("jet0_tau21", r"$\tau_{21} = \tau_2/\tau_1$", None, "tau21"),
+    ("jet0_tau32", r"$\tau_{32} = \tau_3/\tau_2$", None, "tau32"),
+]
+panel_dir = f"{args.outdir}/panels"
+os.makedirs(panel_dir, exist_ok=True)
+for hist, xlabel, xlim, name in PANELS:
+    channels = [None] if hist.startswith("jet0_") else ["Zee", "Zmm"]
+    for channel in channels:
+        figp = plt.figure(figsize=(10, 9))
+        region = None if channel is None else "Z_jet"
+        axp = make_plot(hist, region, xlabel, figp, figp.add_gridspec(1, 1)[0], channel=channel, xlim=xlim)
+        axp.texts[0].set_text("Z_jet (Zee + Zmm)" if channel is None else f"Z_jet ({channel})")
+        axp.set_ylim(top=axp.get_ylim()[1] * 30)  # headroom for label and legend
+        hep.cms.label("Preliminary", data=True, lumi=lumi_fb, year=era.cfg["year"], ax=axp)
+        outp = f"{panel_dir}/{tag}_{name}_{channel or 'Zee+Zmm'}.png"
+        plt.savefig(outp, dpi=130)
+        plt.close(figp)
+        print("saved", outp)
