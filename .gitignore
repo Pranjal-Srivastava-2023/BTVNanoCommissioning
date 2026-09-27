@@ -34,3 +34,4 @@ hists_run*_mSD_SF/*
 !logs_run*_mSD_SF/
 logs_run*_mSD_SF/*
 !logs_run*_mSD_SF/summary.log
+!hists_run*_mSD_SF/*.pdf
