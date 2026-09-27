@@ -52,7 +52,30 @@ old-vs-new table (Zee data from EGamma only, Zmm data from SingleMuon only).
 `submit_qcd_sf_per_dataset.sh` now takes `OUTDIR=`/`LOGDIR=` env vars and runs
 all 16 datasets by default.
 
-**Run in progress** (launched 2026-09-26 19:41 CDT from cmslpc323, inside the
+**RESULT (2026-09-27 04:25 CDT) — 2018 validation DONE, agreement ~1-1.5%.**
+All 16 datasets OK, no hangs. Merged: `hists_run2018_mSD_SF/merged_run2018.coffea`;
+table saved in `hists_run2018_mSD_SF/compare_2018.txt` (both gitignored/local).
+new/old: Z_jet Zee MC 1.015 / data 1.017; Z_jet Zmm MC 1.013 / data 1.009;
+Z_bjet Zee MC 0.998 / data 1.010; Z_bjet Zmm MC 1.015 / data 1.006.
+Data/MC old vs new: Z_jet Zee 1.052/1.054, Z_jet Zmm 1.036/1.032,
+Z_bjet Zee 1.167/1.182, Z_bjet Zmm 1.238/1.226.
+Per-dataset cutflow checks vs old ROOT files (condor_output_mSD):
+- SingleMuon: identical input (985,422,152 events) and identical trigger
+  count; Zee chain identical at every step; Zmm 2-muon step -0.2% (Rochester
+  not applied); Z_jet +0.86%, Z_bjet +0.6%.
+- EGamma: all 738 files; old read 0.35% fewer events (old lost a file or so),
+  constant offset through lepton steps; Z_jet +1.3% net.
+- DY0J: Zmm Z_jet weighted yield 208.0 vs 208.0 exactly.
+- Residual ~+1-1.5% appears only at the jet step, in data and MC alike, both
+  channels -> consistent with the old framework's jet-ID bug
+  (`r->Jet_jetId[i]`, AK4 branch indexed by FatJet index). Not yet proven —
+  could test by emulating the bug on one file.
+Data-integrity notes: our DY1J lost 1/78 files to xrootd (73FCAF1C-...,
+~49.5k events, MC so normalization unaffected). Old `condor_output_mSD/
+DY_2J_amcatnlo_MC_2018.root` is truncated (needs ROOT recovery; cutflows lost;
+old processed 1.2% fewer DY2J events than ours).
+
+**Run details** (launched 2026-09-26 19:41 CDT from cmslpc323, inside the
 Apptainer container, detached with nohup/setsid):
 `OUTDIR=hists_run2018_mSD_SF LOGDIR=logs_run2018_mSD_SF ./submit_qcd_sf_per_dataset.sh`
 -> outputs `hists_run2018_mSD_SF/hists_QCD_sf_QCD_sf_run2018_all/*_<dataset>.coffea`,
