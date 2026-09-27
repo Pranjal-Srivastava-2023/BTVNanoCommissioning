@@ -1,5 +1,20 @@
 # Session notes: QCD_sf boosted Zbb — LPC condor scale-up
 
+## 2026-09-27 afternoon — plots and cutflow for the 2018 (mSD_SF) run
+
+The old `qcd_sf_2018_*.png` in the repo root are from 2026-09-07 (pre-alignment
+output) and are superseded. New, per era:
+- `python3 plot_stack_sample.py --era <ERA>` and `python3 plot_full_overview.py --era <ERA>`
+  read `hists_run<ERA>_mSD_SF/merged_run<ERA>.coffea`, write PNGs to
+  `hists_run<ERA>_mSD_SF/plots/` (gitignored, local only).
+- `python3 print_cutflow.py --era <ERA>` -> `hists_run<ERA>_mSD_SF/cutflow_<ERA>.txt`
+  (object cutflow, Zee/Zmm event cutflows per dataset, scaled final yields per group).
+- Shared era config/data handling in `qcd_sf_plot_common.py`. Data per channel now
+  from its own PD only (Zee: EGamma/SingleElectron, Zmm: SingleMuon); the old plots
+  summed both PDs, double-counting ~2% (EGamma has 644 Zmm Z_jet events, SingleMuon
+  246 Zee). `jet0_*` hists have no channel axis, so still sum both PDs ("(*)" in titles).
+2018 yields from the cutflow script match `compare_2018.txt` exactly.
+
 ## STATUS AS OF 2026-09-27 12:05 CDT — 2016preVFP / 2016postVFP / 2017 runs launched
 
 Commit `1c35472` (local) extends the 2018 validation setup to the other three
