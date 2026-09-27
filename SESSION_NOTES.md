@@ -1,5 +1,71 @@
 # Session notes: QCD_sf boosted Zbb — LPC condor scale-up
 
+## STATUS AS OF 2026-09-26 — yield validation vs. old framework (2018), selection + SFs aligned, full rerun in progress
+
+**Goal**: compare event yields with the old ROOT `ZbAnalysis_boosted` framework,
+Run 2 UL, starting with 2018 only. **Reference = old framework's latest run,
+`ZbAnalysis_boosted/condor_output_mSD/event_counts_{Z_jet,Z_bjet}_amcnlo.txt`
+(2026-06-27)**, chosen by the user — *not* the older `plots/` tables
+(2024-09-13), whose source ROOT files no longer exist and whose 2018 Zmm data
+looks incomplete (Data/MC 0.67).
+
+Hsin-Wei's 3 newer commits on `hsinwei/coffea_machine` (c7c65ae etc., which
+also add msoftdrop>40 / load_SF / Zmm fix, but c7c65ae has a SyntaxError) were
+deliberately **not** merged — user said to set them aside for now. Merging will
+conflict in `QCD_validation.py` and `histogrammer.py`.
+
+**First comparison (old selection, before changes)**: Z_jet was ~4x too high in
+ours (old framework requires leading-jet msoftdrop > 40, we didn't); Z_bjet
+already within ~10%.
+
+**Changes made to match the old framework** (read from its `src/ZbSelection.cxx`,
+`src/Selector.cxx`, `Ana.cxx`, `Configs/inputParameters.txt`):
+1. `Z_jet`: leading AK8 jet `msoftdrop > 40` added (both channels).
+2. `Z_bjet`: now = first selected AK8 jet passing loose PNet Xbb WP (not
+   necessarily the leading jet), pT>200, |eta|<2.5, **no** msoftdrop cut —
+   so Z_bjet is no longer a subset of Z_jet. Cutflow key `bjet` added to
+   `cutflow_Zee`/`cutflow_Zmm`.
+3. Zee and Zmm evaluated independently (an event can enter both), as old code.
+4. Lepton SFs: new `utils/zb_old_sf.py` reproduces old `CalEleSF` (ele ID
+   tight x reco, both electrons, in (eta, pt)), `CalMuonSF_id_iso` (muon
+   medium ID x tight-iso x reco, both muons, in (|eta|, pt)) and `CalTrigSF`
+   (trigger SF of the lepton within dR<0.2 of the leading matching TrigObj).
+   Uses the *same* TH2 files, copied to `data/ZbOld/2018-UL/`. Out-of-range
+   lookups -> SF=1, as in the old code (note: muon reco histogram stops at
+   40 GeV). Old code applies no PU reweighting (puSF=1) — neither do we.
+   Checked on DY2J: <SF_Zee>=0.894, <SF_Zmm>=0.971.
+5. `selection.py` fixes: `ele_EE_EB_removal` was buggy (`abs()` applied to a
+   boolean, so the gap veto only worked for eta>0; now vetoes
+   1.442<|etaSC|<1.566); jet-overlap leptons now |eta|<2.5, muons require
+   mediumId, electrons taken after the IP cuts — all as in old code.
+6. `fill_comparison_hists` rewritten: fills each (region, channel) from its own
+   mask/jet/leptons/weight. `cmp_n_fj` now filled before any jet requirement
+   (old `FillNjet`). `histo_writter` hists (jet0_*, dilep_*) cover Z_jet only.
+
+**Known remaining differences (not replicated)**: old applies Rochester muon
+corrections; old jet ID reads `Jet_jetId[i]` (AK4 branch indexed by FatJet
+index — a bug); old normalizes MC with sign(genWeight), we use raw genWeight
+(identical when |genWeight| is constant per sample).
+
+**Tools**: `compare_yields_old_new.py --new <merged.coffea>` prints the
+old-vs-new table (Zee data from EGamma only, Zmm data from SingleMuon only).
+`submit_qcd_sf_per_dataset.sh` now takes `OUTDIR=`/`LOGDIR=` env vars and runs
+all 16 datasets by default.
+
+**Run in progress** (launched 2026-09-26 19:41 CDT from cmslpc323, inside the
+Apptainer container, detached with nohup/setsid):
+`OUTDIR=hists_run2018_mSD_SF LOGDIR=logs_run2018_mSD_SF ./submit_qcd_sf_per_dataset.sh`
+-> outputs `hists_run2018_mSD_SF/hists_QCD_sf_QCD_sf_run2018_all/*_<dataset>.coffea`,
+driver log `logs_run2018_mSD_SF_driver.log`, per-dataset logs + `summary.log` in
+`logs_run2018_mSD_SF/`. The previous (pre-change) 2018 outputs in
+`hists_QCD_sf_QCD_sf_run2018_all/` are untouched. When done: merge with
+`python3 merge_qcd_sf_outputs.py --pattern 'hists_run2018_mSD_SF/hists_QCD_sf_QCD_sf_run2018_all/*_*.coffea' --output hists_run2018_mSD_SF/merged_run2018.coffea`
+then run `compare_yields_old_new.py` on it.
+
+**Next**: after 2018 agrees, extend to 2016preVFP/2016postVFP/2017 (file lists
+can come straight from the old framework's `FileLists_NanoUL/`; SF files per
+era from its `Ana.cxx`; L1 prefiring weight must be added for 2016/2017).
+
 ## PLANNED (not started) — extend to 2016preVFP, 2016postVFP, 2017
 
 Next round of scale-up work: add the `2016preVFP-UL`, `2016postVFP-UL`,
@@ -99,9 +165,10 @@ weight is just its raw `genWeight`. The framework already has `puwei`,
 wired in for `QCD_sf`. This is the concrete, code-level explanation for
 the MC/data normalization offset, and likely also contributes to shape-
 level mismatches (anything correlated with pileup or lepton kinematics).
-Also confirmed: no golden-JSON/certified-lumi mask (`LumiMask`, exists in
-`utils/correction.py`) is applied to the data samples either — a smaller
-but real additional gap.
+~~Also confirmed: no golden-JSON/certified-lumi mask is applied to the data
+samples either.~~ **WRONG (corrected 2026-09-26)**: `QCD_validation.py`
+does apply `self.lumiMask` (`load_lumi(campaign)`) to data right after the
+trigger setup.
 **Not yet fixed** — flagged to the user as a workflow-design decision
 (whether/how to enable `load_SF` for `QCD_sf`) rather than acted on
 unilaterally; likely worth raising with Hsin-Wei before touching it, since

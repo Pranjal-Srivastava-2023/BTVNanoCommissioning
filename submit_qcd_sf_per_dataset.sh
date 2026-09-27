@@ -7,14 +7,16 @@
 #   ./shell coffeateam/coffea-base-almalinux8:0.7.30-py3.10
 # with a valid VOMS proxy and Kerberos ticket on this same node.
 #
-# Usage: ./submit_qcd_sf_per_dataset.sh [dataset1 dataset2 ...]
-#   With no arguments, runs all datasets in metadata/QCD_sf_run2018_all.json
-#   except DYJetsToLL_2J (already validated on 2026-09-01).
+# Usage: [OUTDIR=dir] [LOGDIR=dir] ./submit_qcd_sf_per_dataset.sh [dataset1 dataset2 ...]
+#   With no arguments, runs all datasets in metadata/QCD_sf_run2018_all.json.
+#   OUTDIR (optional) is passed to runner.py --outputdir, so outputs land in
+#   $OUTDIR/hists_QCD_sf_QCD_sf_run2018_all/ instead of the repo root.
 
 set -u
 
 JSON=metadata/QCD_sf_run2018_all.json
-LOGDIR=logs_qcd_sf_split
+OUTDIR=${OUTDIR:-}
+LOGDIR=${LOGDIR:-logs_qcd_sf_split}
 SUMMARY=$LOGDIR/summary.log
 SCALEOUT=8
 
@@ -27,8 +29,7 @@ else
 import json
 d = json.load(open('$JSON'))
 for k in d:
-    if k != 'DYJetsToLL_2J_TuneCP5_13TeV-amcatnloFXFX-pythia8':
-        print(k)
+    print(k)
 ")
 fi
 
@@ -42,6 +43,7 @@ for ds in "${DATASETS[@]}"; do
         --campaign 2018-UL --year 2018 \
         --executor dask/lpc --scaleout "$SCALEOUT" \
         --only "$ds" --skipbadfiles --overwrite \
+        ${OUTDIR:+--outputdir "$OUTDIR"} \
         > "$LOGDIR/${ds}.log" 2>&1
     rc=$?
     end=$(date +%s)

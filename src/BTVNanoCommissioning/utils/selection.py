@@ -272,14 +272,10 @@ def lep_kin(electrons):
     return lep_kin_mask
 
 def ele_EE_EB_removal (electrons):
-    ele_EB_mask = (
-        abs((electrons.eta)>1.57)
-    )
-    ele_end_mask = (
-        abs((electrons.eta)<1.44)
-    )
-    ele_EE_EB_mask = ele_EB_mask | ele_end_mask
-    return ele_EE_EB_mask
+    # Veto the EB-EE transition region in supercluster eta, as in the old
+    # ZbAnalysis_boosted ZbSelection.cxx (1.442 < |etaSC| < 1.566)
+    abs_etaSC = abs(electrons.eta + electrons.deltaEtaSC)
+    return ~((abs_etaSC > 1.442) & (abs_etaSC < 1.566))
 
 def ele_ID (electrons):
     ele_ID_mask = electrons.cutBased >= 4
@@ -290,9 +286,11 @@ def mu_iso (muons):
     mu_iso_mask = muons.pfRelIso04_all < 0.15
     return mu_iso_mask
 
+# Leptons used for AK8 jet overlap removal (old framework: lep_jetOverlap_pt 25,
+# lep_jetOverlap_eta 2.5). Electrons are expected to have passed ele_ip_mask.
 def ele_for_jet_removal(electrons):
     mask = (
-        (abs(electrons.eta) < 2.4)
+        (abs(electrons.eta) < 2.5)
         & (electrons.pt > 25)
         & (electrons.cutBased >= 4)
     )
@@ -302,8 +300,9 @@ def ele_for_jet_removal(electrons):
 
 def mu_for_jet_removal(muons):
     mask = (
-        (abs(muons.eta) < 2.4)
+        (abs(muons.eta) < 2.5)
         & (muons.pt > 25)
+        & muons.mediumId
         & (muons.pfRelIso04_all < 0.15)
     )
     return mask
