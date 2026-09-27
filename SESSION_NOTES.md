@@ -1,5 +1,40 @@
 # Session notes: QCD_sf boosted Zbb — LPC condor scale-up
 
+## STATUS AS OF 2026-09-27 12:05 CDT — 2016preVFP / 2016postVFP / 2017 runs launched
+
+Commit `1c35472` (local) extends the 2018 validation setup to the other three
+Run 2 UL eras, each kept separate (no year merging):
+- `utils/zb_old_sf.py`: per-era lepton SF files/histograms from old `Ana.cxx` /
+  `Selector.cxx` (files copied to `data/ZbOld/<campaign>/`). Only the muon trigger
+  histogram name changes per era (2016: IsoMu24_or_IsoTkMu24, 2017: IsoMu27).
+- `QCD_validation.py`: MC weight x `L1PreFiringWeight_Nom` for 2016/2017 (old
+  `ZbSelection.cxx`; not in the normalization sum, as old). 2017 lumi mask is the
+  Golden JSON (framework default for 2017-UL is the Muon JSON; old uses Golden).
+  2016 Legacy JSON verified identical to old.
+- `make_qcd_sf_fileset.py --era <era>`: builds `metadata/QCD_sf_run<era>_all.json`
+  and `QCD_sf_xsections_<era>.json` straight from old `FileLists_NanoUL/` and
+  `Configs/config.ini` (reproduces the 2018 JSONs exactly). 2016 DY xsecs differ
+  from 2017/2018 (4620.519*1.0445 etc.); lumis 19648 / 16978 / 41480 /pb.
+- `submit_qcd_sf_per_dataset.sh` takes `ERA=`; `launch_era_run.sh <ERA>` starts it
+  detached inside the Apptainer container.
+- `compare_yields_old_new.py --era {preVFP2016,postVFP2016,17,18}`.
+Smoke-tested (iterative, 1 file of DY2J + both data PDs per era): all run, Z_jet
+fills, <L1PreFiringWeight_Nom> 0.95-0.97.
+
+**Old-framework input bugs found (affect only ttbar, small):**
+1. `FileLists_NanoUL/TT_semi_powheg_MC_postVFP2016.txt` is byte-identical to the
+   preVFP (APV) list. We use the real postVFP dataset from DAS instead
+   (`metadata/QCD_sf_TTToSemiLeptonic_UL16postVFP_files.txt`, 138 files).
+2. `config.ini` [TT] `file_preVFP2016` uses `TT_dilep_powheg_MC_postVFP2016.root`
+   (postVFP file for preVFP). Expect ttbar old/new to differ somewhat in 2016.
+
+**Runs** (launched from cmslpc323; 8 workers each, eras in parallel):
+outputs `hists_run<ERA>_mSD_SF/hists_QCD_sf_QCD_sf_run<ERA>_all/`, logs
+`logs_run<ERA>_mSD_SF/` (+ `summary.log`), driver log `logs_run<ERA>_mSD_SF_driver.log`.
+When done, per era:
+`python3 merge_qcd_sf_outputs.py --pattern 'hists_run<ERA>_mSD_SF/hists_QCD_sf_QCD_sf_run<ERA>_all/*_*.coffea' --output hists_run<ERA>_mSD_SF/merged_run<ERA>.coffea`
+then `python3 compare_yields_old_new.py --new hists_run<ERA>_mSD_SF/merged_run<ERA>.coffea --era <label>`.
+
 ## REFERENCE — cuts, weights and SFs: new (QCD_sf) vs old (ZbAnalysis_boosted), 2018-UL
 
 State as of commit `6eaaa30` (2026-09-26). "Old" = ROOT framework at
