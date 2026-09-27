@@ -1,5 +1,31 @@
 # Session notes: QCD_sf boosted Zbb — LPC condor scale-up
 
+## TODO (deferred by user 2026-09-27) — per-channel softdrop mass (and tau21/tau32)
+
+**Problem:** our leading-jet softdrop mass plot is Zee + Zmm combined, but the old
+framework plots Zee and Zmm separately (`mSD_Z_jet_{Zee,Zmm}_18_amcnlo.png`), so the
+side-by-side comparison (`hists_run2018_mSD_SF/old_vs_new_2018_side_by_side.pdf`, page 1)
+is not like-for-like. Same for tau21/tau32 (and jet mass).
+
+**Why:** these exist only as `jet0_*` histograms, filled through the framework's
+generic `histo_writter` (axes: syst, flav, value only; no region/channel). The
+old-framework comparison histograms (`cmp_*`, `histograms/qcd.py`, with region and
+channel axes, filled in `QCD_validation.py` `fill_comparison_hists`) never got
+msoftdrop/tau21/tau32/mass. Oversight, no physics reason.
+
+**Fix (not done yet):** add `cmp_msd_fj` (and optionally `cmp_tau21_fj`,
+`cmp_tau32_fj`, `cmp_mass_fj`) to the `cmp_*` set in `histograms/qcd.py`, filled in
+`fill_comparison_hists` per (region, channel) from the region's jet, like `cmp_pt_fj`.
+Then rerun all 16 datasets of 2018 (~9 h on condor), re-merge, remake the mSD panels
+per channel, and rebuild page 1 (and the tau21/tau32 pages) of the side-by-side PDF.
+If 2016/2017 jobs are running at that time, make the change in a separate worktree:
+each dataset job ships the current `src/` to condor.
+
+**Related, same code path (also not done):** for 2016/2017 the `jet0_*` weights
+(`QCD_validation.py`, `weight_manager` + `lepSF`, ~L594-604) lack the L1 prefiring
+weight that the `cmp_*` weights have. Affects only `jet0_*` histograms of the
+2016/2017 runs launched 2026-09-27; moving mSD/tau to `cmp_*` also sidesteps this.
+
 ## 2026-09-27 afternoon — plots and cutflow for the 2018 (mSD_SF) run
 
 The old `qcd_sf_2018_*.png` in the repo root are from 2026-09-07 (pre-alignment
