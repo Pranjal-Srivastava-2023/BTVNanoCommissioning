@@ -1,5 +1,106 @@
 # Session notes: QCD_sf boosted Zbb — LPC condor scale-up
 
+## REFERENCE — cuts, weights and SFs: new (QCD_sf) vs old (ZbAnalysis_boosted), 2018-UL
+
+State as of commit `6eaaa30` (2026-09-26). "Old" = ROOT framework at
+`~/nobackup/ZbExercize/CMSSW_14_0_6/src/Zb/CMSSW_14_0_6/src/ZbAnalysis_boosted`
+(`src/ZbSelection.cxx`, `src/Selector.cxx`, `Ana.cxx`,
+`Configs/inputParameters.txt`, `Configs/config.ini`, `Scripts/plot_dataMC_v4.py`).
+"New" = `workflows/QCD_validation.py`, `utils/selection.py`, `utils/zb_old_sf.py`.
+Every value below was read from those files; no value is assumed.
+
+### Event-level (data)
+| | New | Old |
+|---|---|---|
+| Lumi mask | `Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt` | same file (content verified identical) |
+| Primary datasets used per channel | Zee: EGamma only; Zmm: SingleMuon only (applied in `compare_yields_old_new.py`) | Zee: EGamma; Zmm: SingleMuon (`config.ini` [Electron]/[Muon]) |
+
+### Triggers (2018)
+| | New | Old |
+|---|---|---|
+| Zee | `HLT_Ele32_WPTight_Gsf` | same |
+| Zmm | `HLT_IsoMu24` | same |
+(2016: Ele27_WPTight_Gsf / IsoMu24 or IsoTkMu24; 2017: Ele32_WPTight_Gsf_L1DoubleEG / IsoMu27 — same in both.)
+
+### Electrons
+| Cut | New | Old |
+|---|---|---|
+| Impact parameter | barrel (\|etaSC\|<1.4442): \|dz\|<0.1, \|dxy\|<0.05; endcap: \|dz\|<0.2, \|dxy\|<0.1 | same |
+| Kinematics | pT > 25, \|eta\| < 2.4 | same |
+| EB-EE gap veto | 1.442 < \|etaSC\| < 1.566 (etaSC = eta + deltaEtaSC) | same |
+| ID | cutBased >= 4 (tight) | same |
+
+### Muons
+| Cut | New | Old |
+|---|---|---|
+| Momentum correction | **none** | **Rochester** (`RoccoR2018UL.txt`; data kScaleDT, MC kSpreadMC/kSmearMC) |
+| Kinematics | pT > 25, \|eta\| < 2.4 | same, on Rochester-corrected pT |
+| ID | mediumId | same |
+| Isolation | pfRelIso04_all < 0.15 | same |
+
+### Z candidate (per channel, evaluated independently in both)
+| Cut | New | Old |
+|---|---|---|
+| Lepton multiplicity | >= 2 selected leptons | same |
+| Leading lepton pT | >= 35 (subleading >= 25 from object cut) | same |
+| Mass of two leading leptons | 71 <= m_ll <= 111 | same |
+| Opposite charge | not required | not required |
+| MET | PF `MET_pt` < 50 | same |
+
+### AK8 jets (FatJet)
+| Cut | New | Old |
+|---|---|---|
+| Overlap removal | drop jet if dR <= 0.8 to any: electron (after IP cuts, pT>25, \|eta\|<2.5, tight) or muon (pT>25, \|eta\|<2.5, medium, iso<0.15) | same (old muon pT is Rochester-corrected) |
+| Jet ID | `FatJet_jetId >= 2` | **`Jet_jetId[i] >= 2` — AK4 branch indexed with the FatJet index (bug)** |
+| Subjets | subJetIdx1 >= 0 and subJetIdx2 >= 0 | same |
+| **Z_jet** | leading selected jet: pT >= 200, \|eta\| < 2.5, **msoftdrop > 40** | same |
+| **Z_bjet** | first selected jet with PNetMD Xbb/(Xbb+QCD) >= 0.9172 (loose, 2018), and that jet pT >= 200, \|eta\| < 2.5; no msoftdrop cut; not a subset of Z_jet | same |
+
+### MC event weight
+| Factor | New | Old |
+|---|---|---|
+| Generator weight | raw `genWeight` | sign(genWeight) = ±1 (equivalent: \|genWeight\| is constant per sample, verified for TT; e.g. ±72.70 TTTo2L2Nu, ±303.36 TTToSemiLeptonic) |
+| Pileup reweighting | not applied | not applied (`puSF = 1`; the pileup file is loaded but unused) |
+| L1 prefiring | not applied | applied only for 2016/2017 (`L1PreFiringWeight_Nom`); none for 2018 |
+| Electron ID SF | tight, both electrons, (eta, pT): `egammaEffi.txt_Ele_Tight_EGM2D.root` | same file |
+| Electron reco SF | both electrons, (eta, pT): `egammaEffi_ptAbove20.txt_EGM2D_UL2018.root` | same file |
+| Electron trigger SF | `egammaTrigEffi_wp90noiso_EGM2D_2018.root`, (etaSC, pT) | same |
+| Muon ID SF | `NUM_MediumID_DEN_TrackerMuons_abseta_pt_syst`, both muons, (\|eta\|, pT) | same |
+| Muon iso SF | `NUM_TightRelIso_DEN_MediumID_abseta_pt_syst`, both muons | same |
+| Muon reco SF | `NUM_TrackerMuons_DEN_genTracks`, both muons (histogram only covers 2-40 GeV, so SF=1 above 40) | same |
+| Muon trigger SF | `NUM_IsoMu24_DEN_CutBasedIdMedium_and_PFIsoMedium_abseta_pt` | same |
+| Trigger SF logic | highest-pT TrigObj with matching id, filterBits & 2, pT > 32 (e) / 24 (mu); SF of the lepton closer to it if dR < 0.2, else 1 | same |
+| SF outside histogram range | 1 | same |
+| b-tag SF, PU-jet-ID SF, JEC/JER variations | none | none |
+| Top pT reweighting | **not in event weight, but included in the TT normalization sum** (see below) | not applied |
+
+SF files are byte-identical copies of the old `CalibData/` files, stored in
+`src/BTVNanoCommissioning/data/ZbOld/2018-UL/`.
+
+### Normalization
+| | New | Old |
+|---|---|---|
+| Scale factor | xsec x lumi / sumw, sumw = sum of genWeight over processed events | xsec x lumi / (sum of sign(genWeight)) (`Nevt` bin 4) |
+| Lumi | 59832 /pb | same (`config.ini` lumi_18) |
+| Cross-sections | `metadata/QCD_sf_xsections_2018.json` | `config.ini` xSec_18 (all 14 values verified identical) |
+
+**Known inconsistency (not yet fixed):** the framework's `reweighting()`
+(`utils/correction.py`) multiplies genWeight by the top-pT weight when
+building `sumw` for any dataset whose name contains "TT", while our event
+weight does not include it. The mean top-pT weight is 0.9895 (TTTo2L2Nu and
+TTToSemiLeptonic), so our ttbar yields are about 1.1% too high relative to
+the old framework's convention. ttbar is ~1% of MC in Z_jet and ~4-6% in
+Z_bjet. Fix options: drop the top-pT factor from `sumw` (matches old), or
+also apply it per event (physically standard).
+
+### Differences not replicated on purpose
+- Rochester muon corrections (effect seen: -0.2% at the two-muon step).
+- Old jet-ID bug (likely cause of the ~+1-1.5% excess at the jet step, same in
+  data and MC; not yet proven).
+- Subjet plots: old swaps subjet eta/phi (Plots.cxx) and uses the leading
+  jet's subjets in Z_bjet; ours fills the correct quantities for the region's
+  jet. Affects subjet histograms only, not yields.
+
 ## STATUS AS OF 2026-09-26 — yield validation vs. old framework (2018), selection + SFs aligned, full rerun in progress
 
 **Goal**: compare event yields with the old ROOT `ZbAnalysis_boosted` framework,
