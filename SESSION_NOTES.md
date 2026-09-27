@@ -6,7 +6,9 @@ The old `qcd_sf_2018_*.png` in the repo root are from 2026-09-07 (pre-alignment
 output) and are superseded. New, per era:
 - `python3 plot_stack_sample.py --era <ERA>` and `python3 plot_full_overview.py --era <ERA>`
   read `hists_run<ERA>_mSD_SF/merged_run<ERA>.coffea`, write PNGs to
-  `hists_run<ERA>_mSD_SF/plots/` (gitignored, local only).
+  `hists_run<ERA>_mSD_SF/plots/`. Merged .coffea, plots/, *.txt and
+  `logs_run<ERA>_mSD_SF/summary.log` are committed (.gitignore exceptions);
+  per-dataset .coffea files and raw logs stay local.
 - `python3 print_cutflow.py --era <ERA>` -> `hists_run<ERA>_mSD_SF/cutflow_<ERA>.txt`
   (object cutflow, Zee/Zmm event cutflows per dataset, scaled final yields per group).
 - Shared era config/data handling in `qcd_sf_plot_common.py`. Data per channel now

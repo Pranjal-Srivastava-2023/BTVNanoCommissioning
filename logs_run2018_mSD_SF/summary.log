@@ -1,0 +1,16 @@
+2026-09-26 19:54:01 DYJetsToLL_0J_TuneCP5_13TeV-amcatnloFXFX-pythia8 OK elapsed=726s log=logs_run2018_mSD_SF/DYJetsToLL_0J_TuneCP5_13TeV-amcatnloFXFX-pythia8.log
+2026-09-26 20:08:12 DYJetsToLL_1J_TuneCP5_13TeV-amcatnloFXFX-pythia8 OK elapsed=851s log=logs_run2018_mSD_SF/DYJetsToLL_1J_TuneCP5_13TeV-amcatnloFXFX-pythia8.log
+2026-09-26 20:17:54 DYJetsToLL_2J_TuneCP5_13TeV-amcatnloFXFX-pythia8 OK elapsed=582s log=logs_run2018_mSD_SF/DYJetsToLL_2J_TuneCP5_13TeV-amcatnloFXFX-pythia8.log
+2026-09-26 23:19:21 EGamma_Run2018 OK elapsed=10887s log=logs_run2018_mSD_SF/EGamma_Run2018.log
+2026-09-26 23:24:55 ST_s-channel_4f_leptonDecays_TuneCP5_13TeV-amcatnlo-pythia8 OK elapsed=334s log=logs_run2018_mSD_SF/ST_s-channel_4f_leptonDecays_TuneCP5_13TeV-amcatnlo-pythia8.log
+2026-09-26 23:28:40 ST_tW_antitop_5f_inclusiveDecays_TuneCP5_13TeV-powheg-pythia8 OK elapsed=225s log=logs_run2018_mSD_SF/ST_tW_antitop_5f_inclusiveDecays_TuneCP5_13TeV-powheg-pythia8.log
+2026-09-26 23:33:50 ST_tW_top_5f_inclusiveDecays_TuneCP5_13TeV-powheg-pythia8 OK elapsed=310s log=logs_run2018_mSD_SF/ST_tW_top_5f_inclusiveDecays_TuneCP5_13TeV-powheg-pythia8.log
+2026-09-26 23:48:11 ST_t-channel_antitop_4f_InclusiveDecays_TuneCP5_13TeV-powheg-madspin-pythia8 OK elapsed=861s log=logs_run2018_mSD_SF/ST_t-channel_antitop_4f_InclusiveDecays_TuneCP5_13TeV-powheg-madspin-pythia8.log
+2026-09-27 00:14:10 ST_t-channel_top_4f_InclusiveDecays_TuneCP5_13TeV-powheg-madspin-pythia8 OK elapsed=1559s log=logs_run2018_mSD_SF/ST_t-channel_top_4f_InclusiveDecays_TuneCP5_13TeV-powheg-madspin-pythia8.log
+2026-09-27 02:04:24 SingleMuon_Run2018 OK elapsed=6614s log=logs_run2018_mSD_SF/SingleMuon_Run2018.log
+2026-09-27 02:31:34 TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8 OK elapsed=1630s log=logs_run2018_mSD_SF/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8.log
+2026-09-27 04:09:22 TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8 OK elapsed=5868s log=logs_run2018_mSD_SF/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8.log
+2026-09-27 04:14:33 WW_TuneCP5_13TeV-pythia8 OK elapsed=311s log=logs_run2018_mSD_SF/WW_TuneCP5_13TeV-pythia8.log
+2026-09-27 04:17:51 WZ_TuneCP5_13TeV-pythia8 OK elapsed=198s log=logs_run2018_mSD_SF/WZ_TuneCP5_13TeV-pythia8.log
+2026-09-27 04:22:52 ZH_HToBB_ZToLL_M-125_TuneCP5_13TeV-powheg-pythia8 OK elapsed=301s log=logs_run2018_mSD_SF/ZH_HToBB_ZToLL_M-125_TuneCP5_13TeV-powheg-pythia8.log
+2026-09-27 04:25:40 ZZ_TuneCP5_13TeV-pythia8 OK elapsed=168s log=logs_run2018_mSD_SF/ZZ_TuneCP5_13TeV-pythia8.log
