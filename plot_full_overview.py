@@ -31,7 +31,7 @@ os.makedirs(args.outdir, exist_ok=True)
 PLOTS = [
     ("cmp_mass_zcand", {"channel": "Zee", "region": "Z_jet"}, "Zee candidate mass", True, (70, 110)),
     ("cmp_mass_zcand", {"channel": "Zmm", "region": "Z_jet"}, "Zmm candidate mass", True, (70, 110)),
-    ("jet0_msoftdrop", {}, "Leading AK8 jet softdrop mass (*)", True, None),
+    ("jet0_msoftdrop", {}, "Leading AK8 jet softdrop mass (*)", True, (40, 250)),
     ("cmp_pt_fj", {"region": "Z_jet"}, "Leading AK8 jet pT", True, (195, 900)),
     ("cmp_pt_zcand", {"region": "Z_jet"}, "Z candidate pT", True, None),
     ("cmp_pt_lep0", {"region": "Z_jet"}, "Leading lepton pT", True, (25, 700)),

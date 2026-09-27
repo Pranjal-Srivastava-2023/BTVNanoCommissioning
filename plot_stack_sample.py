@@ -95,3 +95,15 @@ for region in ["Z_jet", "Z_bjet"]:
     outpath3 = f"{args.outdir}/{tag}_sample_stack_by_channel_{region}.png"
     plt.savefig(outpath3, dpi=130)
     print("saved", outpath3)
+
+# Leading AK8 jet softdrop mass in Z_jet (msoftdrop > 40 cut). jet0_* histograms
+# have no channel axis, so this is Zee + Zmm combined and the data sums both
+# primary datasets (~2% overlap, see qcd_sf_plot_common.py).
+fig4 = plt.figure(figsize=(10, 9))
+ax4 = make_plot("jet0_msoftdrop", None, r"Leading AK8 jet $m_{SD}$ [GeV]", fig4, fig4.add_gridspec(1, 1)[0], xlim=(40, 250))
+ax4.texts[0].set_text("Z_jet (Zee + Zmm)")
+ax4.set_ylim(top=ax4.get_ylim()[1] * 30)  # headroom for label and legend
+hep.cms.label("Preliminary", data=True, lumi=lumi_fb, year=era.cfg["year"], ax=ax4)
+outpath4 = f"{args.outdir}/{tag}_msoftdrop.png"
+plt.savefig(outpath4, dpi=130)
+print("saved", outpath4)
