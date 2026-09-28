@@ -20,6 +20,50 @@ Every value below was read from the files above. "same" means the value and the
 way it is applied are identical in both. Differences are marked with  <-- DIFF.
 
 
+0. QUICK ANSWERS
+----------------
+Applies to NEW, and is the same in OLD unless stated. Details in the sections below.
+
+Are scale factors applied?
+  Yes, lepton SFs on MC: electron ID, reco and trigger; muon ID, isolation, reco and
+  trigger. Applied to the two leading leptons of the Z candidate, using the same SF
+  histograms as OLD (section 8).
+  Not applied: b-tag SF, pileup reweighting, pileup-jet-ID SF (not in OLD either).
+
+Are triggers applied?
+  Yes. Single-lepton triggers are required in data and MC, per era (section 2; 2018:
+  HLT_Ele32_WPTight_Gsf / HLT_IsoMu24). In MC the trigger SF is applied to the lepton
+  matched to the trigger object (dR < 0.2).
+
+Are corrections applied?
+  Applied:
+    - Golden JSON lumi mask on data
+    - L1 prefiring weight on MC, 2016 and 2017 only
+    - lepton SFs (above)
+    - MC normalized to cross-section x luminosity
+  Not applied:
+    - pileup reweighting
+    - Rochester muon corrections (OLD applies them; the one real difference here)
+    - jet energy corrections: jets are used as stored in NanoAOD, no JEC/JER
+      re-application or variations
+    - top pT reweighting in the event weight
+    - systematic variations of any kind
+
+Are the results b-tagged?
+  Depends on the region (section 7).
+  - Z_jet: no. Inclusive region with no tagging requirement: leading AK8 jet with
+    pT > 200 GeV and msoftdrop > 40 GeV.
+  - Z_bjet: yes. The AK8 jet must pass the loose ParticleNet-MD Xbb-vs-QCD working
+    point (0.9172 in 2018). This is a double-b tag on the whole boosted jet, not
+    standard AK4 b-tagging such as DeepJet.
+  No b-tag SF is applied, so the MC tagging efficiency is uncorrected. This may be
+  part of why Data/MC is higher in Z_bjet (about 1.2-1.36) than in Z_jet (about
+  1.0-1.13); not studied.
+
+Caveat for 2016/2017 plots: the softdrop mass, tau21 and tau32 histograms are filled
+without the L1 prefiring weight. All yields and tables use the full weight.
+
+
 1. DATA: LUMI MASK AND PRIMARY DATASETS
 ---------------------------------------
 Lumi mask (identical JSON content in NEW and OLD, compared file-by-file):
