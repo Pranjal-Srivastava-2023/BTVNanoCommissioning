@@ -65,7 +65,7 @@ def make_plot(histname, region, xlabel, fig, subplot_spec, channel=None, logy=Tr
     return ax
 
 
-lumi_fb = era.lumi / 1000.0
+lumi_fb = round(era.lumi / 1000.0, 1)  # one decimal, as in the old plots; keeps the 2016 labels from overlapping "Preliminary"
 tag = f"qcd_sf_{args.era}"
 
 fig = plt.figure(figsize=(20, 9))
@@ -103,7 +103,7 @@ fig4 = plt.figure(figsize=(10, 9))
 ax4 = make_plot("jet0_msoftdrop", None, r"Leading AK8 jet $m_{SD}$ [GeV]", fig4, fig4.add_gridspec(1, 1)[0], xlim=(40, 250))
 ax4.texts[0].set_text("Z_jet (Zee + Zmm)")
 ax4.set_ylim(top=ax4.get_ylim()[1] * 30)  # headroom for label and legend
-hep.cms.label("Preliminary", data=True, lumi=lumi_fb, year=era.cfg["year"], ax=ax4)
+hep.cms.label("Preliminary", data=True, lumi=lumi_fb, year=era.cfg["year"], ax=ax4, fontsize=22)  # smaller: 2016 labels are long
 outpath4 = f"{args.outdir}/{tag}_msoftdrop.png"
 plt.savefig(outpath4, dpi=130)
 print("saved", outpath4)
@@ -135,7 +135,7 @@ for hist, xlabel, xlim, name in PANELS:
         axp = make_plot(hist, region, xlabel, figp, figp.add_gridspec(1, 1)[0], channel=channel, xlim=xlim)
         axp.texts[0].set_text("Z_jet (Zee + Zmm)" if channel is None else f"Z_jet ({channel})")
         axp.set_ylim(top=axp.get_ylim()[1] * 30)  # headroom for label and legend
-        hep.cms.label("Preliminary", data=True, lumi=lumi_fb, year=era.cfg["year"], ax=axp)
+        hep.cms.label("Preliminary", data=True, lumi=lumi_fb, year=era.cfg["year"], ax=axp, fontsize=22)
         outp = f"{panel_dir}/{tag}_{name}_{channel or 'Zee+Zmm'}.png"
         plt.savefig(outp, dpi=130)
         plt.close(figp)

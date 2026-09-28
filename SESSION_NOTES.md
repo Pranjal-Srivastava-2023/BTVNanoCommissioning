@@ -21,6 +21,12 @@ SingleElectron 2017 and SingleMuon 2018 identical. Correcting for it, postVFP Ze
 2016 ttbar Z_bjet differences (up to +12%) are the known old ttbar input bugs (below).
 2016 Z_jet MC residual (~2-2.5%) is a bit larger than 2017/2018 (~1.4%); not investigated.
 
+Old-vs-new side-by-side PDFs for all eras: `python3 make_side_by_side_pdf.py --era <ERA>`
+-> `hists_run<ERA>_mSD_SF/old_vs_new_<ERA>_side_by_side.pdf` (25 pages, same layout as 2018;
+the script reproduces the committed 2018 PDF pixel-for-pixel). `plot_stack_sample.py` now labels
+lumi with one decimal and a smaller CMS label on single-panel plots (2016 labels overlapped
+"Preliminary"); 2016/2017 plots regenerated, 2018 plots left as committed (59.832 label).
+
 ## TODO (deferred by user 2026-09-27) — per-channel softdrop mass (and tau21/tau32)
 
 **Problem:** our leading-jet softdrop mass plot is Zee + Zmm combined, but the old
