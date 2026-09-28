@@ -1,0 +1,268 @@
+QCD_sf (boosted Z -> bb + jet): cuts, weights and scale factors
+NEW framework vs OLD framework, Run 2 UL (2016preVFP, 2016postVFP, 2017, 2018)
+==============================================================================
+
+NEW = this repo, branch coffea_machine (fork Pranjal-Srivastava-2023/BTVNanoCommissioning)
+      src/BTVNanoCommissioning/workflows/QCD_validation.py   (processor, event selection, weights)
+      src/BTVNanoCommissioning/utils/selection.py            (lepton helper cuts, HLT_helper)
+      src/BTVNanoCommissioning/utils/zb_old_sf.py            (lepton SFs, trigger-object matching)
+      src/BTVNanoCommissioning/utils/correction.py           (reweighting(): sumw)
+      metadata/QCD_sf_xsections_<era>.json                   (cross-sections)
+      compare_yields_old_new.py, qcd_sf_plot_common.py       (normalization, data PD per channel)
+OLD = ROOT framework ZbAnalysis_boosted
+      (~/nobackup/ZbExercize/CMSSW_14_0_6/src/Zb/CMSSW_14_0_6/src/ZbAnalysis_boosted)
+      src/ZbSelection.cxx   (selection, weights)      src/Selector.cxx   (SF lookup, trigger matching, Rochester)
+      src/Obj.cxx           (overlap dR)              Ana.cxx            (per-era input files)
+      Configs/inputParameters.txt (cut values)        Configs/config.ini (lumi, cross-sections, samples)
+      Scripts/plot_dataMC_v4.py (normalization)
+
+Every value below was read from the files above. "same" means the value and the
+way it is applied are identical in both. Differences are marked with  <-- DIFF.
+
+
+1. DATA: LUMI MASK AND PRIMARY DATASETS
+---------------------------------------
+Lumi mask (identical JSON content in NEW and OLD, compared file-by-file):
+  2016preVFP, 2016postVFP : Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt
+  2017                    : Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSON.txt
+                            (NEW overrides the framework default for 2017-UL, which is the
+                             Muon JSON, to match OLD)
+  2018                    : Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt
+
+Primary dataset used per channel (same in NEW and OLD):
+  era           Zee channel       Zmm channel
+  2016pre/post  SingleElectron    SingleMuon
+  2017          SingleElectron    SingleMuon
+  2018          EGamma            SingleMuon
+  NEW processes both PDs through both channels and picks the PD per channel when
+  computing yields/plots (compare_yields_old_new.py, qcd_sf_plot_common.py), so
+  events in both PDs are not double-counted. OLD picks it in config.ini [Electron]/[Muon].
+
+
+2. TRIGGERS (same in NEW and OLD)
+---------------------------------
+  era           Zee                              Zmm
+  2016pre/post  HLT_Ele27_WPTight_Gsf            HLT_IsoMu24 OR HLT_IsoTkMu24
+  2017          HLT_Ele32_WPTight_Gsf_L1DoubleEG HLT_IsoMu27
+  2018          HLT_Ele32_WPTight_Gsf            HLT_IsoMu24
+  The Zee channel requires the electron trigger, the Zmm channel the muon trigger.
+
+
+3. ELECTRONS (same in NEW and OLD, all eras)
+--------------------------------------------
+  etaSC = Electron_eta + Electron_deltaEtaSC
+  Impact parameter   barrel |etaSC| < 1.4442: |dz| < 0.1 cm, |dxy| < 0.05 cm
+                     endcap |etaSC| > 1.4442: |dz| < 0.2 cm, |dxy| < 0.1 cm
+  Kinematics         pT > 25 GeV, |eta| < 2.4
+  EB-EE gap veto     reject 1.442 < |etaSC| < 1.566
+  ID                 Electron_cutBased >= 4 (tight)
+  Isolation          none beyond the cut-based ID
+  Order of cuts      IP -> kinematics -> gap veto -> ID
+
+
+4. MUONS
+--------
+                     NEW                                  OLD
+  Momentum scale     none                                 Rochester correction applied to     <-- DIFF
+                                                          pT before all muon cuts:
+                                                          data kScaleDT; MC kSpreadMC (gen-
+                                                          matched) or kSmearMC (not matched).
+                                                          Files: RoccoR2016aUL (preVFP),
+                                                          RoccoR2016bUL (postVFP),
+                                                          RoccoR2017UL, RoccoR2018UL
+  Kinematics         pT > 25 GeV, |eta| < 2.4             same (on Rochester-corrected pT)
+  ID                 Muon_mediumId                        same
+  Isolation          Muon_pfRelIso04_all < 0.15           same
+
+
+5. Z CANDIDATE (per channel; Zee and Zmm evaluated independently in both)
+-------------------------------------------------------------------------
+  same in NEW and OLD:
+  Lepton multiplicity    >= 2 selected leptons of the channel's flavour
+  Leading lepton pT      >= 35 GeV (subleading >= 25 GeV from the object cut)
+  Dilepton mass          71 <= m(l0 + l1) <= 111 GeV, using the two leading selected leptons
+  Opposite charge        not required
+  MET                    PF MET_pt < 50 GeV
+  An event can in principle pass both channels.
+
+
+6. AK8 JETS (FatJet)
+--------------------
+                     NEW                                  OLD
+  Overlap removal    drop the jet if dR <= 0.8 to any     same (OLD muon pT is Rochester-
+                     overlap lepton:                      corrected, see section 4)
+                     electrons after the IP cut with
+                     pT > 25, |eta| < 2.5, cutBased >= 4;
+                     muons with pT > 25, |eta| < 2.5,
+                     mediumId, pfRelIso04_all < 0.15
+  Jet ID             FatJet_jetId >= 2                    Jet_jetId[i] >= 2, i.e. the AK4 jet   <-- DIFF
+                                                          branch indexed with the FatJet index
+                                                          (bug in OLD; ZbSelection.cxx)
+  Subjets            subJetIdx1 >= 0 and subJetIdx2 >= 0  same
+  Jet pT/eta         applied only in the region definitions (section 7), same in both
+
+
+7. SIGNAL REGIONS (same in NEW and OLD)
+---------------------------------------
+  Both regions require trigger + Z candidate + MET cut of the channel (section 5).
+  Z_jet   leading selected AK8 jet: pT >= 200 GeV, |eta| < 2.5, msoftdrop > 40 GeV
+  Z_bjet  first (highest-pT) selected AK8 jet with PNet >= loose WP, and that jet
+          pT >= 200 GeV, |eta| < 2.5; no msoftdrop cut.
+          Z_bjet is NOT a subset of Z_jet (tagged jet need not be the leading jet,
+          and there is no msoftdrop cut).
+  PNet    = particleNetMD_Xbb / (particleNetMD_Xbb + particleNetMD_QCD)  (-1 if denominator is 0)
+  Loose WP (OLD inputParameters.txt jet_PNETL_*; same values in NEW):
+          2016preVFP 0.9088 | 2016postVFP 0.9137 | 2017 0.9105 | 2018 0.9172
+
+
+8. MC EVENT WEIGHT
+------------------
+  Zee weight = gen x L1 prefiring x electron ID x electron reco x electron trigger
+  Zmm weight = gen x L1 prefiring x muon ID x muon iso x muon reco x muon trigger
+
+                     NEW                                  OLD
+  Generator weight   genWeight                            sign(genWeight) = +-1
+                     Equivalent after normalization (section 9) when |genWeight| is
+                     constant within a sample; checked for TTTo2L2Nu (+-72.70) and
+                     TTToSemiLeptonic (+-303.36).
+  L1 prefiring       L1PreFiringWeight_Nom for 2016pre,   same
+                     2016post, 2017; none for 2018
+  Pileup             not applied                          not applied (puSF = 1; the pileup
+                                                          file is loaded but the call is
+                                                          commented out)
+  Top pT reweighting not in the event weight, but          not applied                          <-- DIFF
+                     included in sumw for TT samples       (NEW ttbar yields ~1.1% higher; mean
+                     (framework reweighting())             top-pT weight 0.9895)
+  b-tag SF           none                                 none (commented out)
+  PU jet ID SF       none                                 none (= 1)
+  JEC/JER variations none                                 none
+
+  Lepton SFs (same in NEW and OLD; NEW uses byte-identical copies of the OLD
+  CalibData files, stored in src/BTVNanoCommissioning/data/ZbOld/<campaign>/):
+  - Applied to the two leading selected leptons of the channel.
+  - Lookup: ROOT FindFixBin convention; a lepton outside the histogram range gets SF = 1
+    (no clamping to edge bins). The muon reco histogram (NUM_TrackerMuons_DEN_genTracks)
+    only covers 2 <= pT < 40 GeV in every era, so muons with pT >= 40 GeV get reco SF = 1.
+  - Electron ID and reco SF: looked up in (eta, pT), histogram EGamma_SF2D.
+  - Electron trigger SF: looked up in (etaSC, pT), histogram EGamma_SF2D.
+  - Muon ID, iso, reco, trigger SF: looked up in (|eta|, pT).
+  - Trigger SF logic: take the highest-pT TrigObj with |id| = 11 (e) or 13 (mu),
+    (filterBits & bits) != 0 and pT above threshold. Apply the trigger SF of the lepton
+    closer to it in dR, if that dR < 0.2; otherwise trigger SF = 1.
+      era           electron bits / pT thr     muon bits / pT thr
+      2016pre/post  2 / 27 GeV                 2+8 / 24 GeV
+      2017          2 / 32 GeV                 2   / 27 GeV
+      2018          2 / 32 GeV                 2   / 24 GeV
+
+  Files per era:
+  2016preVFP
+    ele trigger  egammaTrigEffi_wp90noiso_preVFP_EGM2D_2016.root
+    ele reco     egammaEffi_ptAbove20.txt_EGM2D_UL2016preVFP.root
+    ele ID       egammaEffi.txt_Ele_Tight_preVFP_EGM2D.root
+    mu trigger   Efficiencies_muon_generalTracks_Z_Run2016_UL_HIPM_SingleMuonTriggers.root
+                 [NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdMedium_and_PFIsoMedium_abseta_pt]
+    mu ID        Efficiencies_muon_generalTracks_Z_Run2016_UL_HIPM_ID.root
+    mu iso       Efficiencies_muon_generalTracks_Z_Run2016_UL_HIPM_ISO.root
+    mu reco      Efficiency_muon_generalTracks_Run2016preVFP_UL_trackerMuon.root
+  2016postVFP
+    ele trigger  egammaTrigEffi_wp90noiso_postVFP_EGM2D_2016.root
+    ele reco     egammaEffi_ptAbove20.txt_EGM2D_UL2016postVFP.root
+    ele ID       egammaEffi.txt_Ele_Tight_postVFP_EGM2D.root
+    mu trigger   Efficiencies_muon_generalTracks_Z_Run2016_UL_SingleMuonTriggers.root
+                 [NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdMedium_and_PFIsoMedium_abseta_pt]
+    mu ID        Efficiencies_muon_generalTracks_Z_Run2016_UL_ID.root
+    mu iso       Efficiencies_muon_generalTracks_Z_Run2016_UL_ISO.root
+    mu reco      Efficiency_muon_generalTracks_Run2016postVFP_UL_trackerMuon.root
+  2017
+    ele trigger  egammaTrigEffi_wp90noiso_EGM2D_2017.root
+    ele reco     egammaEffi_ptAbove20.txt_EGM2D_UL2017.root
+    ele ID       egammaEffi.txt_EGM2D_Tight_UL17.root
+    mu trigger   Efficiencies_muon_generalTracks_Z_Run2017_UL_SingleMuonTriggers.root
+                 [NUM_IsoMu27_DEN_CutBasedIdMedium_and_PFIsoMedium_abseta_pt]
+    mu ID        Efficiencies_muon_generalTracks_Z_Run2017_UL_ID.root
+    mu iso       Efficiencies_muon_generalTracks_Z_Run2017_UL_ISO.root
+    mu reco      Efficiency_muon_generalTracks_Run2017_UL_trackerMuon.root
+  2018
+    ele trigger  egammaTrigEffi_wp90noiso_EGM2D_2018.root
+    ele reco     egammaEffi_ptAbove20.txt_EGM2D_UL2018.root
+    ele ID       egammaEffi.txt_Ele_Tight_EGM2D.root
+    mu trigger   Efficiencies_muon_generalTracks_Z_Run2018_UL_SingleMuonTriggers.root
+                 [NUM_IsoMu24_DEN_CutBasedIdMedium_and_PFIsoMedium_abseta_pt]
+    mu ID        Efficiencies_muon_generalTracks_Z_Run2018_UL_ID.root
+    mu iso       Efficiencies_muon_generalTracks_Z_Run2018_UL_ISO.root
+    mu reco      Efficiency_muon_generalTracks_Run2018_UL_trackerMuon.root
+  Histogram names, all eras: electrons EGamma_SF2D;
+    mu ID  NUM_MediumID_DEN_TrackerMuons_abseta_pt_syst
+    mu iso NUM_TightRelIso_DEN_MediumID_abseta_pt_syst
+    mu reco NUM_TrackerMuons_DEN_genTracks
+
+  Weight used for which NEW histograms:
+  - cmp_* histograms (all yields, tables and old-vs-new plots): the full weight above.
+  - jet0_* / dilep_* histograms (framework histo_writter; e.g. softdrop mass, tau21,
+    tau32 plots): genWeight x lepton SFs, WITHOUT the L1 prefiring weight.       <-- open issue
+    Affects only these histograms in 2016/2017; not the yields.
+
+
+9. NORMALIZATION
+----------------
+                     NEW                                  OLD
+  MC scale           xsec x lumi / sumw                   xsec x lumi / Nevt(bin 4)
+                     sumw = sum of genWeight over all     Nevt bin 4 = sum of sign(genWeight)
+                     processed events (x top-pT weight    over all processed events
+                     for TT samples, see section 8)
+  Data               unweighted                           same
+
+  Integrated luminosity (/pb, OLD config.ini; same in NEW):
+    2016preVFP 19648 | 2016postVFP 16978 | 2017 41480 | 2018 59832
+
+  Cross-sections (pb, k-factors multiplied in; NEW values generated from OLD config.ini
+  and checked equal):
+    sample                      2016pre/post         2017 / 2018
+    DYJetsToLL_0J (amc@NLO)     4620.519 x 1.0445    5313 x 0.9167
+    DYJetsToLL_1J               859.58 x 1.0445      955.8 x 0.9167
+    DYJetsToLL_2J               338.25 x 1.0445      360.4 x 0.9167
+    TTToSemiLeptonic            365.3                365.3
+    TTTo2L2Nu                   88.2                 88.2
+    ST t-channel top            136.02               136.02
+    ST t-channel antitop        80.95                80.95
+    ST s-channel                10.32                10.32
+    ST tW top / antitop         35.85 each           35.85 each
+    WW / WZ / ZZ                118.7 / 47.13 / 16.523
+    ZH(bb)Z(ll)                 0.048650253
+
+  Yield definition (NEW): integral of cmp_pt_zcand incl. under/overflow per region and
+  channel. OLD: event_counts_<region>_amcnlo.txt from the plotting script.
+
+
+10. INPUT DIFFERENCES (not cuts, but they affect the comparison)
+----------------------------------------------------------------
+  NEW builds its file lists from OLD FileLists_NanoUL (make_qcd_sf_fileset.py), except:
+  - 2016postVFP TTToSemiLeptonic: OLD's list is byte-identical to the preVFP list (bug).
+    NEW uses the real postVFP dataset from DAS (138 files).                   <-- DIFF
+  - 2016preVFP TTTo2L2Nu: OLD config.ini uses the postVFP dilepton file for preVFP (bug).
+    NEW uses the preVFP sample.                                                <-- DIFF
+  Data events processed (OLD Nevt vs NEW, same file lists; NEW processed every file):
+    2016postVFP SingleElectron: OLD 277.2M vs NEW 291.2M (OLD missing 4.8%)
+    smaller OLD shortfalls: 2016preVFP SingleElectron 0.8%, 2016postVFP SingleMuon 0.6%,
+    2017 SingleMuon 0.5%, 2016preVFP SingleMuon 0.3%, 2018 EGamma 0.3%;
+    2017 SingleElectron and 2018 SingleMuon identical.
+
+
+11. SUMMARY OF DIFFERENCES THAT CAN CHANGE YIELDS
+-------------------------------------------------
+  1. Rochester muon corrections: OLD yes, NEW no (-0.2% seen at the two-muon step, 2018).
+  2. AK8 jet ID: OLD reads the AK4 Jet_jetId with the FatJet index (bug), NEW uses
+     FatJet_jetId. Likely cause of the ~1-1.5% NEW excess at the jet step (same in data
+     and MC); not proven.
+  3. Top pT reweighting enters NEW's ttbar sumw only: NEW ttbar ~1.1% high.
+  4. 2016 ttbar input-file bugs in OLD (section 10).
+  5. OLD did not process all data files (section 10).
+  Everything else in sections 1-9 is the same.
+
+  Not a yield difference, only plots: OLD fills subjet eta into phi_sub0 and phi into
+  eta_sub0 (swapped, Plots.cxx), and uses the leading jet's subjets in Z_bjet; NEW fills
+  the correct quantities for the region's jet.
+
+  Cut-boundary conventions differ in a few places (e.g. OLD keeps pT >= 25, NEW pT > 25;
+  OLD keeps |dz| <= 0.1, NEW |dz| < 0.1; OLD muon iso <= 0.15, NEW < 0.15). These only
+  matter for values exactly on the boundary.
