@@ -1,5 +1,26 @@
 # Session notes: QCD_sf boosted Zbb — LPC condor scale-up
 
+## STATUS AS OF 2026-09-28 — 2016preVFP / 2016postVFP / 2017 runs done, merged, compared
+
+All 16 datasets OK in each era, no skipped files. Merged -> `hists_run<ERA>_mSD_SF/merged_run<ERA>.coffea`;
+`compare_<ERA>.txt`, `cutflow_<ERA>.txt`, `plots/` made with the same scripts as 2018.
+
+new/old yields (MC total / data):
+| era | Z_jet Zee | Z_jet Zmm | Z_bjet Zee | Z_bjet Zmm |
+|---|---|---|---|---|
+| 2016preVFP | 1.024 / 1.034 | 1.019 / 1.024 | 1.014 / 1.011 | 1.020 / 1.031 |
+| 2016postVFP | 1.018 / **1.060** | 1.023 / 1.021 | 1.022 / **1.060** | 0.995 / 1.018 |
+| 2017 | 1.014 / 1.010 | 1.013 / 1.014 | 1.007 / 1.007 | 0.999 / 1.007 |
+| 2018 (ref) | 1.015 / 1.017 | 1.013 / 1.009 | 0.998 / 1.010 | 1.015 / 1.006 |
+
+**2016postVFP Zee data +6% explained: the old run did not process all of its own input.**
+Old `Nevt` (condor_output_mSD/<PD>_DATA_<era>.root) vs our processed events (same file lists):
+SingleElectron postVFP2016 277.2M vs 291.2M (old missing 4.8%); SingleElectron preVFP2016 -0.8%;
+SingleMuon preVFP2016 -0.3%, postVFP2016 -0.6%, 2017 -0.45%; EGamma 2018 -0.35%;
+SingleElectron 2017 and SingleMuon 2018 identical. Correcting for it, postVFP Zee data is ~+0.9%.
+2016 ttbar Z_bjet differences (up to +12%) are the known old ttbar input bugs (below).
+2016 Z_jet MC residual (~2-2.5%) is a bit larger than 2017/2018 (~1.4%); not investigated.
+
 ## TODO (deferred by user 2026-09-27) — per-channel softdrop mass (and tau21/tau32)
 
 **Problem:** our leading-jet softdrop mass plot is Zee + Zmm combined, but the old

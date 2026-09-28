@@ -1,0 +1,100 @@
+QCD_sf cutflow, 2016postVFP, lumi 16978 /pb, input /uscms/home/psrivast/nobackup/BTVNanoCommissioning/hists_run2016postVFP_mSD_SF/merged_run2016postVFP.coffea
+
+== Object-level cutflow (Total Events = events; other columns = object counts) ==
+dataset                                    Total Events       ele_all        ele_ip       ele_kin     ele_EE_EB        ele_ID        mu_all        mu_kin         mu_ID        mu_iso       jet_all  jet_ele_removed  jet_mu_removed        jet_ID    subjet_req
+DYJetsToLL_0J                                  73908089      41274989      32702152      21112663      20428233      14446314      42735295      25041238      23516524      22437769         24937            20392           14183         13780          5754
+DYJetsToLL_1J                                  82259479      61790455      52757067      31491007      30461917      20649042      54958932      33731099      31769542      30149714       1107528           944384          748088        736994        367553
+DYJetsToLL_2J                                  41816675      38527381      33225808      18199964      17589462      10668071      30026506      17734252      16461871      15270337       4858655          4388376         3829071       3804086       2323503
+TTTo2L2Nu                                      43546000      58033596      50017517      26036759      25283784      14067443      51642609      25330179      23427250      19557639      11727812         10446791         8862051       8847183       5881591
+TTToSemiLeptonic                              144722000     178685622     148680275      60035333      58310836      22722972     130957367      48703461      42281555      31745233      49545633         47396887        44681756      44647611      31513228
+ST_t-channel_top_4f_InclusiveDecays            63073000      45208793      34996090      10216043       9907319       2756645      32661913       8236719       6433849       4738791       8808008          8743560         8644036       8631858       5093385
+ST_t-channel_antitop_4f_InclusiveDecays        30609000      22468997      17514556       5055867       4909943       1421007      16015428       4062981       3216172       2405004       3590107          3563210         3521307       3517359       2145013
+ST_s-channel_4f_leptonDecays                    5471000       4347327       3473893       1462440       1413787        693633       3963296       1481565       1299851       1032543        791350           770377          741875        741318        513897
+ST_tW_top_5f_inclusiveDecays                    2491000       2507591       2067430        781021        759204        276122       1699443        589621        487564        381880        720457           694585          663401        662665        490845
+ST_tW_antitop_5f_inclusiveDecays                2554000       2571503       2118818        802523        780280        285195       1740633        602581        498321        391271        735842           709679          677949        677148        503020
+WW                                             15821000       9120195       7238235       2797061       2708627       1343999       5699548       2483724       2118084       1961413       1131237          1088587         1037368       1032675        713537
+WZ                                              7584000       4322731       3397552       1230738       1192078        544242       2713406       1039253        860528        786755        617844           599046          577083        574853        400953
+ZZ                                              1151000        651602        508057        173350        167916         70286        422757        140738        113617        100230         90316            87309           83792         83541         56963
+ZH_HToBB_ZToLL_M-125                            2209078       2552945       2164489       1208585       1168050        690455       2311851       1205149       1119158        975216        407608           352952          289098        287789        190564
+SingleElectron_Run2016postVFP                 291243208     330466054     254952286     210443356     203862838     106692835      49328099       8151494        722201        243613      58980243         57941734        57915329      57457269      31741379
+SingleMuon_Run2016postVFP                     331976208      67183156      40600981       8651331       8364124        232906     424173847     275493008     244100008     187022906      38374237         38347083        37386917      37359637      25083113
+
+== Zee cutflow (raw events; [..] = not the Zee primary dataset) ==
+dataset                                         trigger      electron         Zmass           MET           jet          bjet
+DYJetsToLL_0J                                  10610207       3013233       2921784       2785212             2             0
+DYJetsToLL_1J                                  16662254       4021164       3818543       3595219          2655           140
+DYJetsToLL_2J                                   8741226       2069491       1953973       1788062         22890           766
+TTTo2L2Nu                                      12934110       1084470        294221         93970          1069           242
+TTToSemiLeptonic                               23134010          7282          2706          1231            48             9
+ST_t-channel_top_4f_InclusiveDecays             2691589           582           243           125             0             0
+ST_t-channel_antitop_4f_InclusiveDecays         1380756           326           146            89             1             1
+ST_s-channel_4f_leptonDecays                     685571           169            86            56             0             0
+ST_tW_top_5f_inclusiveDecays                     272125          7608          1981           714             2             2
+ST_tW_antitop_5f_inclusiveDecays                 280009          7882          2037           739             4             0
+WW                                              1310589         30518          9392          5521             3             0
+WZ                                               489005         53319         46266         35977           767            17
+ZZ                                                55249         14699         13390         10710           181            28
+ZH_HToBB_ZToLL_M-125                             553327        149577        144600        125068          5010          3097
+SingleElectron_Run2016postVFP                 185425803       4196322       4001877       3683395          4906           212
+SingleMuon_Run2016postVFP                      [240266]        [2288]        [1437]         [879]          [38]          [12]
+
+== Zmm cutflow (raw events; [..] = not the Zmm primary dataset) ==
+dataset                                         trigger          muon         Zmass           MET           jet          bjet
+DYJetsToLL_0J                                  14666006       6562040       6370950       6075374            24             1
+DYJetsToLL_1J                                  20773195       8434274       8027402       7559834          4547           207
+DYJetsToLL_2J                                  10590507       4228025       3999640       3663879         40645          1357
+TTTo2L2Nu                                      17084840       2112682        592332        188762          1935           455
+TTToSemiLeptonic                               31582665         49544         19797          8962           305            55
+ST_t-channel_top_4f_InclusiveDecays             4594030          4898          2499          1366             3             2
+ST_t-channel_antitop_4f_InclusiveDecays         2346184          2498          1228           657             3             0
+ST_s-channel_4f_leptonDecays                    1002098          1542           697           363             2             0
+ST_tW_top_5f_inclusiveDecays                     359958         14406          3887          1438            11             2
+ST_tW_antitop_5f_inclusiveDecays                 368737         14721          4061          1491             7             1
+WW                                              1834299         62060         20185         12118             3             0
+WZ                                               652888        104470         91965         72220          1228            31
+ZZ                                                66984         29337         26839         21774           266            43
+ZH_HToBB_ZToLL_M-125                             657403        291958        281475        244602          8056          4724
+SingleElectron_Run2016postVFP                  [224160]        [4121]        [2643]        [1914]         [102]           [6]
+SingleMuon_Run2016postVFP                     216744120       9679940       9149533       8435985          8841           392
+
+== Final yields (MC xsec*lumi/sumw-scaled, stat. unc.) ==
+
+Z_jet Zee
+  DY+jets           4665.3 +-    67.7  ( 96.8%)
+  ttbar               34.8 +-     1.1  (  0.7%)
+  Single top           1.4 +-     0.5  (  0.0%)
+  Diboson            116.4 +-     4.1  (  2.4%)
+  ZH                   1.8 +-     0.0  (  0.0%)
+  MC total          4819.7
+  Data                4906
+  Data/MC            1.018
+
+Z_jet Zmm
+  DY+jets           8427.5 +-    91.8  ( 96.9%)
+  ttbar               74.2 +-     1.6  (  0.9%)
+  Single top           4.4 +-     1.0  (  0.1%)
+  Diboson            183.6 +-     5.1  (  2.1%)
+  ZH                   2.9 +-     0.0  (  0.0%)
+  MC total          8692.7
+  Data                8841
+  Data/MC            1.017
+
+Z_bjet Zee
+  DY+jets            185.8 +-    12.6  ( 91.5%)
+  ttbar                7.5 +-     0.5  (  3.7%)
+  Single top           0.5 +-     0.3  (  0.2%)
+  Diboson              8.2 +-     1.3  (  4.0%)
+  ZH                   1.1 +-     0.0  (  0.5%)
+  MC total           203.0
+  Data                 212
+  Data/MC            1.044
+
+Z_bjet Zmm
+  DY+jets            286.4 +-    17.0  ( 89.9%)
+  ttbar               16.7 +-     0.8  (  5.3%)
+  Single top           0.8 +-     0.4  (  0.2%)
+  Diboson             12.9 +-     1.6  (  4.1%)
+  ZH                   1.7 +-     0.0  (  0.5%)
+  MC total           318.5
+  Data                 392
+  Data/MC            1.231

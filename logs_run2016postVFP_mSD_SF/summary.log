@@ -1,0 +1,16 @@
+2026-09-27 12:13:57 DYJetsToLL_0J_TuneCP5_13TeV-amcatnloFXFX-pythia8 OK elapsed=565s log=logs_run2016postVFP_mSD_SF/DYJetsToLL_0J_TuneCP5_13TeV-amcatnloFXFX-pythia8.log
+2026-09-27 12:27:35 DYJetsToLL_1J_TuneCP5_13TeV-amcatnloFXFX-pythia8 OK elapsed=818s log=logs_run2016postVFP_mSD_SF/DYJetsToLL_1J_TuneCP5_13TeV-amcatnloFXFX-pythia8.log
+2026-09-27 12:37:07 DYJetsToLL_2J_TuneCP5_13TeV-amcatnloFXFX-pythia8 OK elapsed=572s log=logs_run2016postVFP_mSD_SF/DYJetsToLL_2J_TuneCP5_13TeV-amcatnloFXFX-pythia8.log
+2026-09-27 12:42:13 ST_s-channel_4f_leptonDecays_TuneCP5_13TeV-amcatnlo-pythia8 OK elapsed=306s log=logs_run2016postVFP_mSD_SF/ST_s-channel_4f_leptonDecays_TuneCP5_13TeV-amcatnlo-pythia8.log
+2026-09-27 12:48:37 ST_t-channel_antitop_4f_InclusiveDecays_TuneCP5_13TeV-powheg-madspin-pythia8 OK elapsed=384s log=logs_run2016postVFP_mSD_SF/ST_t-channel_antitop_4f_InclusiveDecays_TuneCP5_13TeV-powheg-madspin-pythia8.log
+2026-09-27 12:58:53 ST_t-channel_top_4f_InclusiveDecays_TuneCP5_13TeV-powheg-madspin-pythia8 OK elapsed=616s log=logs_run2016postVFP_mSD_SF/ST_t-channel_top_4f_InclusiveDecays_TuneCP5_13TeV-powheg-madspin-pythia8.log
+2026-09-27 13:02:40 ST_tW_antitop_5f_inclusiveDecays_TuneCP5_13TeV-powheg-pythia8 OK elapsed=227s log=logs_run2016postVFP_mSD_SF/ST_tW_antitop_5f_inclusiveDecays_TuneCP5_13TeV-powheg-pythia8.log
+2026-09-27 13:05:21 ST_tW_top_5f_inclusiveDecays_TuneCP5_13TeV-powheg-pythia8 OK elapsed=161s log=logs_run2016postVFP_mSD_SF/ST_tW_top_5f_inclusiveDecays_TuneCP5_13TeV-powheg-pythia8.log
+2026-09-27 13:39:50 SingleElectron_Run2016postVFP OK elapsed=2069s log=logs_run2016postVFP_mSD_SF/SingleElectron_Run2016postVFP.log
+2026-09-27 14:17:57 SingleMuon_Run2016postVFP OK elapsed=2287s log=logs_run2016postVFP_mSD_SF/SingleMuon_Run2016postVFP.log
+2026-09-27 14:27:57 TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8 OK elapsed=600s log=logs_run2016postVFP_mSD_SF/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8.log
+2026-09-27 14:49:48 TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8 OK elapsed=1311s log=logs_run2016postVFP_mSD_SF/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8.log
+2026-09-27 14:55:16 WW_TuneCP5_13TeV-pythia8 OK elapsed=328s log=logs_run2016postVFP_mSD_SF/WW_TuneCP5_13TeV-pythia8.log
+2026-09-27 14:58:50 WZ_TuneCP5_13TeV-pythia8 OK elapsed=214s log=logs_run2016postVFP_mSD_SF/WZ_TuneCP5_13TeV-pythia8.log
+2026-09-27 15:01:08 ZH_HToBB_ZToLL_M-125_TuneCP5_13TeV-powheg-pythia8 OK elapsed=138s log=logs_run2016postVFP_mSD_SF/ZH_HToBB_ZToLL_M-125_TuneCP5_13TeV-powheg-pythia8.log
+2026-09-27 15:03:21 ZZ_TuneCP5_13TeV-pythia8 OK elapsed=133s log=logs_run2016postVFP_mSD_SF/ZZ_TuneCP5_13TeV-pythia8.log
