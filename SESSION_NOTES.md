@@ -1,5 +1,40 @@
 # Session notes: QCD_sf boosted Zbb — LPC condor scale-up
 
+## RESUME HERE (end of session 2026-09-28) — all four Run 2 UL eras validated
+
+**Where things stand:** 2016preVFP, 2016postVFP, 2017 and 2018 all have the full set of
+outputs, committed and pushed to `myfork/coffea_machine` (last commit of the session is the
+one adding this section). Per era, in `hists_run<ERA>_mSD_SF/`:
+`merged_run<ERA>.coffea`, `compare_<ERA>.txt` (old-vs-new yields), `cutflow_<ERA>.txt`,
+`plots/` + `plots/panels/`, `old_vs_new_<ERA>_side_by_side.pdf` (25 pages); plus
+`logs_run<ERA>_mSD_SF/summary.log`. Nothing is running on condor.
+
+**Done this session (2026-09-28):**
+- Merged/compared/plotted 2016preVFP, 2016postVFP, 2017 (table below).
+- Root-caused the 2016postVFP Zee data +6% (compare_2016postVFP.txt lines 10 and 32):
+  old run processed only 277.2M of 291.2M SingleElectron events. Explained, not "fixed" --
+  the fix would be rerunning the old framework's missing jobs; nothing to change on our side.
+  Our Zee Data/MC (1.018) matches Zmm (1.017); old Zee Data/MC is 0.977.
+- 2018 side-by-side PDF: page headers now just "NEW" / "OLD", no filename captions.
+- `make_side_by_side_pdf.py --era <ERA>` added (the builder was never in the repo before;
+  recovered from the 2026-09-27 session transcript; reproduces the 2018 PDF pixel-for-pixel).
+- `cuts.txt` (repo root): full new-vs-old reference of cuts, triggers, SFs (files and
+  histogram names per era), weights, normalization, cross-sections, input differences, plus
+  a "quick answers" section (are SFs / triggers / corrections applied, is it b-tagged).
+  Every value checked against both codebases; SF files and lumi JSONs verified identical.
+- User cross-checked the 2018 yields from merged_run2018.coffea on coffea-casa: they match.
+
+**Open items / possible next steps (none started):**
+1. Per-channel softdrop mass / tau21 / tau32 (deferred TODO below; needs a code change and a
+   rerun of all eras). Would also remove item 2.
+2. 2016/2017 `jet0_*` histograms (mSD, tau21, tau32 plots and PDF pages 1 and the tau pages)
+   lack the L1 prefiring weight. Yields/tables unaffected.
+3. 2016 Z_jet MC residual vs old (~2-2.5%, vs ~1.4% in 2017/2018): not investigated.
+4. 2018 plots were not regenerated after the label change in `plot_stack_sample.py` (they
+   still show 59.832 fb^-1); regenerate + rebuild the 2018 PDF only if uniform labels wanted.
+5. No Z_bjet pages in the side-by-side PDFs yet (cmp_* hists have Z_bjet; old PNGs exist).
+6. Top-pT factor in ttbar sumw (ttbar ~1.1% high vs old) still not decided.
+
 ## STATUS AS OF 2026-09-28 — 2016preVFP / 2016postVFP / 2017 runs done, merged, compared
 
 All 16 datasets OK in each era, no skipped files. Merged -> `hists_run<ERA>_mSD_SF/merged_run<ERA>.coffea`;
