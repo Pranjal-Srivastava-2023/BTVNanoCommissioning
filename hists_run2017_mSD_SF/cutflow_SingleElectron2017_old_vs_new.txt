@@ -1,0 +1,37 @@
+Cutflow SingleElectron 2017: OLD = /uscms/home/psrivast/nobackup/ZbExercize/CMSSW_14_0_6/src/Zb/CMSSW_14_0_6/src/ZbAnalysis_boosted/condor_output_mSD_evt/SingleElectron_DATA_2017.root
+                             NEW = /uscms/home/psrivast/nobackup/BTVNanoCommissioning/hists_run2017_mSD_SF/merged_run2017.coffea [SingleElectron_Run2017]
+Object sections count objects; Events/Zee/Zmm sections count events.
+
+section     step                        old            new   new-old    new/old
+Events      all events          479,277,493    479,277,493        +0   1.000000
+
+Electrons   all                 550,172,523    550,172,523        +0   1.000000
+            IP                  454,553,256    454,553,252        -4   1.000000
+            pT, eta             387,961,966    387,961,963        -3   1.000000
+            EB-EE gap           375,541,799    375,541,864       +65   1.000000
+            tight ID            225,355,085    225,355,121       +36   1.000000
+
+Muons       all                  83,122,681     83,122,681        +0   1.000000
+            pT, eta              12,584,425     12,584,424        -1   1.000000
+            medium ID             1,093,890      1,093,890        +0   1.000000
+            iso                     457,062        457,062        +0   1.000000
+
+AK8 jets    all                  64,325,331     64,325,331        +0   1.000000
+            ele removal          61,812,159     61,812,201       +42   1.000001
+            mu removal           61,761,763     61,761,806       +43   1.000001
+            jet ID               61,326,470     61,326,508       +38   1.000001
+            2 subjets            36,651,132     36,651,133        +1   1.000000
+
+Zee events  trigger             325,560,255    325,560,255        +0   1.000000
+            2 electrons          10,687,444     10,687,446        +2   1.000000
+            Z mass               10,192,259     10,192,261        +2   1.000000
+            MET                   8,862,248      8,862,250        +2   1.000000
+            jet (Z_jet)              11,825         11,827        +2   1.000169
+            b-jet (Z_bjet)              439            440        +1   1.002278
+
+Zmm events  trigger                 391,975        391,975        +0   1.000000
+            2 muons                   6,381          6,381        +0   1.000000
+            Z mass                    4,169          4,169        +0   1.000000
+            MET                       2,668          2,668        +0   1.000000
+            jet (Z_jet)                 162            162        +0   1.000000
+            b-jet (Z_bjet)                3              3        +0   1.000000
