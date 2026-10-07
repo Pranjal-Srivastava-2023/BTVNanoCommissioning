@@ -1,0 +1,116 @@
+Run 3 boosted Z(->ll) + b/c workflow (Zb_Zc_ratio) -- notes
+=============================================================
+Written 2026-10-07. Workflow commit 2ecd95e, test output f8cd578, slides 6acd6a4.
+Online deck: https://claude.ai/artifact/FSDzBLV3qnBMVzSiQsscXE
+
+
+GOAL
+----
+Move the boosted Z+jet analysis from Run 2 to Run 3 and measure
+sigma(Z+b) / sigma(Z+c), with Z -> ee / mumu and the heavy-flavour jet a boosted
+AK8 jet. Starting with MC only.
+
+
+WHAT WE BUILT
+-------------
+- Separate workflow: workflows/Zb_Zc_ratio.py (registered as "Zb_Zc_ratio").
+  The Run 2 QCD_sf workflow is untouched.
+- Campaign: Summer22 (2022 pre-EE, NanoAODv12). Lumi 2022 C-D golden JSON
+  ~7.98 fb^-1 (to be confirmed with brilcalc).
+- MC: DY->ll amc@NLO FxFx (DYto2L-2Jets_MLL-50). NOT Zto2Q.
+  Inclusive + PTLL-100/200/400/600 samples, stitched on LHE pT(ll):
+    inclusive  : LHE Vpt < 100
+    PTLL-100   : 100-200
+    PTLL-200   : 200-400
+    PTLL-400   : 400-600
+    PTLL-600   : > 600
+  PTLL-X xsecs = inclusive (6346 pb) x fraction of inclusive with LHE Vpt > X.
+  Files: make_zbzc_fileset.py, metadata/Zb_Zc_ratio_Summer22_DY.json (+ _test.json),
+         metadata/Zb_Zc_ratio_xsections_Summer22.json, plot_zbzc.py.
+
+
+SELECTION (follows Run 2)
+-------------------------
+- Trigger: Ele30_WPTight_Gsf (ee) / IsoMu24 (mumu)
+- Two tight leptons, opposite sign, leading lepton pT > 35 GeV
+- 71 < m(ll) < 111 GeV
+- PuppiMET < 50 GeV
+- Leading AK8 jet: pT > 200 GeV, |eta| < 2.5, m_SD > 40 GeV, two subjets,
+  tight jet ID, dR > 0.8 from leptons
+
+
+RUN 2 -> RUN 3 CHANGES
+----------------------
+- Taggers: ParticleNet XbbVsQCD / XccVsQCD (particleNetMD_* gone in Run 3)
+- SFs: framework correctionlib (pileup, lepton ID/iso/reco) instead of old histograms
+- No L1 prefiring weight (does not exist in Run 3)
+- MET: PuppiMET
+
+
+FLAVOUR LABELLING (MC generator truth)
+--------------------------------------
+From FatJet_nBHadrons / FatJet_nCHadrons of the leading AK8 jet (hadrons
+ghost-associated to the jet). First match wins:
+    bb : >= 2 B hadrons
+    b  : exactly 1 B hadron
+    cc : 0 B, >= 2 C hadrons
+    c  : 0 B, exactly 1 C hadron
+    l  : 0 B, 0 C (u/d/s/gluon)
+    data : real data (no truth available)
+b has priority: a jet with a B hadron is b/bb even if it also has C hadrons.
+"Generator truth" = what the simulation knows really happened; only exists in MC.
+In data we rely on the taggers (Xbb, Xcc); MC truth is used to measure the
+tagger efficiency / mistag rate.
+Taggers are only histogrammed so far -- no working-point cut applied yet.
+
+
+FIRST TEST (1 file per sample, low stats)
+-----------------------------------------
+- Runs end to end, cutflows and SFs sensible (pileup weight mean 1.000)
+- ~80-84% of selected jets are light; c+cc ~12% (ee) to ~24% (mumu)
+- Yields in yields.txt
+
+
+WHY Zmm "b" = -191.8 IN yields.txt
+----------------------------------
+It is NOT a number of events. It is a scaled, weighted yield:
+    yield = sum over events of (genWeight x SFs) x xsec x lumi / sumw
+i.e. the predicted number of events in 7.98 fb^-1 from these test files.
+
+amc@NLO samples have NEGATIVE generator weights for some events (part of the
+NLO calculation; they cancel against positive ones with enough statistics).
+
+Breakdown of Zmm b by sample:
+    inclusive : 1 raw event, weight -19502 x scale 0.014   = -273.0
+    PTLL-100  : +7.5
+    PTLL-200  : +61.9
+    PTLL-400  : +11.9
+    PTLL-600  : 0
+    total     : -191.8
+
+So a single negative-weight event from the inclusive sample (1 file only)
+dominates. Each inclusive event carries a large weight after scaling
+(~ +/-270 events), and only 8 inclusive events passed the full Zmm selection
+(inclusive covers LHE pT(ll) < 100, so a 200 GeV AK8 jet is rare there).
+-> statistical artefact of the 1-file test, not physics. Should go away with
+   the full sample. The Zmm light yield from the inclusive sample is also
+   negative for the same reason.
+Check later: if the inclusive sample still contributes large +/- weights in
+the full run, consider how much it matters in the boosted region.
+
+
+FRAMEWORK BUG (not fixed, shared code)
+--------------------------------------
+utils/correction.py eleSFs resets the running SF product inside the per-electron
+loop -> only the last electron's SF is kept. Our workflow avoids it by calling
+the SF function once per lepton. Report to framework maintainers.
+
+
+NEXT STEPS
+----------
+1. Full condor run over all DY files
+2. Trigger SFs, jet veto maps, FatJet JEC/JER
+3. Choose Xbb/Xcc working points or template fit in the Xbb-Xcc plane
+4. Add data and other backgrounds (ttbar, dibosons)
+5. Extract Z+b / Z+c ratio
+   (decide: b = b+bb and c = c+cc, or single-hadron categories only)
