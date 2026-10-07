@@ -59,7 +59,10 @@ for var in VARS:
                      color=[COLORS[f] for f in FLAVS], label=[LABELS[f] for f in FLAVS])
         ax.set_yscale("log")
         ax.set_ylabel("Events / bin")
-        ax.set_ylim(bottom=1e-2)
+        # log-y floor at 0.1 events/bin (bins below that are +/- NLO weight
+        # cancellations), headroom above the stacked peak for the legend
+        tot = sum(x.values() for x in hs)
+        ax.set_ylim(0.1, max(tot.max(), 1.0) * 50)
         ax.text(0.04, 0.94, ch.replace("Zee", r"Z$\to$ee").replace("Zmm", r"Z$\to\mu\mu$"),
                 transform=ax.transAxes, fontsize=20, va="top")
         ax.legend(fontsize=14, loc="upper right")
