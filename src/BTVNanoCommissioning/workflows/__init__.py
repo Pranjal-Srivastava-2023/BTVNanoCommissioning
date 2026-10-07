@@ -37,6 +37,9 @@ from BTVNanoCommissioning.workflows.ctag_DY_valid_sf import (
 from BTVNanoCommissioning.workflows.QCD_validation import (
     NanoProcessor as QCDValidProcessor,
 )
+from BTVNanoCommissioning.workflows.Zb_Zc_ratio import (
+    NanoProcessor as ZbZcRatioProcessor,
+)
 from BTVNanoCommissioning.workflows.QCD_soft_mu_validation import (
     NanoProcessor as QCDsmuValidProcessor,
 )
@@ -103,6 +106,7 @@ workflows["sf_ttsemilep_tnp"] = TTsemilepTnPSFProcessor
 # QCD
 workflows["QCD_sf"] = QCDValidProcessor
 workflows["QCD_smu_sf"] = QCDsmuValidProcessor
+workflows["Zb_Zc_ratio"] = ZbZcRatioProcessor
 
 # W+c
 workflows["ctag_Wc_sf"] = partial(CTAGWcTTValidSFProcessor, selectionModifier="WcM")

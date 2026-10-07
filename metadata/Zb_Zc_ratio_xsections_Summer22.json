@@ -1,0 +1,9 @@
+{
+    "_comment": "Summer22 DY->ll xsecs [pb] for the Zb_Zc_ratio workflow. Inclusive MLL-50 from helpers/xsection.py; each PTLL-X = inclusive x genWeight-signed fraction of inclusive events with LHE_Vpt > X, measured 2026-10-07 on 150/525 inclusive files (27.7M events; stat 0.1/0.4/1.5/4.1% for X=100/200/400/600). Normalize each sample as xsec * lumi / sumw (sumw over the full sample, before the workflow's LHE pT(ll) slice). lumi_pb: 2022 C-D golden JSON, to be checked with brilcalc.",
+    "lumi_pb": 7980.4,
+    "DYto2L-2Jets_MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8": 6346.0,
+    "DYto2L-2Jets_MLL-50_PTLL-100_TuneCP5_13p6TeV_amcatnloFXFX-pythia8": 104.97,
+    "DYto2L-2Jets_MLL-50_PTLL-200_TuneCP5_13p6TeV_amcatnloFXFX-pythia8": 11.239,
+    "DYto2L-2Jets_MLL-50_PTLL-400_TuneCP5_13p6TeV_amcatnloFXFX-pythia8": 0.6433,
+    "DYto2L-2Jets_MLL-50_PTLL-600_TuneCP5_13p6TeV_amcatnloFXFX-pythia8": 0.09941
+}
