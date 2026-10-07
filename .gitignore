@@ -35,3 +35,11 @@ hists_run*_mSD_SF/*
 logs_run*_mSD_SF/*
 !logs_run*_mSD_SF/summary.log
 !hists_run*_mSD_SF/*.pdf
+# Zb_Zc_ratio (Run 3) outputs: merged .coffea, tables and plots go in git
+!hists_zbzc*/
+hists_zbzc*/**
+!hists_zbzc*/*/
+!hists_zbzc*/*/*.coffea
+!hists_zbzc*/*/*.txt
+!hists_zbzc*/*/plots/
+!hists_zbzc*/*/plots/**

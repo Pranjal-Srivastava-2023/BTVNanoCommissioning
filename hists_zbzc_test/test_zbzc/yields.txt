@@ -1,0 +1,25 @@
+input: hists_zbzc_test/test_zbzc/test_zbzc.coffea
+lumi: 7.98 /fb, 13.6 TeV, Summer22
+
+== Zee: raw MC events passing each step (after the LHE pT(ll) slice)
+sample             all   trigger   leptons        OS     Zmass       MET       jet
+inclusive       197672     32660      9802      9745      9396      8872         1
+PTLL-100        161921     46448     13156     13037     12032     10642       139
+PTLL-200         91186     31202     11594     11431     10398      8584      1211
+PTLL-400          2727      1013       458       447       396       287        77
+PTLL-600           939       229       101       100        82        54        12
+
+== Zmm: raw MC events passing each step (after the LHE pT(ll) slice)
+sample             all   trigger   leptons        OS     Zmass       MET       jet
+inclusive       197672     42062     17685     17685     17054     16139         8
+PTLL-100        161921     48592     20606     20604     19043     16788       225
+PTLL-200         91186     31717     16868     16865     15258     12453      1753
+PTLL-400          2727      1048       659       659       592       407       104
+PTLL-600           939       319       199       199       178       102        31
+
+== scaled yields after full selection, by AK8 jet flavour
+               l         c        cc         b        bb     total
+Zee       1897.8     137.0     128.7      65.1      31.1    2259.7
+  frac     0.840     0.061     0.057     0.029     0.014
+Zmm       2228.6     265.0     415.5    -191.8      67.3    2784.7
+  frac     0.800     0.095     0.149    -0.069     0.024
