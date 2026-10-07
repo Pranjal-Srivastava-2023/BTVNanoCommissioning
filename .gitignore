@@ -41,5 +41,6 @@ hists_zbzc*/**
 !hists_zbzc*/*/
 !hists_zbzc*/*/*.coffea
 !hists_zbzc*/*/*.txt
+!hists_zbzc*/*/*.pdf
 !hists_zbzc*/*/plots/
 !hists_zbzc*/*/plots/**
