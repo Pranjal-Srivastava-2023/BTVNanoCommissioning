@@ -97,6 +97,18 @@ for ch in ["Zee", "Zmm"]:
         short = ds.split("_TuneCP5")[0].replace("DYto2L-2Jets_MLL-50", "").strip("_") or "inclusive"
         lines.append(f"{short:12s}" + "".join(f"{o['cutflow_raw'][ch][s]:>10d}" for s in steps))
     lines.append("")
+lines.append("== raw (unweighted) MC events after full selection, by AK8 jet flavour")
+for ch in ["Zee", "Zmm"]:
+    lines.append(f"-- {ch}")
+    lines.append(f"{'sample':12s}" + "".join(f"{f:>10s}" for f in FLAVS) + f"{'total':>10s}")
+    tot = [0] * len(FLAVS)
+    for ds, o in out.items():
+        short = ds.split("_TuneCP5")[0].replace("DYto2L-2Jets_MLL-50", "").strip("_") or "inclusive"
+        n = [o["nevt_flav"][ch][f] for f in FLAVS]
+        tot = [t + v for t, v in zip(tot, n)]
+        lines.append(f"{short:12s}" + "".join(f"{v:10d}" for v in n) + f"{sum(n):10d}")
+    lines.append(f"{'all':12s}" + "".join(f"{v:10d}" for v in tot) + f"{sum(tot):10d}")
+lines.append("")
 h = scaled("fj_pt")
 lines.append("== scaled yields after full selection, by AK8 jet flavour")
 lines.append(f"{'':6s}" + "".join(f"{f:>10s}" for f in FLAVS) + f"{'total':>10s}")

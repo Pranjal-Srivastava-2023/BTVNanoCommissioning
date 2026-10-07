@@ -135,6 +135,10 @@ class NanoProcessor(processor.ProcessorABC):
         cutflow_raw = {c: processor.defaultdict_accumulator(int) for c in CHANNELS}
         output["cutflow"] = cutflow
         output["cutflow_raw"] = cutflow_raw
+        # unweighted number of selected events per AK8 jet flavour
+        output["nevt_flav"] = {
+            c: processor.defaultdict_accumulator(int) for c in CHANNELS
+        }
 
         ## Lumi mask (data) / LHE pT(ll) stitching slice (DY MC)
         req_lumi = np.ones(len(events), dtype="bool")
@@ -252,6 +256,8 @@ class NanoProcessor(processor.ProcessorABC):
                     ["bb", "b", "cc", "c"],
                     default="l",
                 )
+            for f, n in zip(*np.unique(flav, return_counts=True)):
+                output["nevt_flav"][channel][str(f)] += int(n)
 
             def fill(name, **values):
                 output[name].fill(channel=channel, flav=flav, **values, weight=weight)

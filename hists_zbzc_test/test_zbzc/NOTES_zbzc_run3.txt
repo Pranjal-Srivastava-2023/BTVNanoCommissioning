@@ -71,6 +71,20 @@ FIRST TEST (1 file per sample, low stats)
 - Yields in yields.txt
 
 
+RAW (UNWEIGHTED) EVENT COUNTS PER FLAVOUR (1-file test)
+------------------------------------------------------
+Plain number of selected MC events (one leading AK8 jet each), no weights,
+summed over all DY samples. Stored in the coffea output as nevt_flav.
+            l      c     cc      b     bb   total
+    Zee  1159     96     91     60     34    1440
+    Zmm  1719    154    132     78     38    2121
+These are always positive and tell you the MC statistics in each category.
+They are NOT a physics prediction: they mix samples with very different
+cross sections and ignore the NLO weights. For the ratio use the scaled
+yields (below). Per-sample breakdown in yields.txt.
+Note: these count JETS by hadron content, not quarks.
+
+
 WHY Zmm "b" = -191.8 IN yields.txt
 ----------------------------------
 It is NOT a number of events. It is a scaled, weighted yield:
