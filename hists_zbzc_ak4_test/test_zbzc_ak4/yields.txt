@@ -1,0 +1,43 @@
+input: hists_zbzc_ak4_test/test_zbzc_ak4/test_zbzc_ak4.coffea
+lumi: 7.98 /fb, 13.6 TeV, Summer22, AK4 jets
+
+== Zee: raw MC events passing each step (after the LHE pT(ll) slice)
+sample             all   trigger   leptons        OS     Zmass       MET       jet
+inclusive       197672     32660      9802      9745      9396      8872      2347
+PTLL-100        161921     46448     13156     13037     12032     10642     10214
+PTLL-200         91186     31202     11594     11431     10398      8584      8466
+PTLL-400          2727      1013       458       447       396       287       286
+PTLL-600           939       229       101       100        82        54        54
+
+== Zmm: raw MC events passing each step (after the LHE pT(ll) slice)
+sample             all   trigger   leptons        OS     Zmass       MET       jet
+inclusive       197672     42062     17685     17685     17054     16139      4159
+PTLL-100        161921     48592     20606     20604     19043     16788     16142
+PTLL-200         91186     31717     16868     16865     15258     12453     12298
+PTLL-400          2727      1048       659       659       592       407       405
+PTLL-600           939       319       199       199       178       102       102
+
+== raw (unweighted) MC events after full selection, by AK4 jet flavour
+-- Zee
+sample               l         c         b     total
+inclusive         1981       247       119      2347
+PTLL-100          8677       914       623     10214
+PTLL-200          7357       691       418      8466
+PTLL-400           253        23        10       286
+PTLL-600            47         5         2        54
+all              18315      1880      1172     21367
+-- Zmm
+sample               l         c         b     total
+inclusive         3596       360       203      4159
+PTLL-100         13750      1478       914     16142
+PTLL-200         10786       979       533     12298
+PTLL-400           347        43        15       405
+PTLL-600            84        13         5       102
+all              28563      2873      1670     33106
+
+== scaled yields after full selection, by AK4 jet flavour
+               l         c         b     total
+Zee     343532.5   42631.0   16844.4  403007.9
+  frac     0.852     0.106     0.042
+Zmm     683956.5   65108.4   35637.3  784702.2
+  frac     0.872     0.083     0.045
