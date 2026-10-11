@@ -1,10 +1,13 @@
 """Plots and yield tables for the Zb_Zc_ratio workflow output (MC only so far).
 
 Each sample is scaled by xsec * lumi / sumw (metadata/Zb_Zc_ratio_xsections_Summer22.json)
-and the histograms are stacked by AK8 jet flavour, per channel, log-scale y.
-Also writes the Xbb vs Xcc 2D map per flavour group and a cutflow/yield table.
+and the histograms are stacked by jet flavour, per channel, log-scale y.
+Works for both the AK4 (Zb_Zc_ratio) and AK8 (Zb_Zc_ratio_AK8) outputs, detected
+from the histogram names. Also writes the 2D tagger map per flavour group
+(AK4: PNet CvL vs CvB, AK8: XbbVsQCD vs XccVsQCD) and a cutflow/yield table.
 
 Usage:
+    python plot_zbzc.py hists_zbzc_ak4_test/test_zbzc_ak4/test_zbzc_ak4.coffea
     python plot_zbzc.py hists_zbzc_test/test_zbzc/test_zbzc.coffea
 """
 import json
@@ -28,11 +31,21 @@ xs = json.load(open("metadata/Zb_Zc_ratio_xsections_Summer22.json"))
 LUMI = xs["lumi_pb"]
 out = load(infile)
 
-FLAVS = ["l", "c", "cc", "b", "bb"]  # bottom to top of the stack
+AK4 = "jet_pt" in next(iter(out.values()))
+JET = "AK4" if AK4 else "AK8"
 COLORS = {"l": "#9e9e9e", "c": "#7fb3e6", "cc": "#1f5fa8", "b": "#f2a65a", "bb": "#c0392b"}
-LABELS = {"l": "light", "c": "c (1 C hadron)", "cc": "cc (≥2 C)", "b": "b (1 B hadron)", "bb": "bb (≥2 B)"}
-VARS = ["fj_pt", "fj_eta", "fj_msd", "fj_mreg", "fj_Xbb", "fj_Xcc", "fj_tau21", "n_fj",
-        "z_mass", "z_pt", "lep0_pt", "lep1_pt", "lhe_vpt"]
+ZVARS = ["z_mass", "z_pt", "lep0_pt", "lep1_pt", "lhe_vpt"]
+if AK4:
+    FLAVS = ["l", "c", "b"]  # bottom to top of the stack
+    LABELS = {"l": "light", "c": "c (hadronFlavour 4)", "b": "b (hadronFlavour 5)"}
+    VARS = ["jet_pt", "jet_eta", "jet_PNetB", "jet_PNetCvL", "jet_PNetCvB", "n_jet"] + ZVARS
+    MAP2D = ("jet_CvL_CvB", "PNet CvL", "PNet CvB", {"b": ["b"], "c": ["c"], "light": ["l"]})
+else:
+    FLAVS = ["l", "c", "cc", "b", "bb"]
+    LABELS = {"l": "light", "c": "c (1 C hadron)", "cc": "cc (≥2 C)", "b": "b (1 B hadron)", "bb": "bb (≥2 B)"}
+    VARS = ["fj_pt", "fj_eta", "fj_msd", "fj_mreg", "fj_Xbb", "fj_Xcc", "fj_tau21", "n_fj"] + ZVARS
+    MAP2D = ("fj_Xbb_Xcc", "PNet XbbVsQCD", "PNet XccVsQCD",
+             {"b + bb": ["b", "bb"], "c + cc": ["c", "cc"], "light": ["l"]})
 
 
 def scaled(name):
@@ -71,9 +84,9 @@ for var in VARS:
     fig.savefig(os.path.join(outdir, f"{var}.png"), dpi=90)
     plt.close(fig)
 
-# Xbb vs Xcc, per flavour group, both channels summed
-h2 = scaled("fj_Xbb_Xcc")[{"channel": sum}]
-groups = {"b + bb": ["b", "bb"], "c + cc": ["c", "cc"], "light": ["l"]}
+# 2D tagger map, per flavour group, both channels summed
+name2d, xlab, ylab, groups = MAP2D
+h2 = scaled(name2d)[{"channel": sum}]
 fig, axes = plt.subplots(1, 3, figsize=(27, 8))
 for ax, (title, fl) in zip(axes, groups.items()):
     hh = sum(h2[{"flav": f}] for f in fl)
@@ -82,16 +95,16 @@ for ax, (title, fl) in zip(axes, groups.items()):
     m = ax.pcolormesh(hh.axes[0].edges, hh.axes[1].edges, np.clip(vals.T, 1e-5, None),
                       norm=matplotlib.colors.LogNorm(1e-4, 1), cmap="viridis")
     fig.colorbar(m, ax=ax, label="fraction of jets")
-    ax.set_xlabel("PNet XbbVsQCD")
-    ax.set_ylabel("PNet XccVsQCD")
+    ax.set_xlabel(xlab)
+    ax.set_ylabel(ylab)
     ax.text(0.04, 0.94, title, transform=ax.transAxes, fontsize=20, va="top", color="white")
     label(ax, fontsize=13)
 fig.tight_layout()
-fig.savefig(os.path.join(outdir, "fj_Xbb_vs_Xcc.png"), dpi=90)
+fig.savefig(os.path.join(outdir, f"{name2d}.png"), dpi=90)
 plt.close(fig)
 
 # Cutflow (raw MC events per sample) and scaled yields per flavour
-lines = [f"input: {infile}", f"lumi: {LUMI / 1000:.2f} /fb, 13.6 TeV, Summer22", ""]
+lines = [f"input: {infile}", f"lumi: {LUMI / 1000:.2f} /fb, 13.6 TeV, Summer22, {JET} jets", ""]
 for ch in ["Zee", "Zmm"]:
     lines.append(f"== {ch}: raw MC events passing each step (after the LHE pT(ll) slice)")
     steps = list(next(iter(out.values()))["cutflow_raw"][ch].keys())
@@ -100,7 +113,7 @@ for ch in ["Zee", "Zmm"]:
         short = ds.split("_TuneCP5")[0].replace("DYto2L-2Jets_MLL-50", "").strip("_") or "inclusive"
         lines.append(f"{short:12s}" + "".join(f"{o['cutflow_raw'][ch][s]:>10d}" for s in steps))
     lines.append("")
-lines.append("== raw (unweighted) MC events after full selection, by AK8 jet flavour")
+lines.append(f"== raw (unweighted) MC events after full selection, by {JET} jet flavour")
 for ch in ["Zee", "Zmm"]:
     lines.append(f"-- {ch}")
     lines.append(f"{'sample':12s}" + "".join(f"{f:>10s}" for f in FLAVS) + f"{'total':>10s}")
@@ -112,8 +125,8 @@ for ch in ["Zee", "Zmm"]:
         lines.append(f"{short:12s}" + "".join(f"{v:10d}" for v in n) + f"{sum(n):10d}")
     lines.append(f"{'all':12s}" + "".join(f"{v:10d}" for v in tot) + f"{sum(tot):10d}")
 lines.append("")
-h = scaled("fj_pt")
-lines.append("== scaled yields after full selection, by AK8 jet flavour")
+h = scaled(VARS[0])
+lines.append(f"== scaled yields after full selection, by {JET} jet flavour")
 lines.append(f"{'':6s}" + "".join(f"{f:>10s}" for f in FLAVS) + f"{'total':>10s}")
 for ch in ["Zee", "Zmm"]:
     y = [h[{"channel": ch, "flav": f}].sum(flow=True).value for f in FLAVS]

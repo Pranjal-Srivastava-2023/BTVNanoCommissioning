@@ -1,18 +1,24 @@
 """
-Run 3 boosted Z(->ee/mumu) + heavy-flavour AK8 jet workflow, for measuring the
-Z+b / Z+c ratio.
+Run 3 Z(->ee/mumu) + heavy-flavour jet workflow, for measuring the Z+b / Z+c
+ratio. The jet collection is chosen with `jet`:
 
-Selection follows the Run 2 QCD_sf workflow (QCD_validation.py) -- two leptons
-in the Z mass window, low MET, leading AK8 jet with pT > 200, |eta| < 2.5,
-msoftdrop > 40 and two subjets -- with these Run 3 changes:
-- tight muon ID (matches the MUO tight ID / tight PF iso SFs), opposite-sign
-  lepton pair, PuppiMET
-- framework correctionlib SFs (pileup, lepton ID/iso/reco) instead of the old
-  framework's histograms; no L1 prefiring weight (none in Run 3)
-- ParticleNet XbbVsQCD / XccVsQCD taggers (particleNetMD_* no longer exist)
+- "AK4" (default, workflow "Zb_Zc_ratio"): resolved Z+jet. Leading AK4 (PUPPI)
+  jet with pT > 30, |eta| < 2.5, tight-lepton-veto jet ID and dR > 0.4 from the
+  leptons; no Z pT requirement. Tagger: ParticleNet AK4 B / CvL / CvB.
+  Flavour from Jet_hadronFlavour: b (5), c (4), l (else). AK4 jets carry no
+  hadron counts in NanoAOD, so there is no b/bb or c/cc split.
+- "AK8" (workflow "Zb_Zc_ratio_AK8"): boosted selection following the Run 2
+  QCD_sf workflow (QCD_validation.py) -- leading AK8 jet with pT > 200,
+  |eta| < 2.5, msoftdrop > 40 and two subjets, dR > 0.8 from the leptons.
+  Tagger: ParticleNet XbbVsQCD / XccVsQCD (particleNetMD_* no longer exist).
+  Flavour from B/C hadron counts: bb (>= 2 B), b (1 B), cc (0 B, >= 2 C),
+  c (0 B, 1 C), l.
 
-Histograms are split by the generator flavour of the selected AK8 jet, from its
-B/C hadron counts: bb (>= 2 B), b (1 B), cc (0 B, >= 2 C), c (0 B, 1 C), l.
+Common Z selection, with these Run 3 changes w.r.t. Run 2: two leptons in the
+Z mass window, low MET, tight muon ID (matches the MUO tight ID / tight PF iso
+SFs), opposite-sign lepton pair, PuppiMET; framework correctionlib SFs (pileup,
+lepton ID/iso/reco) instead of the old framework's histograms; no L1 prefiring
+weight (none in Run 3).
 
 The DY pT(ll)-binned samples (PTLL-X) are inclusive above X, so each one is
 restricted to its own LHE pT(ll) slice (STITCH below) and the inclusive sample
@@ -40,9 +46,13 @@ from BTVNanoCommissioning.utils.selection import (
     ele_EE_EB_removal,
     ele_ID,
     mu_iso,
+    jet_id,
 )
 
-FLAVOURS = ["bb", "b", "cc", "c", "l", "data"]
+FLAVOURS = {
+    "AK4": ["b", "c", "l", "data"],
+    "AK8": ["bb", "b", "cc", "c", "l", "data"],
+}
 CHANNELS = ["Zee", "Zmm"]
 
 
@@ -71,14 +81,18 @@ class NanoProcessor(processor.ProcessorABC):
         isArray=False,
         noHist=False,
         chunksize=75000,
+        jet="AK4",
     ):
         if campaign not in self.trigger_config:
             raise KeyError(
                 f"Zb_Zc_ratio: campaign {campaign} not configured "
                 f"(have {list(self.trigger_config)})"
             )
+        if jet not in FLAVOURS:
+            raise KeyError(f"Zb_Zc_ratio: jet must be one of {list(FLAVOURS)}")
         self._year = year
         self._campaign = campaign
+        self.jet = jet
         self.name = name
         self.isSyst = isSyst
         self.isArray = isArray
@@ -89,31 +103,50 @@ class NanoProcessor(processor.ProcessorABC):
 
     def make_hists(self):
         ch = hist.axis.StrCategory(CHANNELS, name="channel")
-        fl = hist.axis.StrCategory(FLAVOURS, name="flav")
+        fl = hist.axis.StrCategory(FLAVOURS[self.jet], name="flav")
 
         def h(*axes):
             return hist.Hist(ch, fl, *axes, storage=hist.storage.Weight())
 
         Reg = hist.axis.Regular
-        return {
-            "fj_pt": h(Reg(50, 200, 1200, name="pt", label="AK8 jet $p_T$ [GeV]")),
-            "fj_eta": h(Reg(25, -2.5, 2.5, name="eta", label=r"AK8 jet $\eta$")),
-            "fj_msd": h(Reg(52, 40, 300, name="mass", label="AK8 jet $m_{SD}$ [GeV]")),
-            "fj_mreg": h(Reg(60, 0, 300, name="mass", label="AK8 jet PNet regressed mass [GeV]")),
-            "fj_Xbb": h(Reg(50, 0, 1, name="score", label="PNet XbbVsQCD")),
-            "fj_Xcc": h(Reg(50, 0, 1, name="score", label="PNet XccVsQCD")),
-            "fj_Xbb_Xcc": h(
-                Reg(25, 0, 1, name="xbb", label="PNet XbbVsQCD"),
-                Reg(25, 0, 1, name="xcc", label="PNet XccVsQCD"),
-            ),
-            "fj_tau21": h(Reg(25, 0, 1, name="tau21", label=r"AK8 jet $\tau_{21}$")),
-            "n_fj": h(hist.axis.Integer(0, 6, name="n", label="N AK8 jets")),
-            "z_mass": h(Reg(40, 71, 111, name="mass", label="$m_{\\ell\\ell}$ [GeV]")),
-            "z_pt": h(Reg(50, 0, 1000, name="pt", label="$p_T^{\\ell\\ell}$ [GeV]")),
-            "lep0_pt": h(Reg(50, 0, 1000, name="pt", label="Leading lepton $p_T$ [GeV]")),
-            "lep1_pt": h(Reg(50, 0, 500, name="pt", label="Subleading lepton $p_T$ [GeV]")),
-            "lhe_vpt": h(Reg(75, 0, 1500, name="pt", label="LHE $p_T^{\\ell\\ell}$ [GeV]")),
-        }
+        if self.jet == "AK4":
+            hists = {
+                "jet_pt": h(Reg(50, 30, 530, name="pt", label="AK4 jet $p_T$ [GeV]")),
+                "jet_eta": h(Reg(25, -2.5, 2.5, name="eta", label=r"AK4 jet $\eta$")),
+                "jet_PNetB": h(Reg(50, 0, 1, name="score", label="PNet B")),
+                "jet_PNetCvL": h(Reg(50, 0, 1, name="score", label="PNet CvL")),
+                "jet_PNetCvB": h(Reg(50, 0, 1, name="score", label="PNet CvB")),
+                "jet_CvL_CvB": h(
+                    Reg(25, 0, 1, name="cvl", label="PNet CvL"),
+                    Reg(25, 0, 1, name="cvb", label="PNet CvB"),
+                ),
+                "n_jet": h(hist.axis.Integer(0, 10, name="n", label="N AK4 jets")),
+            }
+        else:
+            hists = {
+                "fj_pt": h(Reg(50, 200, 1200, name="pt", label="AK8 jet $p_T$ [GeV]")),
+                "fj_eta": h(Reg(25, -2.5, 2.5, name="eta", label=r"AK8 jet $\eta$")),
+                "fj_msd": h(Reg(52, 40, 300, name="mass", label="AK8 jet $m_{SD}$ [GeV]")),
+                "fj_mreg": h(Reg(60, 0, 300, name="mass", label="AK8 jet PNet regressed mass [GeV]")),
+                "fj_Xbb": h(Reg(50, 0, 1, name="score", label="PNet XbbVsQCD")),
+                "fj_Xcc": h(Reg(50, 0, 1, name="score", label="PNet XccVsQCD")),
+                "fj_Xbb_Xcc": h(
+                    Reg(25, 0, 1, name="xbb", label="PNet XbbVsQCD"),
+                    Reg(25, 0, 1, name="xcc", label="PNet XccVsQCD"),
+                ),
+                "fj_tau21": h(Reg(25, 0, 1, name="tau21", label=r"AK8 jet $\tau_{21}$")),
+                "n_fj": h(hist.axis.Integer(0, 6, name="n", label="N AK8 jets")),
+            }
+        hists.update(
+            {
+                "z_mass": h(Reg(40, 71, 111, name="mass", label="$m_{\\ell\\ell}$ [GeV]")),
+                "z_pt": h(Reg(50, 0, 1000, name="pt", label="$p_T^{\\ell\\ell}$ [GeV]")),
+                "lep0_pt": h(Reg(50, 0, 1000, name="pt", label="Leading lepton $p_T$ [GeV]")),
+                "lep1_pt": h(Reg(50, 0, 500, name="pt", label="Subleading lepton $p_T$ [GeV]")),
+                "lhe_vpt": h(Reg(75, 0, 1500, name="pt", label="LHE $p_T^{\\ell\\ell}$ [GeV]")),
+            }
+        )
+        return hists
 
     @property
     def accumulator(self):
@@ -135,7 +168,7 @@ class NanoProcessor(processor.ProcessorABC):
         cutflow_raw = {c: processor.defaultdict_accumulator(int) for c in CHANNELS}
         output["cutflow"] = cutflow
         output["cutflow_raw"] = cutflow_raw
-        # unweighted number of selected events per AK8 jet flavour
+        # unweighted number of selected events per jet flavour
         output["nevt_flav"] = {
             c: processor.defaultdict_accumulator(int) for c in CHANNELS
         }
@@ -180,22 +213,7 @@ class NanoProcessor(processor.ProcessorABC):
         mu = mu[mu.tightId]
         mu = mu[mu_iso(mu)]
 
-        ## AK8 jets: lepton cleaning (dR > 0.8), tight jet ID, two subjets.
-        # FatJet_jetId in NanoAODv12 is only wrong for |eta| > 2.7, outside our
-        # |eta| < 2.5 selection, so it is used as is.
-        fj = events.FatJet
-        fj = fj[ak.all(fj.metric_table(ele_jetveto) > 0.8, axis=2)]
-        fj = fj[ak.all(fj.metric_table(mu_jetveto) > 0.8, axis=2)]
-        fj = fj[fj.jetId >= 2]
-        fj = fj[(fj.subJetIdx1 >= 0) & (fj.subJetIdx2 >= 0)]
-        fj_pad = ak.pad_none(fj, 1, axis=1)
-        lead = fj_pad[:, 0]
-        req_jet = ak.to_numpy(
-            ak.fill_none(
-                (lead.pt > 200) & (abs(lead.eta) < 2.5) & (lead.msoftdrop > 40),
-                False,
-            )
-        )
+        jets, lead, req_jet = self.select_jets(events, ele_jetveto, mu_jetveto)
         req_met = ak.to_numpy(events.PuppiMET.pt < 50)
 
         ## Per-channel selection
@@ -249,33 +267,14 @@ class NanoProcessor(processor.ProcessorABC):
             if isRealData:
                 flav = np.full(len(ev), "data")
             else:
-                nb = ak.to_numpy(jet.nBHadrons)
-                nc = ak.to_numpy(jet.nCHadrons)
-                flav = np.select(
-                    [nb >= 2, nb == 1, nc >= 2, nc == 1],
-                    ["bb", "b", "cc", "c"],
-                    default="l",
-                )
+                flav = self.jet_flavour(jet)
             for f, n in zip(*np.unique(flav, return_counts=True)):
                 output["nevt_flav"][channel][str(f)] += int(n)
 
             def fill(name, **values):
                 output[name].fill(channel=channel, flav=flav, **values, weight=weight)
 
-            xbb = ak.to_numpy(jet.particleNet_XbbVsQCD)
-            xcc = ak.to_numpy(jet.particleNet_XccVsQCD)
-            fill("fj_pt", pt=ak.to_numpy(jet.pt))
-            fill("fj_eta", eta=ak.to_numpy(jet.eta))
-            fill("fj_msd", mass=ak.to_numpy(jet.msoftdrop))
-            fill("fj_mreg", mass=ak.to_numpy(jet.particleNet_massCorr * jet.mass))
-            fill("fj_Xbb", score=xbb)
-            fill("fj_Xcc", score=xcc)
-            fill("fj_Xbb_Xcc", xbb=xbb, xcc=xcc)
-            fill(
-                "fj_tau21",
-                tau21=ak.to_numpy(ak.where(jet.tau1 > 0, jet.tau2 / jet.tau1, -1.0)),
-            )
-            fill("n_fj", n=ak.to_numpy(ak.num(fj[mask])))
+            self.fill_jets(fill, jet, jets[mask])
             fill("z_mass", mass=ak.to_numpy(z.mass))
             fill("z_pt", pt=ak.to_numpy(z.pt))
             fill("lep0_pt", pt=ak.to_numpy(l0[mask].pt))
@@ -284,6 +283,74 @@ class NanoProcessor(processor.ProcessorABC):
                 fill("lhe_vpt", pt=ak.to_numpy(ev.LHE.Vpt))
 
         return {dataset: output}
+
+    def select_jets(self, events, ele_jetveto, mu_jetveto):
+        """Selected jet collection, its leading jet and the per-event jet requirement."""
+        if self.jet == "AK4":
+            # pT > 30, |eta| < 2.5, tight-lepton-veto ID (with the NanoAODv12
+            # jetId fix), lepton cleaning dR > 0.4
+            jets = events.Jet[jet_id(events, self._campaign, max_eta=2.5, min_pt=30)]
+            jets = jets[ak.all(jets.metric_table(ele_jetveto) > 0.4, axis=2)]
+            jets = jets[ak.all(jets.metric_table(mu_jetveto) > 0.4, axis=2)]
+            lead = ak.pad_none(jets, 1, axis=1)[:, 0]
+            req_jet = ak.to_numpy(ak.num(jets) >= 1)
+            return jets, lead, req_jet
+
+        ## AK8 jets: lepton cleaning (dR > 0.8), tight jet ID, two subjets.
+        # FatJet_jetId in NanoAODv12 is only wrong for |eta| > 2.7, outside our
+        # |eta| < 2.5 selection, so it is used as is.
+        fj = events.FatJet
+        fj = fj[ak.all(fj.metric_table(ele_jetveto) > 0.8, axis=2)]
+        fj = fj[ak.all(fj.metric_table(mu_jetveto) > 0.8, axis=2)]
+        fj = fj[fj.jetId >= 2]
+        fj = fj[(fj.subJetIdx1 >= 0) & (fj.subJetIdx2 >= 0)]
+        lead = ak.pad_none(fj, 1, axis=1)[:, 0]
+        req_jet = ak.to_numpy(
+            ak.fill_none(
+                (lead.pt > 200) & (abs(lead.eta) < 2.5) & (lead.msoftdrop > 40),
+                False,
+            )
+        )
+        return fj, lead, req_jet
+
+    def jet_flavour(self, jet):
+        if self.jet == "AK4":
+            hf = ak.to_numpy(jet.hadronFlavour)
+            return np.select([hf == 5, hf == 4], ["b", "c"], default="l")
+        nb = ak.to_numpy(jet.nBHadrons)
+        nc = ak.to_numpy(jet.nCHadrons)
+        return np.select(
+            [nb >= 2, nb == 1, nc >= 2, nc == 1],
+            ["bb", "b", "cc", "c"],
+            default="l",
+        )
+
+    def fill_jets(self, fill, jet, jets):
+        if self.jet == "AK4":
+            cvl = ak.to_numpy(jet.btagPNetCvL)
+            cvb = ak.to_numpy(jet.btagPNetCvB)
+            fill("jet_pt", pt=ak.to_numpy(jet.pt))
+            fill("jet_eta", eta=ak.to_numpy(jet.eta))
+            fill("jet_PNetB", score=ak.to_numpy(jet.btagPNetB))
+            fill("jet_PNetCvL", score=cvl)
+            fill("jet_PNetCvB", score=cvb)
+            fill("jet_CvL_CvB", cvl=cvl, cvb=cvb)
+            fill("n_jet", n=ak.to_numpy(ak.num(jets)))
+            return
+        xbb = ak.to_numpy(jet.particleNet_XbbVsQCD)
+        xcc = ak.to_numpy(jet.particleNet_XccVsQCD)
+        fill("fj_pt", pt=ak.to_numpy(jet.pt))
+        fill("fj_eta", eta=ak.to_numpy(jet.eta))
+        fill("fj_msd", mass=ak.to_numpy(jet.msoftdrop))
+        fill("fj_mreg", mass=ak.to_numpy(jet.particleNet_massCorr * jet.mass))
+        fill("fj_Xbb", score=xbb)
+        fill("fj_Xcc", score=xcc)
+        fill("fj_Xbb_Xcc", xbb=xbb, xcc=xcc)
+        fill(
+            "fj_tau21",
+            tau21=ak.to_numpy(ak.where(jet.tau1 > 0, jet.tau2 / jet.tau1, -1.0)),
+        )
+        fill("n_fj", n=ak.to_numpy(ak.num(jets)))
 
     def mc_sf(self, ev, l0, l1, channel):
         """

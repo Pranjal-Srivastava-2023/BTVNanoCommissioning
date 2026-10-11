@@ -106,7 +106,8 @@ workflows["sf_ttsemilep_tnp"] = TTsemilepTnPSFProcessor
 # QCD
 workflows["QCD_sf"] = QCDValidProcessor
 workflows["QCD_smu_sf"] = QCDsmuValidProcessor
-workflows["Zb_Zc_ratio"] = ZbZcRatioProcessor
+workflows["Zb_Zc_ratio"] = ZbZcRatioProcessor  # AK4 jets
+workflows["Zb_Zc_ratio_AK8"] = partial(ZbZcRatioProcessor, jet="AK8")
 
 # W+c
 workflows["ctag_Wc_sf"] = partial(CTAGWcTTValidSFProcessor, selectionModifier="WcM")
