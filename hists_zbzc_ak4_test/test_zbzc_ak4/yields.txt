@@ -41,3 +41,32 @@ Zee     343532.5   42631.0   16844.4  403007.9
   frac     0.852     0.106     0.042
 Zmm     683956.5   65108.4   35637.3  784702.2
   frac     0.872     0.083     0.045
+
+== scaled yields after full selection, by AK4 jet partonFlavour
+            none         g       uds         c         b     total
+Zee       2155.4  115166.9  222596.6   46641.5   16447.5  403007.9
+  frac     0.005     0.286     0.552     0.116     0.041
+Zmm       2258.4  240686.3  438450.1   66535.5   36771.9  784702.2
+  frac     0.003     0.307     0.559     0.085     0.047
+
+== hadron (rows) x parton (columns) flavour migration
+-- Zee: scaled, fraction of each hadron-flavour row
+                 b         c       uds         g      none
+b            0.974     0.027    -0.001     0.000     0.000
+c           -0.002     0.953     0.032     0.017     0.000
+l            0.000     0.016     0.644     0.333     0.006
+-- Zee: raw (unweighted) events
+                 b         c       uds         g      none
+b             1166         2         3         1         0
+c               12      1773        66        29         0
+l               25       205     12922      5155         8
+-- Zmm: scaled, fraction of each hadron-flavour row
+                 b         c       uds         g      none
+b            0.999     0.000     0.001     0.000     0.000
+c            0.005     0.905     0.058     0.032     0.000
+l            0.001     0.011     0.635     0.349     0.003
+-- Zmm: raw (unweighted) events
+                 b         c       uds         g      none
+b             1662         0         7         1         0
+c                9      2716        99        49         0
+l               43       310     20064      8134        12
