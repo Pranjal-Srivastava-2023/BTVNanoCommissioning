@@ -5,6 +5,8 @@ and the histograms are stacked by jet flavour, per channel, log-scale y.
 Works for both the AK4 (Zb_Zc_ratio) and AK8 (Zb_Zc_ratio_AK8) outputs, detected
 from the histogram names. Also writes the 2D tagger map per flavour group
 (AK4: PNet CvL vs CvB, AK8: XbbVsQCD vs XccVsQCD) and a cutflow/yield table.
+For AK4 every variable is also stacked by partonFlavour (<var>_parton.png), and the
+hadron x parton flavour migration is plotted (flav_migration.png) and tabulated.
 
 Usage:
     python plot_zbzc.py hists_zbzc_ak4_test/test_zbzc_ak4/test_zbzc_ak4.coffea
@@ -40,6 +42,10 @@ if AK4:
     LABELS = {"l": "light", "c": "c (hadronFlavour 4)", "b": "b (hadronFlavour 5)"}
     VARS = ["jet_pt", "jet_eta", "jet_PNetB", "jet_PNetCvL", "jet_PNetCvB", "n_jet"] + ZVARS
     MAP2D = ("jet_CvL_CvB", "PNet CvL", "PNet CvB", {"b": ["b"], "c": ["c"], "light": ["l"]})
+    PFLAVS = ["none", "g", "uds", "c", "b"]
+    PCOLORS = {"none": "#d9d9d9", "g": "#6aa84f", "uds": "#9e9e9e", "c": "#7fb3e6", "b": "#f2a65a"}
+    PLABELS = {"none": "no parton (0)", "g": "g (21)", "uds": "uds (1-3)",
+               "c": "c (partonFlavour 4)", "b": "b (partonFlavour 5)"}
 else:
     FLAVS = ["l", "c", "cc", "b", "bb"]
     LABELS = {"l": "light", "c": "c (1 C hadron)", "cc": "cc (≥2 C)", "b": "b (1 B hadron)", "bb": "bb (≥2 B)"}
@@ -48,12 +54,18 @@ else:
              {"b + bb": ["b", "bb"], "c + cc": ["c", "cc"], "light": ["l"]})
 
 
-def scaled(name):
-    """Sum of all samples' histogram `name`, each scaled to xsec * lumi / sumw."""
+def scaled(name, keep="flav"):
+    """Sum of all samples' histogram `name`, each scaled to xsec * lumi / sumw.
+
+    AK4 histograms have both a hadron ("flav") and a parton ("pflav") flavour axis;
+    the one not in `keep` is summed over (keep=None keeps both)."""
     tot = None
     for ds, o in out.items():
         h = o[name] * (xs[ds] * LUMI / o["sumw"])
         tot = h if tot is None else tot + h
+    for ax in ("flav", "pflav"):
+        if keep and ax != keep and ax in tot.axes.name:
+            tot = tot[{ax: sum}]
     return tot
 
 
@@ -63,13 +75,13 @@ def label(ax, fontsize=18):
                   com=13.6, ax=ax, fontsize=fontsize)
 
 
-for var in VARS:
-    h = scaled(var)
+def stack(var, axname, flavs, colors, labels, suffix=""):
+    h = scaled(var, axname)
     fig, axes = plt.subplots(1, 2, figsize=(20, 8))
     for ax, ch in zip(axes, ["Zee", "Zmm"]):
-        hs = [h[{"channel": ch, "flav": f}] for f in FLAVS]
+        hs = [h[{"channel": ch, axname: f}] for f in flavs]
         hep.histplot(hs, ax=ax, stack=True, histtype="fill",
-                     color=[COLORS[f] for f in FLAVS], label=[LABELS[f] for f in FLAVS])
+                     color=[colors[f] for f in flavs], label=[labels[f] for f in flavs])
         ax.set_yscale("log")
         ax.set_ylabel("Events / bin")
         # log-y floor at 0.1 events/bin (bins below that are +/- NLO weight
@@ -81,7 +93,39 @@ for var in VARS:
         ax.legend(fontsize=14, loc="upper right")
         label(ax)
     fig.tight_layout()
-    fig.savefig(os.path.join(outdir, f"{var}.png"), dpi=90)
+    fig.savefig(os.path.join(outdir, f"{var}{suffix}.png"), dpi=90)
+    plt.close(fig)
+
+
+for var in VARS:
+    stack(var, "flav", FLAVS, COLORS, LABELS)
+    if AK4:
+        stack(var, "pflav", PFLAVS, PCOLORS, PLABELS, "_parton")
+
+if AK4:
+    # hadron x parton flavour migration (scaled), each hadron-flavour row normalized to 1
+    hm = scaled(VARS[0], keep=None)
+    HF = ["b", "c", "l"]
+    PF = PFLAVS[::-1]
+    mig = {ch: np.array([[hm[{"channel": ch, "flav": f, "pflav": p}].sum(flow=True).value for p in PF]
+                         for f in HF]) for ch in ["Zee", "Zmm"]}
+    fig, axes = plt.subplots(1, 2, figsize=(20, 7.5))
+    for ax, ch in zip(axes, ["Zee", "Zmm"]):
+        frac = mig[ch] / mig[ch].sum(axis=1, keepdims=True)
+        ax.imshow(np.clip(frac, 0, 1), cmap="Blues", vmin=0, vmax=1)
+        for i in range(len(HF)):
+            for j in range(len(PF)):
+                ax.text(j, i, f"{100 * frac[i, j]:.1f}%", ha="center", va="center", fontsize=17,
+                        color="white" if frac[i, j] > 0.5 else "black")
+        ax.set_xticks(range(len(PF)), PF)
+        ax.set_yticks(range(len(HF)), ["b (5)", "c (4)", "light (0)"])
+        ax.set_xlabel("partonFlavour")
+        ax.set_ylabel("hadronFlavour")
+        ax.minorticks_off()
+        ax.set_title(ch.replace("Zee", r"Z$\to$ee").replace("Zmm", r"Z$\to\mu\mu$")
+                     + ": fraction of each hadron flavour", fontsize=18)
+    fig.tight_layout()
+    fig.savefig(os.path.join(outdir, "flav_migration.png"), dpi=90)
     plt.close(fig)
 
 # 2D tagger map, per flavour group, both channels summed
@@ -132,6 +176,27 @@ for ch in ["Zee", "Zmm"]:
     y = [h[{"channel": ch, "flav": f}].sum(flow=True).value for f in FLAVS]
     lines.append(f"{ch:6s}" + "".join(f"{v:10.1f}" for v in y) + f"{sum(y):10.1f}")
     lines.append(f"{'  frac':6s}" + "".join(f"{v / sum(y):10.3f}" for v in y))
+if AK4:
+    hp = scaled(VARS[0], "pflav")
+    lines.append("")
+    lines.append("== scaled yields after full selection, by AK4 jet partonFlavour")
+    lines.append(f"{'':6s}" + "".join(f"{f:>10s}" for f in PFLAVS) + f"{'total':>10s}")
+    for ch in ["Zee", "Zmm"]:
+        y = [hp[{"channel": ch, "pflav": f}].sum(flow=True).value for f in PFLAVS]
+        lines.append(f"{ch:6s}" + "".join(f"{v:10.1f}" for v in y) + f"{sum(y):10.1f}")
+        lines.append(f"{'  frac':6s}" + "".join(f"{v / sum(y):10.3f}" for v in y))
+    lines.append("")
+    lines.append("== hadron (rows) x parton (columns) flavour migration")
+    for ch in ["Zee", "Zmm"]:
+        lines.append(f"-- {ch}: scaled, fraction of each hadron-flavour row")
+        lines.append(f"{'':8s}" + "".join(f"{p:>10s}" for p in PF))
+        for f, row in zip(HF, mig[ch]):
+            lines.append(f"{f:8s}" + "".join(f"{v / row.sum():10.3f}" for v in row))
+        lines.append(f"-- {ch}: raw (unweighted) events")
+        lines.append(f"{'':8s}" + "".join(f"{p:>10s}" for p in PF))
+        for f in HF:
+            n = [sum(o["nevt_migration"][ch][f"{f}|{p}"] for o in out.values()) for p in PF]
+            lines.append(f"{f:8s}" + "".join(f"{v:10d}" for v in n))
 open(os.path.join(os.path.dirname(infile), "yields.txt"), "w").write("\n".join(lines) + "\n")
 print("\n".join(lines))
 print("plots in", outdir)

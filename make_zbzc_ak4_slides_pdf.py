@@ -2,8 +2,9 @@
 so the two decks can be compared page by page.
 
 Setup, samples, selection, cutflow per channel, yields by AK4 jet flavour, an AK8 vs AK4
-comparison, then the kinematic and PNet tagger plots from plot_zbzc.py. Cutflow and yield
-numbers are read from the coffea outputs (not typed in).
+comparison, the kinematic and PNet tagger plots from plot_zbzc.py, then a hadronFlavour vs
+partonFlavour section (yields under both definitions, migration matrix, plots stacked by
+partonFlavour). Cutflow and yield numbers are read from the coffea outputs (not typed in).
 
 Usage:
     python make_zbzc_ak4_slides_pdf.py hists_zbzc_ak4_test/test_zbzc_ak4 [hists_zbzc_test/test_zbzc]
@@ -49,14 +50,14 @@ def short(ds):
     return next(v for k, v in SHORT.items() if k in ds)
 
 
-def yields(o, var, flavs):
-    """Scaled yield per channel and flavour after the full selection."""
+def yields(o, var, flavs, axis="flav"):
+    """Scaled yield per channel and flavour (hadron "flav" or parton "pflav") after the full selection."""
     y = {ch: {f: 0.0 for f in flavs} for ch in CHS}
     for ds, od in o.items():
         sc = xs[ds] * LUMI / od["sumw"]
         for ch in CHS:
             for f in flavs:
-                y[ch][f] += od[var][{"channel": ch, "flav": f}].sum(flow=True).value * sc
+                y[ch][f] += od[var][{"channel": ch, axis: f}].sum(flow=True).value * sc
     return y
 
 
@@ -206,11 +207,12 @@ blocks = [
                                          "No Z pT requirement"]),
      ("Weights and flavour", ["genWeight × pileup × lepton ID/iso/reco SFs", "No trigger SF yet",
                               "Jet flavour from hadronFlavour: b (5), c (4), light; no bb/cc split for AK4",
+                              "Also labelled by |partonFlavour|: b, c, uds, g, none (pages 21+)",
                               "Tagger: PNet AK4 B, CvL, CvB"])],
 ]
 for i, col in enumerate(blocks):
     cx = 128 + i * (cw + 32)
-    box(fig, cx, y, cw, 680, PANEL)
+    box(fig, cx, y, cw, 730, PANEL)
     yy = y + 40
     for title, items in col:
         yy = text(fig, cx + 40, yy, title, 36, ACCENT, "bold", ls=1.2) + 16
@@ -331,6 +333,92 @@ ax.imshow(img)
 ax.axis("off")
 footer(fig, FOOT + " · Z→ee + Z→μμ", page_no)
 save(fig)
+page_no += 1
+
+# hadronFlavour vs partonFlavour: definitions and yields under both
+pfl = ["b", "c", "uds", "g", "none"]
+yp = yields(out, "jet_pt", pfl, axis="pflav")
+fig = page()
+y = heading(fig, "hadronFlavour vs partonFlavour") + 40
+cw = (1664 - 32) / 2
+defs = [("hadronFlavour (default)", ["Ghost-matched B / C hadrons clustered into the jet",
+                                     "b (5) if any B hadron, else c (4) if any C hadron, else 0",
+                                     "BTV standard; b/c-tag SFs are measured for it"]),
+        ("partonFlavour", ["Ghost-matched partons (last before hadronization) in the jet",
+                           "Hardest heavy parton wins: b (5), c (4), else hardest light parton",
+                           "Splits light jets into uds (1–3) and gluon (21); 0 = no parton matched"])]
+for i, (title, items) in enumerate(defs):
+    cx = 128 + i * (cw + 32)
+    box(fig, cx, y, cw, 290, PANEL)
+    yy = text(fig, cx + 36, y + 30, title, 32, ACCENT, "bold", ls=1.2) + 10
+    for it in items:
+        yy = text(fig, cx + 36, yy, "• " + it, 24, DARK, width=cw - 72, ls=1.4) + 2
+y += 290 + 36
+d_cols = [("Fraction of scaled yield", 520, "left"), ("hadron Z→ee", 286, "right"), ("parton Z→ee", 286, "right"),
+          ("hadron Z→μμ", 286, "right"), ("parton Z→μμ", 286, "right")]
+d_rows = [["b"] + sum(([frac(y4, ch, ["b"]), frac(yp, ch, ["b"])] for ch in CHS), []),
+          ["c"] + sum(([frac(y4, ch, ["c"]), frac(yp, ch, ["c"])] for ch in CHS), []),
+          ["light (hadron) / uds + g + none (parton)"] + sum(([frac(y4, ch, ["l"]), frac(yp, ch, ["uds", "g", "none"])]
+                                                              for ch in CHS), []),
+          ["   of which g / none (parton)"] + sum((["", f"{frac(yp, ch, ['g'])} / {frac(yp, ch, ['none'])}"]
+                                                   for ch in CHS), [])]
+table(fig, 128, y, d_cols, d_rows, 26, shade=(0, 2))
+footer(fig, FOOT + " · leading AK4 jet, scaled to 7.98 fb⁻¹", page_no)
+save(fig)
+page_no += 1
+
+# migration matrix
+def migration(o, f, p):
+    """Scaled fraction of hadron-flavour-f jets with parton flavour p, both channels summed."""
+    num_, den = 0.0, 0.0
+    for ds, od in o.items():
+        sc = xs[ds] * LUMI / od["sumw"]
+        for ch in CHS:
+            h = od["jet_pt"][{"channel": ch, "flav": f}]
+            num_ += h[{"pflav": p}].sum(flow=True).value * sc
+            den += h.sum(flow=True).value * sc
+    return 100 * num_ / den
+
+
+MIGRATION_CAPTION = (
+    f"Each row shows where the jets of one hadronFlavour land in partonFlavour. {migration(out, 'b', 'b'):.0f}% of "
+    f"hadron-b and {migration(out, 'c', 'c'):.0f}% of hadron-c jets also have partonFlavour b / c (both channels). "
+    f"Hadron-light jets split into uds ({migration(out, 'l', 'uds'):.0f}%) and gluon ({migration(out, 'l', 'g'):.0f}%); "
+    f"{migration(out, 'l', 'c') + migration(out, 'l', 'b'):.1f}% carry a c or b parton without a matching hadron."
+)
+fig = page()
+y = heading(fig, "Hadron vs parton flavour migration", y=96) + 20
+y = text(fig, 128, y, MIGRATION_CAPTION, 28, BODY, width=1664) + 20
+img = mpimg.imread(os.path.join(indir, "plots", "flav_migration.png"))
+hpx = min(1664 * img.shape[0] / img.shape[1], 620)
+wpx = hpx * img.shape[1] / img.shape[0]
+ax = fig.add_axes([(W - wpx) / 2 / W, 1 - (y + hpx) / H, wpx / W, hpx / H])
+ax.imshow(img)
+ax.axis("off")
+footer(fig, FOOT + " · rows: hadronFlavour, each sums to 100% (scaled) · small negative entries = NLO negative weights", page_no)
+save(fig)
+page_no += 1
+
+# plots stacked by partonFlavour
+pplots = [
+    ("jet_pt", "Leading AK4 jet pT, by partonFlavour", "Same as page 13, stacked by |partonFlavour| of the leading jet."),
+    ("jet_eta", "Leading AK4 jet η, by partonFlavour", "Same as page 14, stacked by |partonFlavour| of the leading jet."),
+    ("n_jet", "AK4 jet multiplicity, by partonFlavour", "Same as page 15, stacked by |partonFlavour| of the leading jet."),
+    ("jet_PNetB", "PNet B, by partonFlavour", "Same as page 17, stacked by |partonFlavour| of the leading jet."),
+    ("jet_PNetCvL", "PNet CvL, by partonFlavour", "Same as page 18, stacked by |partonFlavour| of the leading jet."),
+    ("jet_PNetCvB", "PNet CvB, by partonFlavour", "Same as page 19, stacked by |partonFlavour| of the leading jet."),
+]
+for name, title, caption in pplots:
+    fig = page()
+    y = heading(fig, title, y=96) + 20
+    y = text(fig, 128, y, caption, 28, BODY, width=1664) + 20
+    ax = fig.add_axes([128 / W, 1 - (y + 666) / H, 1664 / W, 666 / H])
+    ax.imshow(mpimg.imread(os.path.join(indir, "plots", f"{name}_parton.png")))
+    ax.axis("off")
+    footer(fig, FOOT + " · stacked by leading AK4 jet partonFlavour · Z→ee left, Z→μμ right", page_no)
+    save(fig)
+    page_no += 1
+page_no -= 1
 
 pdf.close()
 print("wrote", outfile, f"({page_no} pages)")

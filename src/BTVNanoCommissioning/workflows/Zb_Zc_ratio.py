@@ -6,7 +6,11 @@ ratio. The jet collection is chosen with `jet`:
   jet with pT > 30, |eta| < 2.5, tight-lepton-veto jet ID and dR > 0.4 from the
   leptons; no Z pT requirement. Tagger: ParticleNet AK4 B / CvL / CvB.
   Flavour from Jet_hadronFlavour: b (5), c (4), l (else). AK4 jets carry no
-  hadron counts in NanoAOD, so there is no b/bb or c/cc split.
+  hadron counts in NanoAOD, so there is no b/bb or c/cc split. Every AK4
+  histogram also has a second flavour axis "pflav" from |Jet_partonFlavour|:
+  b (5), c (4), uds (1-3), g (21), none (0, no parton matched), so the two
+  definitions can be compared; nevt_migration holds the raw hadron x parton
+  flavour counts.
 - "AK8" (workflow "Zb_Zc_ratio_AK8"): boosted selection following the Run 2
   QCD_sf workflow (QCD_validation.py) -- leading AK8 jet with pT > 200,
   |eta| < 2.5, msoftdrop > 40 and two subjets, dR > 0.8 from the leptons.
@@ -53,6 +57,7 @@ FLAVOURS = {
     "AK4": ["b", "c", "l", "data"],
     "AK8": ["bb", "b", "cc", "c", "l", "data"],
 }
+PARTON_FLAVOURS = ["b", "c", "uds", "g", "none", "data"]
 CHANNELS = ["Zee", "Zmm"]
 
 
@@ -103,10 +108,12 @@ class NanoProcessor(processor.ProcessorABC):
 
     def make_hists(self):
         ch = hist.axis.StrCategory(CHANNELS, name="channel")
-        fl = hist.axis.StrCategory(FLAVOURS[self.jet], name="flav")
+        fl = [hist.axis.StrCategory(FLAVOURS[self.jet], name="flav")]
+        if self.jet == "AK4":
+            fl.append(hist.axis.StrCategory(PARTON_FLAVOURS, name="pflav"))
 
         def h(*axes):
-            return hist.Hist(ch, fl, *axes, storage=hist.storage.Weight())
+            return hist.Hist(ch, *fl, *axes, storage=hist.storage.Weight())
 
         Reg = hist.axis.Regular
         if self.jet == "AK4":
@@ -172,6 +179,11 @@ class NanoProcessor(processor.ProcessorABC):
         output["nevt_flav"] = {
             c: processor.defaultdict_accumulator(int) for c in CHANNELS
         }
+        if self.jet == "AK4":
+            # unweighted hadron x parton flavour counts, keys "hadron|parton"
+            output["nevt_migration"] = {
+                c: processor.defaultdict_accumulator(int) for c in CHANNELS
+            }
 
         ## Lumi mask (data) / LHE pT(ll) stitching slice (DY MC)
         req_lumi = np.ones(len(events), dtype="bool")
@@ -270,9 +282,21 @@ class NanoProcessor(processor.ProcessorABC):
                 flav = self.jet_flavour(jet)
             for f, n in zip(*np.unique(flav, return_counts=True)):
                 output["nevt_flav"][channel][str(f)] += int(n)
+            flavs = {"flav": flav}
+            if self.jet == "AK4":
+                pflav = (
+                    np.full(len(ev), "data")
+                    if isRealData
+                    else self.parton_flavour(jet)
+                )
+                for hp, n in zip(
+                    *np.unique(np.char.add(np.char.add(flav, "|"), pflav), return_counts=True)
+                ):
+                    output["nevt_migration"][channel][str(hp)] += int(n)
+                flavs["pflav"] = pflav
 
             def fill(name, **values):
-                output[name].fill(channel=channel, flav=flav, **values, weight=weight)
+                output[name].fill(channel=channel, **flavs, **values, weight=weight)
 
             self.fill_jets(fill, jet, jets[mask])
             fill("z_mass", mass=ak.to_numpy(z.mass))
@@ -323,6 +347,15 @@ class NanoProcessor(processor.ProcessorABC):
             [nb >= 2, nb == 1, nc >= 2, nc == 1],
             ["bb", "b", "cc", "c"],
             default="l",
+        )
+
+    @staticmethod
+    def parton_flavour(jet):
+        pf = np.abs(ak.to_numpy(jet.partonFlavour))
+        return np.select(
+            [pf == 5, pf == 4, (pf >= 1) & (pf <= 3), pf == 21],
+            ["b", "c", "uds", "g"],
+            default="none",
         )
 
     def fill_jets(self, fill, jet, jets):
