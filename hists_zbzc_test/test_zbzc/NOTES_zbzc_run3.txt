@@ -128,3 +128,10 @@ NEXT STEPS
 4. Add data and other backgrounds (ttbar, dibosons)
 5. Extract Z+b / Z+c ratio
    (decide: b = b+bb and c = c+cc, or single-hadron categories only)
+
+
+UPDATE 2026-10-11/12
+--------------------
+Switched to AK4 jets after the group meeting (AK8 kept as Zb_Zc_ratio_AK8) and
+added partonFlavour labels. Current status, resume point and next steps:
+NOTES_Zb_Zc_ratio_run3.md at the top of the repo.
