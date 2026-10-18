@@ -86,7 +86,7 @@ PX = 72 / 100  # px -> pt at dpi 100
 plt.rcParams["font.family"] = "DejaVu Sans"
 
 FOOT = f"Summer22 DY→ℓℓ MC · {FILES} · AK4 jets"
-PLOT_FOOT = FOOT + " · stacked by leading AK4 jet flavour · Z→ee left, Z→μμ right"
+PLOT_FOOT = FOOT + " · stacked by leading-jet flavour; lower: fraction per bin · Z→ee left, Z→μμ right"
 
 
 def page(bg=LIGHT):
@@ -378,7 +378,8 @@ for name, title, caption in plots:
     fig = page()
     y = heading(fig, title, y=96) + 20
     y = text(fig, 128, y, caption, 28, BODY, width=1664) + 20
-    ax = fig.add_axes([128 / W, 1 - (y + 666) / H, 1664 / W, 666 / H])
+    hpx = 1000 - 12 - y  # plot fills the page down to the footer
+    ax = fig.add_axes([128 / W, 1 - (y + hpx) / H, 1664 / W, hpx / H])
     ax.imshow(mpimg.imread(os.path.join(indir, "plots", f"{name}.png")))
     ax.axis("off")
     footer(fig, PLOT_FOOT, page_no)
@@ -477,10 +478,11 @@ for name, title, caption in pplots:
     fig = page()
     y = heading(fig, title, y=96) + 20
     y = text(fig, 128, y, caption, 28, BODY, width=1664) + 20
-    ax = fig.add_axes([128 / W, 1 - (y + 666) / H, 1664 / W, 666 / H])
+    hpx = 1000 - 12 - y  # plot fills the page down to the footer
+    ax = fig.add_axes([128 / W, 1 - (y + hpx) / H, 1664 / W, hpx / H])
     ax.imshow(mpimg.imread(os.path.join(indir, "plots", f"{name}_parton.png")))
     ax.axis("off")
-    footer(fig, FOOT + " · stacked by leading AK4 jet partonFlavour · Z→ee left, Z→μμ right", page_no)
+    footer(fig, FOOT + " · by leading-jet partonFlavour; lower: fraction per bin · Z→ee left, Z→μμ right", page_no)
     save(fig)
     page_no += 1
 

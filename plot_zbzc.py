@@ -76,9 +76,13 @@ def label(ax, fontsize=18):
 
 
 def stack(var, axname, flavs, colors, labels, suffix=""):
+    """Stack by flavour, smallest total yield (both channels) at the bottom so every
+    flavour gets a visible band on the log axis; lower panel: flavour fraction per bin."""
     h = scaled(var, axname)
-    fig, axes = plt.subplots(1, 2, figsize=(20, 8))
-    for ax, ch in zip(axes, ["Zee", "Zmm"]):
+    flavs = sorted(flavs, key=lambda f: h[{axname: f}].sum(flow=True).value)
+    fig, axes = plt.subplots(2, 2, figsize=(20, 10.5), sharex="col",
+                             gridspec_kw={"height_ratios": [3, 1], "hspace": 0.05})
+    for ax, rax, ch in zip(axes[0], axes[1], ["Zee", "Zmm"]):
         hs = [h[{"channel": ch, axname: f}] for f in flavs]
         hep.histplot(hs, ax=ax, stack=True, histtype="fill",
                      color=[colors[f] for f in flavs], label=[labels[f] for f in flavs])
@@ -90,9 +94,24 @@ def stack(var, axname, flavs, colors, labels, suffix=""):
         ax.set_ylim(0.1, max(tot.max(), 1.0) * 50)
         ax.text(0.04, 0.94, ch.replace("Zee", r"Z$\to$ee").replace("Zmm", r"Z$\to\mu\mu$"),
                 transform=ax.transAxes, fontsize=20, va="top")
-        ax.legend(fontsize=14, loc="upper right")
+        # legend top-to-bottom in the same order as the stack
+        hdl, lab = ax.get_legend_handles_labels()
+        ax.legend(hdl[::-1], lab[::-1], fontsize=14, loc="upper right")
         label(ax)
-    fig.tight_layout()
+        xlabel = ax.get_xlabel()
+        ax.set_xlabel("")
+        # fraction of each flavour per bin (bins with a non-positive total left empty)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            for f, x in zip(flavs, hs):
+                frac = np.where(tot > 0, x.values() / tot, np.nan)
+                hep.histplot(frac, x.axes[0].edges, ax=rax, histtype="step", color=colors[f], lw=2)
+        rax.set_ylim(0, 1)
+        rax.set_yticks([0.25, 0.5, 0.75])  # no 0 / 1 labels: they collide with the log ticks above
+        rax.grid(axis="y", color="#e0e0e0", lw=1)
+        rax.set_ylabel("Fraction", fontsize=20)
+        rax.set_xlabel(xlabel)
+    # explicit margins: tight_layout cannot handle the shared-x panels with the CMS label
+    fig.subplots_adjust(left=0.07, right=0.985, top=0.94, bottom=0.11, wspace=0.2)
     fig.savefig(os.path.join(outdir, f"{var}{suffix}.png"), dpi=90)
     plt.close(fig)
 

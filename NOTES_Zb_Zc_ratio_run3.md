@@ -90,7 +90,7 @@ Cross sections and lumi: `metadata/Zb_Zc_ratio_xsections_Summer22.json`.
 |---|---|
 | `src/BTVNanoCommissioning/workflows/Zb_Zc_ratio.py` | Processor; `jet="AK4"` (default) or `"AK8"` |
 | `src/BTVNanoCommissioning/workflows/__init__.py` | Registers `Zb_Zc_ratio` (AK4) and `Zb_Zc_ratio_AK8` |
-| `plot_zbzc.py` | Stacked plots (hadron and parton flavour), 2D tagger map, migration matrix, `yields.txt`; detects AK4 or AK8 |
+| `plot_zbzc.py` | Stacked plots (hadron and parton flavour; smallest flavour at the bottom of the log stack, lower panel = flavour fraction per bin, since 2026-10-18), 2D tagger map, migration matrix, `yields.txt`; detects AK4 or AK8 |
 | `make_zbzc_ak4_slides_pdf.py` | AK4 deck; reads numbers from the coffea files |
 | `make_zbzc_slides_pdf.py` | AK8 deck (numbers typed in) |
 | `make_zbzc_fileset.py` | Builds the DY fileset from DAS |
