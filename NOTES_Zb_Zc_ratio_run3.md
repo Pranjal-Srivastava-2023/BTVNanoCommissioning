@@ -13,7 +13,8 @@ Run 2 QCD_sf work is in `SESSION_NOTES.md`; this file is only the Run 3 ratio me
 - `hists_zbzc_ak4_test/test_zbzc_ak4/slides_zbzc_ak4_summer22_test.pdf`: 30-page AK4 deck
   (setup, cutflow, yields, AK8 vs AK4, kinematics, PNet taggers, hadron vs parton flavour,
   pileup check p. 29, N_jet at 1 vs 20 files p. 30)
-- `hists_zbzc_ak4_20files/merged/`: 20-files-per-sample run (plots, `yields.txt`)
+- `hists_zbzc_ak4_20files/merged/`: 20-files-per-sample run (plots, `yields.txt`) and its 30-page deck
+  `slides_zbzc_ak4_summer22_20files.pdf` (page 8 = 1 file vs 20 files instead of AK8 vs AK4)
 - `hists_zbzc_ak4_test/test_zbzc_ak4/yields.txt`: cutflows, raw and scaled yields under
   both flavour definitions, and the migration tables
 - `hists_zbzc_test/test_zbzc/`: the older AK8 test (deck, notes `NOTES_zbzc_run3.txt`)
@@ -75,6 +76,7 @@ python make_zbzc_ak4_slides_pdf.py hists_zbzc_ak4_test/test_zbzc_ak4 hists_zbzc_
 ./run_zbzc_ak4_20files.sh                # per-sample outputs in hists_zbzc_ak4_20files/zbzc_ak4_20files/
 # merge them (dict union, keys are datasets) into hists_zbzc_ak4_20files/merged/zbzc_ak4_20files.coffea, then
 python plot_zbzc.py hists_zbzc_ak4_20files/merged/zbzc_ak4_20files.coffea
+python make_zbzc_ak4_slides_pdf.py hists_zbzc_ak4_20files/merged --nfiles 20   # 20-file deck
 python compare_njet_zbzc.py hists_zbzc_ak4_test/test_zbzc_ak4/test_zbzc_ak4.coffea "1 file / sample" \
     hists_zbzc_ak4_20files/merged/zbzc_ak4_20files.coffea "20 files / sample" hists_zbzc_ak4_20files/merged/plots
 ```

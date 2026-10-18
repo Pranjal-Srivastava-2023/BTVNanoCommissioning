@@ -8,9 +8,14 @@ partonFlavour). Cutflow and yield numbers are read from the coffea outputs (not 
 
 Usage:
     python make_zbzc_ak4_slides_pdf.py hists_zbzc_ak4_test/test_zbzc_ak4 [hists_zbzc_test/test_zbzc]
-writes <dir>/slides_zbzc_ak4_summer22_test.pdf (plots read from <dir>/plots/). The optional
-second directory is the AK8 test output used for the comparison slide.
+    python make_zbzc_ak4_slides_pdf.py hists_zbzc_ak4_20files/merged --nfiles 20
+writes <dir>/slides_zbzc_ak4_summer22_test.pdf (1 file per sample) or
+<dir>/slides_zbzc_ak4_summer22_<N>files.pdf (plots read from <dir>/plots/). The optional
+second directory is the AK8 test output used for the AK8 vs AK4 slide; with --nfiles > 1 that
+slide instead compares with the 1-file AK4 test (--ref), since AK8 only has the 1-file run.
 """
+import argparse
+import datetime
 import glob
 import json
 import os
@@ -26,9 +31,18 @@ from coffea.util import load
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.patches import FancyBboxPatch
 
-indir = sys.argv[1]
-ak8dir = sys.argv[2] if len(sys.argv) > 2 else "hists_zbzc_test/test_zbzc"
-outfile = os.path.join(indir, "slides_zbzc_ak4_summer22_test.pdf")
+parser = argparse.ArgumentParser()
+parser.add_argument("indir")
+parser.add_argument("ak8dir", nargs="?", default="hists_zbzc_test/test_zbzc")
+parser.add_argument("--nfiles", type=int, default=1, help="files per sample in indir's run")
+parser.add_argument("--ref", default="hists_zbzc_ak4_test/test_zbzc_ak4", help="1-file AK4 test (--nfiles > 1)")
+parser.add_argument("--date", default=None, help="cover date (default: 11 October 2026 for the test, else today)")
+args = parser.parse_args()
+indir, ak8dir, NF = args.indir, args.ak8dir, args.nfiles
+TEST = NF == 1
+FILES = "1 file per sample" if TEST else f"{NF} files per sample"
+outfile = os.path.join(indir, "slides_zbzc_ak4_summer22_" + ("test" if TEST else f"{NF}files") + ".pdf")
+DATE = args.date or ("11 October 2026" if TEST else datetime.date.today().strftime("%-d %B %Y"))
 
 
 def load_dir(d):
@@ -36,7 +50,8 @@ def load_dir(d):
 
 
 out = load_dir(indir)
-out8 = load_dir(ak8dir)
+out8 = load_dir(ak8dir) if TEST else None
+ref = None if TEST else load_dir(args.ref)
 xs = json.load(open("metadata/Zb_Zc_ratio_xsections_Summer22.json"))
 LUMI = xs["lumi_pb"]
 CHS = {"Zee": "Z→ee", "Zmm": "Z→μμ"}
@@ -70,7 +85,7 @@ DARK, LIGHT, PANEL, ACCENT, BODY, MUTED = "#14213D", "#FBFBF8", "#EEF1F5", "#1F5
 PX = 72 / 100  # px -> pt at dpi 100
 plt.rcParams["font.family"] = "DejaVu Sans"
 
-FOOT = "Summer22 DY→ℓℓ MC · 1 file per sample · AK4 jets"
+FOOT = f"Summer22 DY→ℓℓ MC · {FILES} · AK4 jets"
 PLOT_FOOT = FOOT + " · stacked by leading AK4 jet flavour · Z→ee left, Z→μμ right"
 
 
@@ -135,8 +150,10 @@ fig = page(DARK)
 text(fig, 128, 260, "BTVNANOCOMMISSIONING · ZB_ZC_RATIO WORKFLOW", 28, "#7FB3E6", "bold")
 text(fig, 128, 340, "Z(→ℓℓ) + b/c AK4 jets in Run 3", 88, LIGHT, "bold", width=1664, ls=1.1)
 text(fig, 128, 580, "Summer22 DY→ℓℓ MC with AK4 jets: samples, cutflow, kinematics, and a comparison "
-     "with the boosted AK8 selection", 44, "#C9D3E3", width=1664)
-text(fig, 128, 800, "11 October 2026", 28, "#C9D3E3")
+     "with the boosted AK8 selection" if TEST else
+     f"Summer22 DY→ℓℓ MC with AK4 jets, {FILES}: samples, cutflow, kinematics, flavour and pileup checks",
+     44, "#C9D3E3", width=1664)
+text(fig, 128, 800, DATE, 28, "#C9D3E3")
 save(fig)
 
 # setup
@@ -159,7 +176,10 @@ for i, (lab, big, small) in enumerate(cards):
 y += 280 + 48
 text(fig, 128, y, "MC only, no data yet. Processed: 1 file per sample (test run), the same files as the AK8 test. "
      "Code: BTVNanoCommissioning, branch coffea_machine, workflow Zb_Zc_ratio (AK4, commit f8748a6); "
-     "the AK8 selection runs as Zb_Zc_ratio_AK8.", 28, BODY, width=1664)
+     "the AK8 selection runs as Zb_Zc_ratio_AK8." if TEST else
+     f"MC only, no data yet. Processed: {FILES} (the first {NF} files of each sample in the fileset, "
+     f"{5 * NF} of 1887 DY files; run_zbzc_ak4_20files.sh). Code: BTVNanoCommissioning, branch coffea_machine, "
+     "workflow Zb_Zc_ratio (AK4, commit 31ba6bc, with the GenJet-match counters).", 28, BODY, width=1664)
 footer(fig, FOOT, 2)
 save(fig)
 
@@ -171,11 +191,12 @@ text(fig, 160, y + 20, "/DYto2L-2Jets_MLL-50[_PTLL-X]_TuneCP5_13p6TeV_amcatnloFX
 text(fig, 160, y + 56, "  Run3Summer22NanoAODv12-130X_mcRun3_2022_realistic_v5-vN/NANOAODSIM", 24, family="DejaVu Sans Mono")
 y += 110 + 32
 cols = [("Sample", 400, "left"), ("LHE pT(ℓℓ) used", 283, "left"), ("σ [pb]", 216, "right"),
-        ("DAS files", 216, "right"), ("DAS events", 250, "right"), ("Test: events used", 299, "right")]
+        ("DAS files", 216, "right"), ("DAS events", 250, "right"), ("Test: events used" if TEST else f"{NF} files: events", 299, "right")]
 used = {short(ds): od["cutflow_raw"]["Zmm"]["all"] for ds, od in out.items()}
 incl = {ds: od for ds, od in out.items() if short(ds) == "Inclusive"}
 incl_share = {ch: sum(yields(incl, "jet_pt", ["l", "c", "b"])[ch].values())
               / sum(yields(out, "jet_pt", ["l", "c", "b"])[ch].values()) for ch in CHS}
+incl_raw = {ch: raw_selected(incl, ch) / raw_selected(out, ch) for ch in CHS}
 rows = [["Inclusive (MLL-50)", "< 100 GeV", "6346", "525", "93.8 M", f"{used['Inclusive']:,}"],
         ["PTLL-100", "100–200 GeV", "105.0", "418", "56.4 M", f"{used['PTLL-100']:,}"],
         ["PTLL-200", "200–400 GeV", "11.24", "335", "44.7 M", f"{used['PTLL-200']:,}"],
@@ -184,9 +205,11 @@ rows = [["Inclusive (MLL-50)", "< 100 GeV", "6346", "525", "93.8 M", f"{used['In
 y = table(fig, 128, y, cols, rows, 26) + 32
 text(fig, 128, y, "PTLL-X samples are inclusive above X, so each is kept to its own LHE pT(ℓℓ) slice. "
      "σ(PTLL-X) = 6346 pb × fraction of inclusive events with pT(ℓℓ) > X (measured on 27.7 M inclusive events). "
-     "\"Test: events used\" = events of 1 file inside the slice. With no boosted-jet requirement the "
+     + ("\"Test: events used\" = events of 1 file" if TEST else f"\"{NF} files: events\" = events of {NF} files")
+     + " inside the slice. With no boosted-jet requirement the "
      f"inclusive sample (pT(ℓℓ) < 100 GeV) gives {100 * incl_share['Zee']:.0f}% (Z→ee) / "
-     f"{100 * incl_share['Zmm']:.0f}% (Z→μμ) of the scaled yield from only ~12% of the raw selected events, "
+     f"{100 * incl_share['Zmm']:.0f}% (Z→μμ) of the scaled yield from only "
+     f"{100 * min(incl_raw.values()):.0f}–{100 * max(incl_raw.values()):.0f}% of the raw selected events, "
      "so its large per-event weights limit the MC statistics.", 24, BODY, width=1664)
 footer(fig, FOOT, 3)
 save(fig)
@@ -259,39 +282,81 @@ for ch, chname in CHS.items():
 y = table(fig, 128, y, y_cols, y_rows, 28, shade=(1, 3)) + 40
 box(fig, 128, y, 1664, 220, "#FDF1E4")
 box(fig, 128, y, 6, 220, "#E07B24")
-yy = text(fig, 168, y + 32, "Still 1 file per sample", 32, DARK, "bold", ls=1.2) + 12
+yy = text(fig, 168, y + 32, "Still 1 file per sample" if TEST else f"{FILES} ({5 * NF} of 1887 DY files)",
+          32, DARK, "bold", ls=1.2) + 12
 text(fig, 168, yy, f"No negative yields now: {raw_selected(out, 'Zee'):,} (Z→ee) and {raw_selected(out, 'Zmm'):,} "
      "(Z→μμ) raw events pass, vs ~1.4k / 2.1k with AK8. Single negative-weight amcatnlo events still leave "
-     "jumps and empty bins in the tails of the plots. No b-tag requirement applied yet.",
+     "jumps and empty bins in the tails of the plots. No b-tag requirement applied yet." if TEST else
+     f"{raw_selected(out, 'Zee'):,} (Z→ee) and {raw_selected(out, 'Zmm'):,} (Z→μμ) raw events pass. The "
+     "inclusive sample (pT(ℓℓ) < 100 GeV) still carries large per-event weights, so the far tails (e.g. "
+     "N_jet ≥ 6) rest on a few events. No b-tag requirement applied yet.",
      26, BODY, width=1580, ls=1.45)
 footer(fig, FOOT + " · weights: σ × L / Σw × genWeight × PU × lepton SFs", page_no)
 save(fig)
 page_no += 1
 
-# AK8 vs AK4 comparison
-fl8 = ["l", "c", "cc", "b", "bb"]
-y8 = yields(out8, "fj_pt", fl8)
-fig = page()
-y = heading(fig, "AK8 vs AK4: same files, same Z selection") + 40
-c_cols = [("", 420, "left"), ("AK8 Z→ee", 310, "right"), ("AK4 Z→ee", 310, "right"),
-          ("AK8 Z→μμ", 310, "right"), ("AK4 Z→μμ", 310, "right")]
+# AK8 vs AK4 comparison (1-file test), or AK4 at 1 file vs N files per sample
 
 
 def frac(y, ch, fls):
     return f"{sum(y[ch][f] for f in fls) / sum(y[ch].values()):.3f}".replace("-", "−")
 
 
-c_rows = [["Raw events selected"] + sum(([f"{raw_selected(out8, ch):,}", f"{raw_selected(out, ch):,}"] for ch in CHS), []),
-          ["Scaled yield"] + sum(([num(sum(y8[ch].values())), num(sum(y4[ch].values()))] for ch in CHS), []),
-          ["b fraction (b + bb)"] + sum(([frac(y8, ch, ['b', 'bb']), frac(y4, ch, ['b'])] for ch in CHS), []),
-          ["c fraction (c + cc)"] + sum(([frac(y8, ch, ['c', 'cc']), frac(y4, ch, ['c'])] for ch in CHS), []),
-          ["light fraction"] + sum(([frac(y8, ch, ['l']), frac(y4, ch, ['l'])] for ch in CHS), []),
-          ["Jet requirement", "pT > 200, mSD > 40", "pT > 30", "pT > 200, mSD > 40", "pT > 30"]]
-y = table(fig, 128, y, c_cols, c_rows, 28, shade=(0, 2, 4)) + 40
-text(fig, 128, y, "AK8 flavour is from B/C hadron counts inside the jet (bb/b/cc/c); AK4 flavour is hadronFlavour. "
-     "The AK4 selection keeps ~15× more events because it does not require a boosted Z. AK8 heavy-flavour "
-     "fractions are unreliable at this statistics (negative Z→μμ b yield).", 26, BODY, width=1664)
-footer(fig, FOOT + " · AK8 numbers from the 7 Oct test output", page_no)
+fig = page()
+if TEST:
+    fl8 = ["l", "c", "cc", "b", "bb"]
+    y8 = yields(out8, "fj_pt", fl8)
+    y = heading(fig, "AK8 vs AK4: same files, same Z selection") + 40
+    c_cols = [("", 420, "left"), ("AK8 Z→ee", 310, "right"), ("AK4 Z→ee", 310, "right"),
+              ("AK8 Z→μμ", 310, "right"), ("AK4 Z→μμ", 310, "right")]
+    c_rows = [["Raw events selected"] + sum(([f"{raw_selected(out8, ch):,}", f"{raw_selected(out, ch):,}"] for ch in CHS), []),
+              ["Scaled yield"] + sum(([num(sum(y8[ch].values())), num(sum(y4[ch].values()))] for ch in CHS), []),
+              ["b fraction (b + bb)"] + sum(([frac(y8, ch, ['b', 'bb']), frac(y4, ch, ['b'])] for ch in CHS), []),
+              ["c fraction (c + cc)"] + sum(([frac(y8, ch, ['c', 'cc']), frac(y4, ch, ['c'])] for ch in CHS), []),
+              ["light fraction"] + sum(([frac(y8, ch, ['l']), frac(y4, ch, ['l'])] for ch in CHS), []),
+              ["Jet requirement", "pT > 200, mSD > 40", "pT > 30", "pT > 200, mSD > 40", "pT > 30"]]
+    y = table(fig, 128, y, c_cols, c_rows, 28, shade=(0, 2, 4)) + 40
+    text(fig, 128, y, "AK8 flavour is from B/C hadron counts inside the jet (bb/b/cc/c); AK4 flavour is hadronFlavour. "
+         "The AK4 selection keeps ~15× more events because it does not require a boosted Z. AK8 heavy-flavour "
+         "fractions are unreliable at this statistics (negative Z→μμ b yield).", 26, BODY, width=1664)
+    footer(fig, FOOT + " · AK8 numbers from the 7 Oct test output", page_no)
+else:
+    yr = yields(ref, "jet_pt", fl4)
+    y = heading(fig, f"AK4: 1 file vs {NF} files per sample") + 40
+    c_cols = [("", 420, "left"), ("1 file Z→ee", 310, "right"), (f"{NF} files Z→ee", 310, "right"),
+              ("1 file Z→μμ", 310, "right"), (f"{NF} files Z→μμ", 310, "right")]
+    c_rows = [["Raw events selected"] + sum(([f"{raw_selected(ref, ch):,}", f"{raw_selected(out, ch):,}"] for ch in CHS), []),
+              ["Scaled yield"] + sum(([num(sum(yr[ch].values())), num(sum(y4[ch].values()))] for ch in CHS), []),
+              ["b fraction"] + sum(([frac(yr, ch, ['b']), frac(y4, ch, ['b'])] for ch in CHS), []),
+              ["c fraction"] + sum(([frac(yr, ch, ['c']), frac(y4, ch, ['c'])] for ch in CHS), []),
+              ["light fraction"] + sum(([frac(yr, ch, ['l']), frac(y4, ch, ['l'])] for ch in CHS), [])]
+    y = table(fig, 128, y, c_cols, c_rows, 28, shade=(0, 2, 4)) + 40
+    def neff(o, ch):
+        """Effective number of MC events (sum w)^2 / sum w^2 after the full selection."""
+        v = var = 0.0
+        for ds, od in o.items():
+            sc = xs[ds] * LUMI / od["sumw"]
+            h = od["jet_pt"][{"channel": ch}].sum(flow=True)
+            v += h.value * sc
+            var += h.variance * sc ** 2
+        return v * v / var
+
+    # largest flavour-fraction shift, in units of the 1-file binomial error sqrt(f(1-f)/N_eff)
+    shifts = []
+    for ch, lab in CHS.items():
+        ne = neff(ref, ch)
+        for f, fl in (("b", "b"), ("c", "c"), ("l", "light")):
+            f1 = yr[ch][f] / sum(yr[ch].values())
+            fn = y4[ch][f] / sum(y4[ch].values())
+            shifts.append((abs(fn - f1) / (f1 * (1 - f1) / ne) ** 0.5, lab, fl, f1, fn))
+    sig, lab, fl, f1, fn = max(shifts)
+    text(fig, 128, y, f"Same selection and code; {NF}× more files per sample, about "
+         f"{raw_selected(out, 'Zmm') / raw_selected(ref, 'Zmm'):.0f}× more raw events. The 1-file test had only "
+         f"N_eff ≈ {neff(ref, 'Zee'):,.0f} (Z→ee) / {neff(ref, 'Zmm'):,.0f} (Z→μμ) effective events. The largest change "
+         f"is the {lab} {fl} fraction, {f1:.3f} → {fn:.3f}, {sig:.1f}σ of the 1-file statistical error, so the "
+         f"1-file numbers were a {'rough' if sig > 2 else 'fair'} estimate. The AK8 vs AK4 comparison "
+         "(1-file test only) is in the test deck.", 26, BODY, width=1664)
+    footer(fig, FOOT + " · 1-file numbers from the AK4 test output", page_no)
 save(fig)
 page_no += 1
 
@@ -437,9 +502,12 @@ def genmatch(o, ch, pf=None, hf=None, scaled=False):
 fig = page()
 y = heading(fig, "Leading jets with partonFlavour 0 are pileup", y=96) + 20
 none_ee, none_mm = (genmatch(out, ch, "none") for ch in CHS)
-y = text(fig, 128, y, f"A jet with no GenJet (pT > 10 GeV) within ΔR < 0.4 (Jet_genJetIdx = −1) is a pileup jet. "
-         f"All {int(none_ee[1] + none_mm[1])} leading jets with partonFlavour 0 "
-         f"({int(none_ee[1])} Z→ee, {int(none_mm[1])} Z→μμ) have no GenJet match.", 28, BODY, width=1664) + 24
+y = text(fig, 128, y, "A jet with no GenJet (pT > 10 GeV) within ΔR < 0.4 (Jet_genJetIdx = −1) is a pileup jet. "
+         + (f"All {int(none_ee[1] + none_mm[1])}" if none_ee[0] + none_mm[0] == 0 else
+            f"{int(none_ee[1] + none_mm[1])} of {int(sum(none_ee) + sum(none_mm))} "
+            f"({100 * (none_ee[1] + none_mm[1]) / (sum(none_ee) + sum(none_mm)):.0f}%)")
+         + f" leading jets with partonFlavour 0 have no GenJet match "
+         f"({int(none_ee[1])} Z→ee, {int(none_mm[1])} Z→μμ).", 28, BODY, width=1664) + 24
 g_cols = [("Leading-jet partonFlavour", 520, "left"), ("Z→ee no GenJet / all", 380, "right"), ("Z→ee %", 192, "right"),
           ("Z→μμ no GenJet / all", 380, "right"), ("Z→μμ %", 192, "right")]
 g_rows = []
@@ -450,15 +518,18 @@ for p in pfl + [None]:
         row += [f"{int(u):,} / {int(m + u):,}", f"{100 * u / (m + u):.2f}" if m + u else "–"]
     g_rows.append(row)
 y = table(fig, 128, y, g_cols, g_rows, 26, shade=(4, 5)) + 30
-nob = sum(genmatch(out, ch, hf="b")[1] for ch in CHS)
-noc = sum(genmatch(out, ch, hf="c")[1] for ch in CHS)
+nob, alb = (sum(v) for v in zip(*(genmatch(out, ch, hf="b")[::-1] for ch in CHS)))
+noc, alc = (sum(v) for v in zip(*(genmatch(out, ch, hf="c")[::-1] for ch in CHS)))
 scl = " and ".join(f"{100 * u / (m + u):.1f}% ({lab})" for ch, lab in CHS.items()
                    for m, u in [genmatch(out, ch, scaled=True)])
 for s in [f"Not every pileup jet has partonFlavour 0: most unmatched leading jets carry a gluon label "
           f"(a soft ISR/UE gluon is ghost-matched, but there is no GenJet).",
-          f"Pileup does not reach the heavy-flavour yields: {int(nob)} unmatched hadron-b and {int(noc)} hadron-c "
-          f"leading jets. Scaled, {scl} of leading jets are unmatched. This is above the raw fraction because the events "
-          f"come from the high-weight inclusive sample, so it waits for the full MC run."]:
+          f"Pileup barely reaches the heavy-flavour yields: {int(nob)} of {int(nob + alb):,} hadron-b and {int(noc)} of "
+          f"{int(noc + alc):,} hadron-c leading jets are unmatched. Scaled, {scl} of leading jets are unmatched. "
+          + ("This is above the raw fraction because the events come from the high-weight inclusive sample, "
+             "so it waits for the full MC run." if TEST else
+             "This is above the raw fraction because the unmatched jets sit in the high-weight inclusive sample, "
+             "but it is close to the 1-file value, so it is not a statistical fluke.")]:
     y = text(fig, 128, y, "• " + s, 26, DARK, width=1664) + 8
 footer(fig, FOOT + " · raw (unweighted) leading-jet counts · counters nevt_genmatch / sumw_genmatch", page_no)
 save(fig)
