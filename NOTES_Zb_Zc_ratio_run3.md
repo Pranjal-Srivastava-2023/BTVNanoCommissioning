@@ -155,6 +155,11 @@ Plots: `plots/n_jet.png`, `plots/n_jet_parton.png`.
     pileup does not touch the b yield. Scaled, the unmatched fraction is 1.9% (Z→ee) and 1.3% (Z→μμ).
     That is larger than the raw fraction because the events sit in the high-weight inclusive sample,
     so it is statistically poor until the full MC run.
+  - 20 files per sample (2026-10-18, `hists_zbzc_ak4_20files/merged/yields.txt`) confirms it:
+    395 of 399 partonFlavour-0 leading jets (99%) have no GenJet. A few unmatched parton-b / c
+    leading jets now appear (11 b, 40 c in 2.3M; 0.01–0.03% raw). The scaled unmatched fraction
+    is stable at 1.75% (Z→ee) and 1.74% (Z→μμ), so ~1.7% of the low-pT-dominated scaled yield
+    has a pileup leading jet, nearly all light (gluon-labelled jets: 3.5–3.7% unmatched).
 
 **Q2: Why does N_jet peak at 6 for Z→ee and at 8 for Z→μμ?**
 Neither bump is physics. Each is one or two high-weight MC events in a nearly empty bin.
