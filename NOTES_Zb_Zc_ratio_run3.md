@@ -29,6 +29,10 @@ Run 2 QCD_sf work is in `SESSION_NOTES.md`; this file is only the Run 3 ratio me
    partonFlavour. They agree for b and differ by ~1 percentage point for c (see results).
 5. Add data (2022 C–D) and other backgrounds (ttbar, dibosons), then extract σ(Z+b)/σ(Z+c).
 
+**2026-10-14 (not yet done):** the group asked about the AK4 jet-multiplicity plots (no
+"no parton" jets above N_jet = 3; bumps at N_jet = 6 for Z→ee and N_jet = 8 for Z→μμ). The
+answers and to-do list are in "Group questions on the AK4 jet-multiplicity plots" below.
+
 **Open questions for the group:**
 - hadronFlavour or partonFlavour as the reference truth for Z+c?
 - Leading jet only, or every jet in the event? (Leading only for now.)
@@ -42,6 +46,7 @@ Run 2 QCD_sf work is in `SESSION_NOTES.md`; this file is only the Run 3 ratio me
 | 2026-10-11 | Group meeting: switch to AK4. AK4 is now the default, AK8 kept as `Zb_Zc_ratio_AK8` | `f8748a6`, `8baed0b` |
 | 2026-10-11 | AK4 slides PDF with AK8 vs AK4 comparison | `d2024f2` |
 | 2026-10-12 | partonFlavour labels next to hadronFlavour, deck pages 21–28 | `d817f67`, `6e0b7e3` |
+| 2026-10-14 | Group questions on the N_jet plots answered (low-statistics MC artefacts), to-dos noted | |
 
 ## How to run
 
@@ -109,6 +114,38 @@ Cross sections and lumi: `metadata/Zb_Zc_ratio_xsections_Summer22.json`.
   Z→μμ b yield was negative (one negative-weight inclusive event; see
   `hists_zbzc_test/test_zbzc/NOTES_zbzc_run3.txt`). AK4 has no negative yields.
 - Small negative entries (−0.1%) in the migration matrix are NLO negative weights.
+
+## Group questions on the AK4 jet-multiplicity plots (2026-10-14)
+
+Answers come from `hists_zbzc_ak4_test/test_zbzc_ak4/test_zbzc_ak4.coffea` (1 file per
+sample). N_eff = (Σw)²/Σw², the number of MC events a bin is effectively built from.
+Plots: `plots/n_jet.png`, `plots/n_jet_parton.png`.
+
+**Q1: Why is the "no parton (0)" category missing in `n_jet_parton.png` above N_jet = 3?**
+- The stack colours each event by its *leading* jet's flavour, while the x axis counts *all* jets.
+- Only 20 raw events have a leading jet with partonFlavour 0 (8 Z→ee, 12 Z→μμ), 0.3–0.5% of
+  the scaled yield. All are hadron-light, have pT 30–50 GeV (two at 70–100), and almost all come
+  from the inclusive sample (one from PTLL-100). They fall in N_jet = 1–2 (Z→ee) and 1–3 (Z→μμ).
+- Interpretation: soft pileup or underlying-event jets just above 30 GeV. They lead only when no
+  hard matrix-element jet is present, which happens in low-multiplicity, low-pT(ℓℓ) events.
+  At higher N_jet a hard parton-matched jet leads.
+- **Not yet verified:** check `Jet_genJetIdx` for these jets (no gen-jet match means pileup).
+
+**Q2: Why does N_jet peak at 6 for Z→ee and at 8 for Z→μμ?**
+Neither bump is physics. Each is one or two high-weight MC events in a nearly empty bin.
+- Z→ee, N_jet = 6 (802) is more than N_jet = 5 (563): 785 of it is the inclusive sample with
+  N_eff = 1.7 (about 2 events), while N_jet = 5 holds 1 inclusive event (462).
+- Z→μμ, N_jet = 8 (19.7) is more than N_jet = 7 (2.4): N_jet = 8 is 1 PTLL-100 event (16.3), and
+  N_jet = 7 nearly cancels: a PTLL-200 negative-weight event (−3.5) plus a PTLL-400 event (+5.9).
+  Z→μμ N_jet = 6 (630) > N_jet = 5 (433) the same way: 589 of it is 1 inclusive event.
+- Per-event weights differ a lot: one inclusive event is about 300–600 events at 7.98 fb⁻¹,
+  a PTLL event about 0.1–20. This is the same low-pT statistics problem as in "Next steps" item 1.
+
+**To do from these questions:**
+- [ ] Merge N_jet ≥ 5 into one last bin and draw MC statistical uncertainty bands on the stacks.
+- [ ] genJet-match check for partonFlavour-0 leading jets (pileup hypothesis).
+- [ ] Optionally fill N_jet with every jet's flavour, not only the leading jet's.
+- [ ] Recheck both plots after the full-statistics MC run.
 
 ## Gotchas
 
