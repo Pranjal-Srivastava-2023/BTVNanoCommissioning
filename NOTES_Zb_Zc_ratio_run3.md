@@ -10,8 +10,8 @@ Run 2 QCD_sf work is in `SESSION_NOTES.md`; this file is only the Run 3 ratio me
 `myfork/coffea_machine` (`6e0b7e3` before this notes commit); nothing is running.
 
 **Look at first:**
-- `hists_zbzc_ak4_test/test_zbzc_ak4/slides_zbzc_ak4_summer22_test.pdf`: 28-page AK4 deck
-  (setup, cutflow, yields, AK8 vs AK4, kinematics, PNet taggers, hadron vs parton flavour)
+- `hists_zbzc_ak4_test/test_zbzc_ak4/slides_zbzc_ak4_summer22_test.pdf`: 29-page AK4 deck
+  (setup, cutflow, yields, AK8 vs AK4, kinematics, PNet taggers, hadron vs parton flavour, pileup check)
 - `hists_zbzc_ak4_test/test_zbzc_ak4/yields.txt`: cutflows, raw and scaled yields under
   both flavour definitions, and the migration tables
 - `hists_zbzc_test/test_zbzc/`: the older AK8 test (deck, notes `NOTES_zbzc_run3.txt`)

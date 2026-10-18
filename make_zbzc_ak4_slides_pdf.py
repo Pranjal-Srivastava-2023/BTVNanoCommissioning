@@ -418,6 +418,51 @@ for name, title, caption in pplots:
     footer(fig, FOOT + " · stacked by leading AK4 jet partonFlavour · Z→ee left, Z→μμ right", page_no)
     save(fig)
     page_no += 1
+
+
+# GenJet match of the leading jet: partonFlavour 0 = pileup?
+def genmatch(o, ch, pf=None, hf=None, scaled=False):
+    """(matched, nomatch) leading-jet counts; raw, or scaled to the lumi when `scaled`."""
+    n = {"matched": 0.0, "nomatch": 0.0}
+    for ds, od in o.items():
+        sc = xs[ds] * LUMI / od["sumw"] if scaled else 1.0
+        src = od["sumw_genmatch" if scaled else "nevt_genmatch"][ch]
+        for k, v in src.items():
+            h, p, g = k.split("|")
+            if pf in (None, p) and hf in (None, h):
+                n[g] += v * sc
+    return n["matched"], n["nomatch"]
+
+
+fig = page()
+y = heading(fig, "Leading jets with partonFlavour 0 are pileup", y=96) + 20
+none_ee, none_mm = (genmatch(out, ch, "none") for ch in CHS)
+y = text(fig, 128, y, f"A jet with no GenJet (pT > 10 GeV) within ΔR < 0.4 (Jet_genJetIdx = −1) is a pileup jet. "
+         f"All {int(none_ee[1] + none_mm[1])} leading jets with partonFlavour 0 "
+         f"({int(none_ee[1])} Z→ee, {int(none_mm[1])} Z→μμ) have no GenJet match.", 28, BODY, width=1664) + 24
+g_cols = [("Leading-jet partonFlavour", 520, "left"), ("Z→ee no GenJet / all", 380, "right"), ("Z→ee %", 192, "right"),
+          ("Z→μμ no GenJet / all", 380, "right"), ("Z→μμ %", 192, "right")]
+g_rows = []
+for p in pfl + [None]:
+    row = [p or "all"]
+    for ch in CHS:
+        m, u = genmatch(out, ch, p)
+        row += [f"{int(u):,} / {int(m + u):,}", f"{100 * u / (m + u):.2f}" if m + u else "–"]
+    g_rows.append(row)
+y = table(fig, 128, y, g_cols, g_rows, 26, shade=(4, 5)) + 30
+nob = sum(genmatch(out, ch, hf="b")[1] for ch in CHS)
+noc = sum(genmatch(out, ch, hf="c")[1] for ch in CHS)
+scl = " and ".join(f"{100 * u / (m + u):.1f}% ({lab})" for ch, lab in CHS.items()
+                   for m, u in [genmatch(out, ch, scaled=True)])
+for s in [f"Not every pileup jet has partonFlavour 0: most unmatched leading jets carry a gluon label "
+          f"(a soft ISR/UE gluon is ghost-matched, but there is no GenJet).",
+          f"Pileup does not reach the heavy-flavour yields: {int(nob)} unmatched hadron-b and {int(noc)} hadron-c "
+          f"leading jets. Scaled, {scl} of leading jets are unmatched. This is above the raw fraction because the events "
+          f"come from the high-weight inclusive sample, so it waits for the full MC run."]:
+    y = text(fig, 128, y, "• " + s, 26, DARK, width=1664) + 8
+footer(fig, FOOT + " · raw (unweighted) leading-jet counts · counters nevt_genmatch / sumw_genmatch", page_no)
+save(fig)
+page_no += 1
 page_no -= 1
 
 pdf.close()
