@@ -463,6 +463,43 @@ for s in [f"Not every pileup jet has partonFlavour 0: most unmatched leading jet
 footer(fig, FOOT + " · raw (unweighted) leading-jet counts · counters nevt_genmatch / sumw_genmatch", page_no)
 save(fig)
 page_no += 1
+
+# N_jet bumps vs MC statistics: 1 file vs 20 files per sample (compare_njet_zbzc.py)
+dir20 = "hists_zbzc_ak4_20files/merged"
+if os.path.exists(os.path.join(dir20, "plots", "n_jet_stats_compare.png")):
+    out20 = load_dir(dir20)
+
+    def njet(o, ch, n):
+        """Scaled yield and N_eff in N_jet bin n, all flavours."""
+        v = var = 0.0
+        for ds, od in o.items():
+            sc = xs[ds] * LUMI / od["sumw"]
+            h = od["n_jet"][{"channel": ch, "flav": sum, "pflav": sum, "n": n}]
+            v += h.value * sc
+            var += h.variance * sc ** 2
+        return v, (v * v / var if var > 0 else 0.0)
+
+    def nj(o, ch, n):
+        v, ne = njet(o, ch, n)
+        return f"{num(v)} (N_eff {ne:.1f})"
+
+    fig = page()
+    y = heading(fig, "N_jet bumps go away with more MC", y=96) + 20
+    y = text(fig, 128, y, f"20 files per sample instead of 1. Z→ee N_jet = 6: {nj(out, 'Zee', 6)} → {nj(out20, 'Zee', 6)}; "
+             f"Z→μμ N_jet = 6: {nj(out, 'Zmm', 6)} → {nj(out20, 'Zmm', 6)}, N_jet = 8: {nj(out, 'Zmm', 8)} → "
+             f"{nj(out20, 'Zmm', 8)}. Both spectra now fall smoothly up to N_jet = 7. The new Z→ee N_jet = 8 "
+             f"point, {nj(out20, 'Zee', 8)}, is again a single inclusive-sample event: N_jet ≥ 6 still needs the full run.",
+             26, BODY, width=1664) + 16
+    img = mpimg.imread(os.path.join(dir20, "plots", "n_jet_stats_compare.png"))
+    hpx = min(1664 * img.shape[0] / img.shape[1], 1000 - 24 - y)
+    wpx = hpx * img.shape[1] / img.shape[0]
+    ax = fig.add_axes([(W - wpx) / 2 / W, 1 - (y + hpx) / H, wpx / W, hpx / H])
+    ax.imshow(img)
+    ax.axis("off")
+    footer(fig, "Summer22 DY→ℓℓ MC · AK4 jets · all flavours, scaled to 7.98 fb⁻¹ · error bars: MC stat · "
+           f"20-file plots in {dir20}/plots", page_no)
+    save(fig)
+    page_no += 1
 page_no -= 1
 
 pdf.close()

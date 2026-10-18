@@ -1,0 +1,90 @@
+input: hists_zbzc_ak4_20files/merged/zbzc_ak4_20files.coffea
+lumi: 7.98 /fb, 13.6 TeV, Summer22, AK4 jets
+
+== Zee: raw MC events passing each step (after the LHE pT(ll) slice)
+sample             all   trigger   leptons        OS     Zmass       MET       jet
+PTLL-100       2933762    840163    238941    236499    218939    193805    186102
+PTLL-200       2735083    929177    344674    339940    309699    256244    252727
+PTLL-400       1560230    576282    264078    259407    233151    171946    171561
+PTLL-600       1236732    306140    138357    135652    112766     73911     73866
+inclusive      3266113    541950    165143    164108    158226    150078     39242
+
+== Zmm: raw MC events passing each step (after the LHE pT(ll) slice)
+sample             all   trigger   leptons        OS     Zmass       MET       jet
+PTLL-100       2933762    886704    372657    372607    344587    305050    292532
+PTLL-200       2735083    949986    504655    504584    457929    375168    369611
+PTLL-400       1560230    591000    365818    365780    324198    226470    225901
+PTLL-600       1236732    435749    279760    279731    241960    138241    138146
+inclusive      3266113    690771    290730    290720    280562    266331     68684
+
+== raw (unweighted) MC events after full selection, by AK4 jet flavour
+-- Zee
+sample               l         c         b     total
+PTLL-100        158493     16737     10872    186102
+PTLL-200        220030     20935     11762    252727
+PTLL-400        151865     13533      6163    171561
+PTLL-600         65647      5860      2359     73866
+inclusive        33699      3576      1967     39242
+all             629734     60641     33123    723498
+-- Zmm
+sample               l         c         b     total
+PTLL-100        249868     25983     16681    292532
+PTLL-200        322759     29856     16996    369611
+PTLL-400        200221     17632      8048    225901
+PTLL-600        123036     10896      4214    138146
+inclusive        59414      6029      3241     68684
+all             955298     90396     49180   1094874
+
+== scaled yields after full selection, by AK4 jet flavour
+               l         c         b     total
+Zee     373416.5   34579.9   16853.2  424849.6
+  frac     0.879     0.081     0.040
+Zmm     674884.4   62972.2   32587.5  770444.2
+  frac     0.876     0.082     0.042
+
+== scaled yields after full selection, by AK4 jet partonFlavour
+            none         g       uds         c         b     total
+Zee       1830.1  115922.0  252740.1   37075.1   17282.3  424849.6
+  frac     0.004     0.273     0.595     0.087     0.041
+Zmm       3421.0  214234.3  452533.8   66721.2   33533.9  770444.2
+  frac     0.004     0.278     0.587     0.087     0.044
+
+== hadron (rows) x parton (columns) flavour migration
+-- Zee: scaled, fraction of each hadron-flavour row
+                 b         c       uds         g      none
+b            0.993     0.004     0.003     0.000     0.000
+c            0.000     0.955     0.031     0.013     0.000
+l            0.001     0.011     0.674     0.309     0.005
+-- Zee: raw (unweighted) events
+                 b         c       uds         g      none
+b            32932        12       110        69         0
+c              183     57189      2111      1157         1
+l              714      6432    449387    173070       131
+-- Zmm: scaled, fraction of each hadron-flavour row
+                 b         c       uds         g      none
+b            0.993     0.000     0.001     0.006     0.000
+c            0.001     0.951     0.026     0.021    -0.000
+l            0.002     0.010     0.668     0.315     0.005
+-- Zmm: raw (unweighted) events
+                 b         c       uds         g      none
+b            48876        26       171       107         0
+c              247     85036      3417      1695         1
+l             1102     10008    680719    263203       266
+
+== leading AK4 jet GenJet match (Jet_genJetIdx >= 0), by partonFlavour
+-- Zee
+           matched   nomatch  nomatch%   scaled%
+b            33824         5      0.01      0.24
+c            63619        14      0.02      0.64
+uds         451511        97      0.02      0.43
+g           173933       363      0.21      3.66
+none             1       131     99.24     99.98
+all         722888       610      0.08      1.75
+-- Zmm
+           matched   nomatch  nomatch%   scaled%
+b            50219         6      0.01     -0.07
+c            95044        26      0.03      0.64
+uds         684120       187      0.03      0.47
+g           264384       621      0.23      3.47
+none             3       264     98.88     99.96
+all        1093770      1104      0.10      1.74

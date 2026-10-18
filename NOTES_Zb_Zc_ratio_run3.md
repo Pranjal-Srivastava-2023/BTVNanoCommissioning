@@ -10,8 +10,10 @@ Run 2 QCD_sf work is in `SESSION_NOTES.md`; this file is only the Run 3 ratio me
 `myfork/coffea_machine` (`6e0b7e3` before this notes commit); nothing is running.
 
 **Look at first:**
-- `hists_zbzc_ak4_test/test_zbzc_ak4/slides_zbzc_ak4_summer22_test.pdf`: 29-page AK4 deck
-  (setup, cutflow, yields, AK8 vs AK4, kinematics, PNet taggers, hadron vs parton flavour, pileup check)
+- `hists_zbzc_ak4_test/test_zbzc_ak4/slides_zbzc_ak4_summer22_test.pdf`: 30-page AK4 deck
+  (setup, cutflow, yields, AK8 vs AK4, kinematics, PNet taggers, hadron vs parton flavour,
+  pileup check p. 29, N_jet at 1 vs 20 files p. 30)
+- `hists_zbzc_ak4_20files/merged/`: 20-files-per-sample run (plots, `yields.txt`)
 - `hists_zbzc_ak4_test/test_zbzc_ak4/yields.txt`: cutflows, raw and scaled yields under
   both flavour definitions, and the migration tables
 - `hists_zbzc_test/test_zbzc/`: the older AK8 test (deck, notes `NOTES_zbzc_run3.txt`)
@@ -29,7 +31,10 @@ Run 2 QCD_sf work is in `SESSION_NOTES.md`; this file is only the Run 3 ratio me
    partonFlavour. They agree for b and differ by ~1 percentage point for c (see results).
 5. Add data (2022 C–D) and other backgrounds (ttbar, dibosons), then extract σ(Z+b)/σ(Z+c).
 
-**2026-10-14 (not yet done):** the group asked about the AK4 jet-multiplicity plots (no
+**2026-10-17/18:** both 2026-10-14 questions are answered (pileup confirmed; the bumps disappear
+with 20 files per sample). Left: merge N_jet ≥ 5 + MC stat bands, then the full run.
+
+**2026-10-14:** the group asked about the AK4 jet-multiplicity plots (no
 "no parton" jets above N_jet = 3; bumps at N_jet = 6 for Z→ee and N_jet = 8 for Z→μμ). The
 answers and to-do list are in "Group questions on the AK4 jet-multiplicity plots" below.
 
@@ -46,7 +51,9 @@ answers and to-do list are in "Group questions on the AK4 jet-multiplicity plots
 | 2026-10-11 | Group meeting: switch to AK4. AK4 is now the default, AK8 kept as `Zb_Zc_ratio_AK8` | `f8748a6`, `8baed0b` |
 | 2026-10-11 | AK4 slides PDF with AK8 vs AK4 comparison | `d2024f2` |
 | 2026-10-12 | partonFlavour labels next to hadronFlavour, deck pages 21–28 | `d817f67`, `6e0b7e3` |
-| 2026-10-14 | Group questions on the N_jet plots answered (low-statistics MC artefacts), to-dos noted | |
+| 2026-10-14 | Group questions on the N_jet plots answered (low-statistics MC artefacts), to-dos noted | `a05510c` |
+| 2026-10-17 | GenJet-match counters: partonFlavour-0 leading jets are pileup; deck page 29 | `31ba6bc`, `03f9bd3` |
+| 2026-10-18 | 20 files per sample: N_jet bumps gone; deck page 30 | |
 
 ## How to run
 
@@ -62,6 +69,14 @@ timeout 900 python runner.py --wf Zb_Zc_ratio --json metadata/Zb_Zc_ratio_Summer
 
 python plot_zbzc.py hists_zbzc_ak4_test/test_zbzc_ak4/test_zbzc_ak4.coffea          # plots + yields.txt
 python make_zbzc_ak4_slides_pdf.py hists_zbzc_ak4_test/test_zbzc_ak4 hists_zbzc_test/test_zbzc   # deck
+                                         # (adds the 1-vs-20-files N_jet page if the 20-file output exists)
+
+# 20 files per sample (~23 min locally, one runner call per sample with timeout + 3 retries)
+./run_zbzc_ak4_20files.sh                # per-sample outputs in hists_zbzc_ak4_20files/zbzc_ak4_20files/
+# merge them (dict union, keys are datasets) into hists_zbzc_ak4_20files/merged/zbzc_ak4_20files.coffea, then
+python plot_zbzc.py hists_zbzc_ak4_20files/merged/zbzc_ak4_20files.coffea
+python compare_njet_zbzc.py hists_zbzc_ak4_test/test_zbzc_ak4/test_zbzc_ak4.coffea "1 file / sample" \
+    hists_zbzc_ak4_20files/merged/zbzc_ak4_20files.coffea "20 files / sample" hists_zbzc_ak4_20files/merged/plots
 ```
 
 Full fileset: `metadata/Zb_Zc_ratio_Summer22_DY.json` (built by `make_zbzc_fileset.py`).
@@ -150,12 +165,20 @@ Neither bump is physics. Each is one or two high-weight MC events in a nearly em
   Z→μμ N_jet = 6 (630) > N_jet = 5 (433) the same way: 589 of it is 1 inclusive event.
 - Per-event weights differ a lot: one inclusive event is about 300–600 events at 7.98 fb⁻¹,
   a PTLL event about 0.1–20. This is the same low-pT statistics problem as in "Next steps" item 1.
+- **Checked 2026-10-18 with 20 files per sample** (`hists_zbzc_ak4_20files/merged/`, deck page 30,
+  `plots/n_jet_stats_compare.png` + `.txt`). Both bumps are gone: Z→ee N_jet = 6 802 → 46,
+  Z→μμ N_jet = 6 630 → 108 and N_jet = 8 19.7 → 0.0. Both spectra fall smoothly up to N_jet = 7,
+  and Z→μμ out to 9. One new single-event point: Z→ee N_jet = 8 = 34 (N_eff 1.1), a single
+  inclusive-sample event (31.6). N_jet ≥ 6 is still N_eff ≲ 3 and needs the full run. The
+  inclusive sample is the limit: 20 files give 39k / 69k selected events (Z→ee / Z→μμ) against
+  74k–370k for each PTLL sample, and all 525 inclusive files would give ~26× more.
 
 **To do from these questions:**
 - [ ] Merge N_jet ≥ 5 into one last bin and draw MC statistical uncertainty bands on the stacks.
 - [x] genJet-match check for partonFlavour-0 leading jets: confirmed pileup (2026-10-17).
 - [ ] Optionally fill N_jet with every jet's flavour, not only the leading jet's.
-- [ ] Recheck both plots after the full-statistics MC run.
+- [x] Recheck with more MC: 20 files per sample removes both bumps (2026-10-18).
+- [ ] Recheck the N_jet ≥ 6 tail after the full-statistics MC run.
 
 ## Gotchas
 
