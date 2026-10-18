@@ -197,6 +197,28 @@ if AK4:
         for f in HF:
             n = [sum(o["nevt_migration"][ch][f"{f}|{p}"] for o in out.values()) for p in PF]
             lines.append(f"{f:8s}" + "".join(f"{v:10d}" for v in n))
+    if all("nevt_genmatch" in o for o in out.values()):
+        # leading jets without a GenJet (pT > 10) within dR 0.4 = pileup candidates
+        lines.append("")
+        lines.append("== leading AK4 jet GenJet match (Jet_genJetIdx >= 0), by partonFlavour")
+        for ch in ["Zee", "Zmm"]:
+            lines.append(f"-- {ch}")
+            lines.append(f"{'':8s}{'matched':>10s}{'nomatch':>10s}{'nomatch%':>10s}{'scaled%':>10s}")
+            for p in PF + ["all"]:
+                n = {"matched": 0, "nomatch": 0}
+                w = {"matched": 0.0, "nomatch": 0.0}
+                for ds, o in out.items():
+                    s = xs[ds] * LUMI / o["sumw"]
+                    for k, v in o["nevt_genmatch"][ch].items():
+                        _, pf, g = k.split("|")
+                        if p in ("all", pf):
+                            n[g] += v
+                            w[g] += o["sumw_genmatch"][ch][k] * s
+                lines.append(
+                    f"{p:8s}{n['matched']:10d}{n['nomatch']:10d}"
+                    f"{100 * n['nomatch'] / max(sum(n.values()), 1):10.2f}"
+                    f"{100 * w['nomatch'] / sum(w.values()) if sum(w.values()) else 0:10.2f}"
+                )
 open(os.path.join(os.path.dirname(infile), "yields.txt"), "w").write("\n".join(lines) + "\n")
 print("\n".join(lines))
 print("plots in", outdir)

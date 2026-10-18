@@ -184,6 +184,15 @@ class NanoProcessor(processor.ProcessorABC):
             output["nevt_migration"] = {
                 c: processor.defaultdict_accumulator(int) for c in CHANNELS
             }
+            # leading-jet GenJet match (Jet_genJetIdx >= 0) per hadron x parton
+            # flavour, keys "hadron|parton|gen" with gen = matched / nomatch;
+            # unmatched jets are the pileup candidates
+            output["nevt_genmatch"] = {
+                c: processor.defaultdict_accumulator(int) for c in CHANNELS
+            }
+            output["sumw_genmatch"] = {
+                c: processor.defaultdict_accumulator(float) for c in CHANNELS
+            }
 
         ## Lumi mask (data) / LHE pT(ll) stitching slice (DY MC)
         req_lumi = np.ones(len(events), dtype="bool")
@@ -294,6 +303,18 @@ class NanoProcessor(processor.ProcessorABC):
                 ):
                     output["nevt_migration"][channel][str(hp)] += int(n)
                 flavs["pflav"] = pflav
+                if not isRealData:
+                    gen = np.where(
+                        ak.to_numpy(jet.genJetIdx) >= 0, "matched", "nomatch"
+                    )
+                    key = np.char.add(np.char.add(np.char.add(flav, "|"), pflav), "|")
+                    key = np.char.add(key, gen)
+                    for k in np.unique(key):
+                        sel_k = key == k
+                        output["nevt_genmatch"][channel][str(k)] += int(np.sum(sel_k))
+                        output["sumw_genmatch"][channel][str(k)] += float(
+                            np.sum(weight[sel_k])
+                        )
 
             def fill(name, **values):
                 output[name].fill(channel=channel, **flavs, **values, weight=weight)

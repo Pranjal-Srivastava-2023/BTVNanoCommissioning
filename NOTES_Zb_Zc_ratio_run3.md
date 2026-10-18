@@ -129,7 +129,17 @@ Plots: `plots/n_jet.png`, `plots/n_jet_parton.png`.
 - Interpretation: soft pileup or underlying-event jets just above 30 GeV. They lead only when no
   hard matrix-element jet is present, which happens in low-multiplicity, low-pT(ℓℓ) events.
   At higher N_jet a hard parton-matched jet leads.
-- **Not yet verified:** check `Jet_genJetIdx` for these jets (no gen-jet match means pileup).
+- **Verified 2026-10-17: they are pileup.** All 20 (8 Z→ee, 12 Z→μμ) have `Jet_genJetIdx = -1`,
+  so no GenJet (pT > 10 GeV) lies within ΔR 0.4. Every leading jet with a b, c, uds or g parton
+  label has a GenJet match, except 0.0–0.5% of them (raw). Workflow counters `nevt_genmatch` /
+  `sumw_genmatch`; table at the end of `yields.txt`.
+  - Leading jets with no GenJet match: 36 raw in Z→ee (0.17%), 55 in Z→μμ (0.17%). Most are
+    parton-labelled gluon (20 and 37), not "none". So partonFlavour 0 picks out only part of
+    the pileup. Pileup jets near a soft ISR/UE gluon get a parton label but still no GenJet.
+  - All are hadron-light apart from a single hadron-c jet (Z→ee), and none are hadron-b, so
+    pileup does not touch the b yield. Scaled, the unmatched fraction is 1.9% (Z→ee) and 1.3% (Z→μμ).
+    That is larger than the raw fraction because the events sit in the high-weight inclusive sample,
+    so it is statistically poor until the full MC run.
 
 **Q2: Why does N_jet peak at 6 for Z→ee and at 8 for Z→μμ?**
 Neither bump is physics. Each is one or two high-weight MC events in a nearly empty bin.
@@ -143,7 +153,7 @@ Neither bump is physics. Each is one or two high-weight MC events in a nearly em
 
 **To do from these questions:**
 - [ ] Merge N_jet ≥ 5 into one last bin and draw MC statistical uncertainty bands on the stacks.
-- [ ] genJet-match check for partonFlavour-0 leading jets (pileup hypothesis).
+- [x] genJet-match check for partonFlavour-0 leading jets: confirmed pileup (2026-10-17).
 - [ ] Optionally fill N_jet with every jet's flavour, not only the leading jet's.
 - [ ] Recheck both plots after the full-statistics MC run.
 

@@ -70,3 +70,21 @@ l            0.001     0.011     0.635     0.349     0.003
 b             1662         0         7         1         0
 c                9      2716        99        49         0
 l               43       310     20064      8134        12
+
+== leading AK4 jet GenJet match (Jet_genJetIdx >= 0), by partonFlavour
+-- Zee
+           matched   nomatch  nomatch%   scaled%
+b             1203         0      0.00      0.00
+c             1979         1      0.05      0.02
+uds          12984         7      0.05      0.46
+g             5165        20      0.39      3.95
+none             0         8    100.00    100.00
+all          21331        36      0.17      1.92
+-- Zmm
+           matched   nomatch  nomatch%   scaled%
+b             1714         0      0.00      0.00
+c             3024         2      0.07      1.07
+uds          20166         4      0.02      0.12
+g             8147        37      0.45      2.73
+none             0        12    100.00    100.00
+all          33051        55      0.17      1.28
