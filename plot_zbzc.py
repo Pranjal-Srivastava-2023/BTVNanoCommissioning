@@ -1,7 +1,7 @@
 """Plots and yield tables for the Zb_Zc_ratio workflow output (MC only so far).
 
 Each sample is scaled by xsec * lumi / sumw (metadata/Zb_Zc_ratio_xsections_Summer22.json)
-and the histograms are stacked by jet flavour, per channel, log-scale y.
+and the histograms are stacked by jet flavour, per channel, log-scale y (linear for m(ll)).
 Works for both the AK4 (Zb_Zc_ratio) and AK8 (Zb_Zc_ratio_AK8) outputs, detected
 from the histogram names. Also writes the 2D tagger map per flavour group
 (AK4: PNet CvL vs CvB, AK8: XbbVsQCD vs XccVsQCD) and a cutflow/yield table.
@@ -37,6 +37,7 @@ AK4 = "jet_pt" in next(iter(out.values()))
 JET = "AK4" if AK4 else "AK8"
 COLORS = {"l": "#9e9e9e", "c": "#7fb3e6", "cc": "#1f5fa8", "b": "#f2a65a", "bb": "#c0392b"}
 ZVARS = ["z_mass", "z_pt", "lep0_pt", "lep1_pt", "lhe_vpt"]
+LINEAR = {"z_mass"}  # linear y-axis (a peak, no long tail); everything else log-y
 if AK4:
     FLAVS = ["l", "c", "b"]  # bottom to top of the stack
     LABELS = {"l": "light", "c": "c (hadronFlavour 4)", "b": "b (hadronFlavour 5)"}
@@ -86,12 +87,16 @@ def stack(var, axname, flavs, colors, labels, suffix=""):
         hs = [h[{"channel": ch, axname: f}] for f in flavs]
         hep.histplot(hs, ax=ax, stack=True, histtype="fill",
                      color=[colors[f] for f in flavs], label=[labels[f] for f in flavs])
-        ax.set_yscale("log")
         ax.set_ylabel("Events / bin")
-        # log-y floor at 0.1 events/bin (bins below that are +/- NLO weight
-        # cancellations), headroom above the stacked peak for the legend
         tot = sum(x.values() for x in hs)
-        ax.set_ylim(0.1, max(tot.max(), 1.0) * 50)
+        if var in LINEAR:
+            # headroom above the peak for the legend
+            ax.set_ylim(0, max(tot.max(), 1.0) * 1.45)
+        else:
+            # log-y floor at 0.1 events/bin (bins below that are +/- NLO weight
+            # cancellations), headroom above the stacked peak for the legend
+            ax.set_yscale("log")
+            ax.set_ylim(0.1, max(tot.max(), 1.0) * 50)
         ax.text(0.04, 0.94, ch.replace("Zee", r"Z$\to$ee").replace("Zmm", r"Z$\to\mu\mu$"),
                 transform=ax.transAxes, fontsize=20, va="top")
         # legend top-to-bottom in the same order as the stack

@@ -2,7 +2,8 @@
 so the two decks can be compared page by page.
 
 Setup, samples, selection, cutflow per channel, yields by AK4 jet flavour, an AK8 vs AK4
-comparison, the kinematic and PNet tagger plots from plot_zbzc.py, then a hadronFlavour vs
+comparison, the kinematic and PNet tagger plots from plot_zbzc.py, a page on the CMS jet-flavour
+truth recommendation (hadronFlavour, with the TWiki link) and our use of it, then a hadronFlavour vs
 partonFlavour section (yields under both definitions, migration matrix, plots stacked by
 partonFlavour). Cutflow and yield numbers are read from the coffea outputs (not typed in).
 
@@ -95,12 +96,12 @@ def page(bg=LIGHT):
     return fig
 
 
-def text(fig, x, y, s, size, color=DARK, weight="normal", ha="left", width=None, family=None, ls=1.4):
+def text(fig, x, y, s, size, color=DARK, weight="normal", ha="left", width=None, family=None, ls=1.4, url=None):
     """Text with its top-left at (x, y) px; wrapped to `width` px. Returns the bottom y."""
     if width:
         s = "\n".join(textwrap.fill(p, max(1, int(width / (0.55 * size)))) for p in s.split("\n"))
     fig.text(x / W, 1 - y / H, s, fontsize=size * PX, color=color, weight=weight, ha=ha, va="top",
-             family=family or plt.rcParams["font.family"], linespacing=ls)
+             family=family or plt.rcParams["font.family"], linespacing=ls, url=url)
     return y + size * ls * (s.count("\n") + 1)
 
 
@@ -230,7 +231,7 @@ blocks = [
                                          "No Z pT requirement"]),
      ("Weights and flavour", ["genWeight × pileup × lepton ID/iso/reco SFs", "No trigger SF yet",
                               "Jet flavour from hadronFlavour: b (5), c (4), light; no bb/cc split for AK4",
-                              "Also labelled by |partonFlavour|: b, c, uds, g, none (pages 21+)",
+                              "Also labelled by |partonFlavour|: b, c, uds, g, none (pages 21+, CMS recommendation on p. 21)",
                               "Tagger: PNet AK4 B, CvL, CvB"])],
 ]
 for i, col in enumerate(blocks):
@@ -362,7 +363,7 @@ page_no += 1
 
 # kinematic and tagger plots
 plots = [
-    ("z_mass", "Dilepton mass", "m(ℓℓ) after the full selection (71–111 GeV window): peaks at the Z mass in both channels."),
+    ("z_mass", "Dilepton mass", "m(ℓℓ) after the full selection (71–111 GeV window): peaks at the Z mass in both channels. Linear y-axis."),
     ("z_pt", "Dilepton pT", "pT(ℓℓ) of the Z candidate after the full selection. No Z pT cut: dominated by low pT, unlike the boosted AK8 selection."),
     ("lep0_pt", "Leading-lepton pT", "Leading lepton of the Z candidate, after the full selection (pT > 35 GeV required)."),
     ("lep1_pt", "Subleading-lepton pT", "Subleading lepton of the Z candidate, after the full selection (pT > 25 GeV required)."),
@@ -401,8 +402,62 @@ footer(fig, FOOT + " · Z→ee + Z→μμ", page_no)
 save(fig)
 page_no += 1
 
+def migration(o, f, p):
+    """Scaled fraction of hadron-flavour-f jets with parton flavour p, both channels summed."""
+    num_, den = 0.0, 0.0
+    for ds, od in o.items():
+        sc = xs[ds] * LUMI / od["sumw"]
+        for ch in CHS:
+            h = od["jet_pt"][{"channel": ch, "flav": f}]
+            num_ += h[{"pflav": p}].sum(flow=True).value * sc
+            den += h.sum(flow=True).value * sc
+    return 100 * num_ / den
+
+
+# jet-flavour truth: CMS/BTV recommendation and what the workflow does
+TWIKI = "https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideBTagMCTools#Hadron_parton_based_jet_flavour"
+fig = page()
+y = heading(fig, "Jet flavour truth: CMS vs our choice", y=96) + 32
+cw = (1664 - 32) / 2
+cols_ = [("CMS / BTV recommendation", [
+             "Hadron-based flavour by ghost association: generated B and C hadrons get their momenta scaled "
+             "by 10⁻¹⁸ and are re-clustered with the jet constituents (same algorithm, same R), so the jet "
+             "is unchanged but now contains the hadron \"ghosts\"",
+             "hadronFlavour = 5 if ≥ 1 B hadron, 4 if ≥ 1 C hadron and no B, else 0 (udsg)",
+             "PAT default since CMSSW_7_0_5_patch1; in NanoAOD as Jet_hadronFlavour",
+             "BTV b/c-tag SFs are defined for it: correctionlib input \"flavor: hadron flavor "
+             "definition: 5=b, 4=c, 0=udsg\" (2022_Summer22 btagging / ctagging)",
+             "partonFlavour (ghost partons, hadron flavour has priority) only to split light jets into "
+             "uds / g; the ΔR < 0.3 parton matching is the Run 1 legacy definition"]),
+         ("What Zb_Zc_ratio (AK4) does", [
+             "Takes Jet_hadronFlavour of the leading selected AK4 jet straight from NanoAODv12: "
+             "5 → b, 4 → c, else → light (Zb_Zc_ratio.jet_flavour)",
+             "No re-clustering or ΔR matching of our own: same ghost-association labels as CMSSW",
+             "No b/bb or c/cc split: NanoAOD AK4 jets carry no B/C hadron counts (the AK8 version "
+             "uses FatJet_nBHadrons / nCHadrons)",
+             "|Jet_partonFlavour| kept as a second axis (b, c, uds, g, none) as a cross-check only: "
+             f"{migration(out, 'b', 'b'):.0f}% of hadron-b and {migration(out, 'c', 'c'):.0f}% of hadron-c "
+             "jets agree (next pages)",
+             "Same convention as the BTV SFs, so b/c-tag SFs can be applied directly once added"])]
+bh = 545
+for i, (title, items) in enumerate(cols_):
+    cx = 128 + i * (cw + 32)
+    box(fig, cx, y, cw, bh, PANEL)
+    yy = text(fig, cx + 36, y + 30, title, 32, ACCENT, "bold", ls=1.2) + 12
+    for it in items:
+        yy = text(fig, cx + 36, yy, "• " + it, 22, DARK, width=cw - 72, ls=1.35) + 6
+y += bh + 28
+box(fig, 128, y, 1664, 120, "#FDF1E4")
+box(fig, 128, y, 6, 120, "#E07B24")
+text(fig, 168, y + 18, "Official reference: CMS TWiki \"Jet Flavour Identification (MC Truth)\"", 24, DARK, "bold")
+text(fig, 168, y + 56, TWIKI, 21, ACCENT, family="DejaVu Sans Mono", url=TWIKI)  # clickable in the PDF
+text(fig, 168, y + 88, "See also CMS, JINST 13 (2018) P05011 (arXiv:1712.07158), jet flavour definition", 20, BODY)
+footer(fig, FOOT + " · leading AK4 jet, both channels, scaled to 7.98 fb⁻¹", page_no)
+save(fig)
+page_no += 1
+
 # hadronFlavour vs partonFlavour: definitions and yields under both
-pfl = ["b", "c", "uds", "g", "none"]
+pfl =["b", "c", "uds", "g", "none"]
 yp = yields(out, "jet_pt", pfl, axis="pflav")
 fig = page()
 y = heading(fig, "hadronFlavour vs partonFlavour") + 40
@@ -434,18 +489,6 @@ save(fig)
 page_no += 1
 
 # migration matrix
-def migration(o, f, p):
-    """Scaled fraction of hadron-flavour-f jets with parton flavour p, both channels summed."""
-    num_, den = 0.0, 0.0
-    for ds, od in o.items():
-        sc = xs[ds] * LUMI / od["sumw"]
-        for ch in CHS:
-            h = od["jet_pt"][{"channel": ch, "flav": f}]
-            num_ += h[{"pflav": p}].sum(flow=True).value * sc
-            den += h.sum(flow=True).value * sc
-    return 100 * num_ / den
-
-
 MIGRATION_CAPTION = (
     f"Each row shows where the jets of one hadronFlavour land in partonFlavour. {migration(out, 'b', 'b'):.0f}% of "
     f"hadron-b and {migration(out, 'c', 'c'):.0f}% of hadron-c jets also have partonFlavour b / c (both channels). "
