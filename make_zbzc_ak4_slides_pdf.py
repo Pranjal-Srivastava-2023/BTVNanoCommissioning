@@ -417,42 +417,42 @@ def migration(o, f, p):
 # jet-flavour truth: CMS/BTV recommendation and what the workflow does
 TWIKI = "https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideBTagMCTools#Hadron_parton_based_jet_flavour"
 fig = page()
-y = heading(fig, "Jet flavour truth: CMS vs our choice", y=96) + 32
+y = heading(fig, "Jet flavour: what CMS recommends", y=96) + 32
 cw = (1664 - 32) / 2
-cols_ = [("CMS / BTV recommendation", [
-             "Hadron-based flavour by ghost association: generated B and C hadrons get their momenta scaled "
-             "by 10⁻¹⁸ and are re-clustered with the jet constituents (same algorithm, same R), so the jet "
-             "is unchanged but now contains the hadron \"ghosts\"",
-             "hadronFlavour = 5 if ≥ 1 B hadron, 4 if ≥ 1 C hadron and no B, else 0 (udsg)",
-             "PAT default since CMSSW_7_0_5_patch1; in NanoAOD as Jet_hadronFlavour",
-             "BTV b/c-tag SFs are defined for it: correctionlib input \"flavor: hadron flavor "
-             "definition: 5=b, 4=c, 0=udsg\" (2022_Summer22 btagging / ctagging)",
-             "partonFlavour (ghost partons, hadron flavour has priority) only to split light jets into "
-             "uds / g; the ΔR < 0.3 parton matching is the Run 1 legacy definition"]),
-         ("What Zb_Zc_ratio (AK4) does", [
-             "Takes Jet_hadronFlavour of the leading selected AK4 jet straight from NanoAODv12: "
-             "5 → b, 4 → c, else → light (Zb_Zc_ratio.jet_flavour)",
-             "No re-clustering or ΔR matching of our own: same ghost-association labels as CMSSW",
-             "No b/bb or c/cc split: NanoAOD AK4 jets carry no B/C hadron counts (the AK8 version "
-             "uses FatJet_nBHadrons / nCHadrons)",
-             "|Jet_partonFlavour| kept as a second axis (b, c, uds, g, none) as a cross-check only: "
-             f"{migration(out, 'b', 'b'):.0f}% of hadron-b and {migration(out, 'c', 'c'):.0f}% of hadron-c "
-             "jets agree (next pages)",
-             "Same convention as the BTV SFs, so b/c-tag SFs can be applied directly once added"])]
-bh = 545
+cols_ = [("CMS recommendation (BTV)", [
+             "Use the hadron-based flavour (hadronFlavour), the CMSSW default",
+             "Generator B and C hadrons are clustered into the jet with ~zero momentum, so the jet "
+             "itself is unchanged",
+             "b if the jet has a B hadron, c if it has a C hadron but no B, light otherwise",
+             "All BTV b/c-tag scale factors are given for this definition",
+             "partonFlavour: mainly to separate gluon from uds jets"]),
+         ("What we do", [
+             "Take Jet_hadronFlavour from NanoAOD for the leading jet: 5 = b, 4 = c, rest = light",
+             "No matching of our own",
+             "No b/bb or c/cc split: NanoAOD doesn't store hadron counts for AK4 jets",
+             f"partonFlavour only as a cross-check: agrees for {migration(out, 'b', 'b'):.0f}% of b jets "
+             f"and {migration(out, 'c', 'c'):.0f}% of c jets"])]
+bh = 455
 for i, (title, items) in enumerate(cols_):
     cx = 128 + i * (cw + 32)
     box(fig, cx, y, cw, bh, PANEL)
-    yy = text(fig, cx + 36, y + 30, title, 32, ACCENT, "bold", ls=1.2) + 12
+    yy = text(fig, cx + 36, y + 30, title, 32, ACCENT, "bold", ls=1.2) + 14
     for it in items:
-        yy = text(fig, cx + 36, yy, "• " + it, 22, DARK, width=cw - 72, ls=1.35) + 6
-y += bh + 28
-box(fig, 128, y, 1664, 120, "#FDF1E4")
-box(fig, 128, y, 6, 120, "#E07B24")
-text(fig, 168, y + 18, "Official reference: CMS TWiki \"Jet Flavour Identification (MC Truth)\"", 24, DARK, "bold")
-text(fig, 168, y + 56, TWIKI, 21, ACCENT, family="DejaVu Sans Mono", url=TWIKI)  # clickable in the PDF
-text(fig, 168, y + 88, "See also CMS, JINST 13 (2018) P05011 (arXiv:1712.07158), jet flavour definition", 20, BODY)
-footer(fig, FOOT + " · leading AK4 jet, both channels, scaled to 7.98 fb⁻¹", page_no)
+        yy = text(fig, cx + 36, yy, "• " + it, 25, DARK, width=cw - 72, ls=1.3) + 10
+y += bh + 20
+# conclusion
+rcb = {ch: y4[ch]["c"] / y4[ch]["b"] for ch in CHS}
+box(fig, 128, y, 1664, 215, "#E8F3EA")
+box(fig, 128, y, 6, 215, "#2E7D32")
+yy = text(fig, 168, y + 22, "Conclusion: we are on the right track", 32, "#1B5E20", "bold", ls=1.2) + 10
+text(fig, 168, yy, "Our flavour labels are exactly the ones CMS recommends, so the BTV scale factors can be "
+     f"applied as they are. The c/b ratio in our MC ({rcb['Zee']:.1f} for Z→ee, {rcb['Zmm']:.1f} for Z→μμ) is a bit higher than, but in the "
+     "same ballpark as, the CMS 13 TeV measurement, 1.62 ± 0.15 (PRD 102, 032007). Not a like-for-like comparison yet: "
+     "ours is MC truth for the leading jet, without tagging.", 25, DARK, width=1584, ls=1.35)
+y += 215 + 14
+text(fig, 128, y, "Reference: CMS TWiki, Jet Flavour Identification (MC Truth)", 22, BODY, "bold")
+text(fig, 128, y + 34, TWIKI, 20, ACCENT, family="DejaVu Sans Mono", url=TWIKI)  # clickable in the PDF
+footer(fig, FOOT + " · leading AK4 jet, scaled to 7.98 fb⁻¹", page_no)
 save(fig)
 page_no += 1
 
