@@ -544,6 +544,61 @@ def genmatch(o, ch, pf=None, hf=None, scaled=False):
     return n["matched"], n["nomatch"]
 
 
+def soft_frac(o, pf, cut=50):
+    """Scaled fraction of leading jets with parton flavour pf (None = all) below `cut` GeV."""
+    lo = tot = 0.0
+    for ds, od in o.items():
+        sc = xs[ds] * LUMI / od["sumw"]
+        h = od["jet_pt"][{"channel": sum, "flav": sum, "pflav": pf if pf else sum}]
+        v = h.values()
+        lo += v[h.axes[0].edges[:-1] < cut].sum() * sc
+        tot += v.sum() * sc
+    return 100 * lo / tot
+
+
+# plain-language summary: what the no-parton jets are, how we know, why we keep them
+none_m, none_u = (sum(v) for v in zip(*(genmatch(out, ch, "none") for ch in CHS)))
+real_m = real_u = 0
+for ch in CHS:
+    for p in ("b", "c", "uds"):
+        m, u = genmatch(out, ch, p)
+        real_m, real_u = real_m + m, real_u + u
+none_share = max(sum(yp[ch]["none"] for ch in CHS) / sum(sum(yp[ch].values()) for ch in CHS), 0)
+fig = page()
+y = heading(fig, "No-parton jets are pileup", y=96) + 36
+cw = (1664 - 2 * 32) / 3
+cards = [
+    ("What we saw",
+     f"In {100 * none_share:.1f}% of events the leading jet has no parton attached (partonFlavour 0). "
+     f"They are all light jets, and they are soft: {soft_frac(out, 'none'):.0f}% are below 50 GeV, compared "
+     f"with {soft_frac(out, None):.0f}% for all leading jets."),
+    ("How we checked",
+     "A jet from the main collision should have a generator-level jet (GenJet) next to it. NanoAOD stores the "
+     "match as Jet_genJetIdx, which is −1 when there is none within ΔR < 0.4. "
+     f"{100 * none_u / (none_m + none_u):.0f}% of the no-parton jets have no GenJet, against "
+     f"{100 * real_u / (real_m + real_u):.2f}% for b, c and uds jets. No generator partner means the jet "
+     "comes from another collision in the same bunch crossing: pileup."),
+    ("Why we keep them",
+     "We can't use generator information in data, so we can't remove these jets by truth in MC either. "
+     "Data has pileup jets too, and the MC has to describe them. Since they are light jets and a tiny "
+     "fraction of the yield, Z+b and Z+c are not affected."),
+]
+for i, (title, body) in enumerate(cards):
+    cx = 128 + i * (cw + 32)
+    box(fig, cx, y, cw, 510, PANEL)
+    yy = text(fig, cx + 36, y + 30, title, 32, ACCENT, "bold", ls=1.2) + 16
+    text(fig, cx + 36, yy, body, 25, DARK, width=cw - 72, ls=1.4)
+y += 510 + 28
+box(fig, 128, y, 1664, 150, "#E8F3EA")
+box(fig, 128, y, 6, 150, "#2E7D32")
+yy = text(fig, 168, y + 22, "Bottom line: expected, small, and harmless for the b/c ratio", 30, "#1B5E20", "bold", ls=1.2) + 8
+text(fig, 168, yy, "No action needed. Our AK4 jets are PUPPI jets, which already remove most pileup. If we ever "
+     "want fewer, the handle is a reco-level cut (e.g. a higher jet pT threshold), applied the same way to data and MC.",
+     24, DARK, width=1584, ls=1.35)
+footer(fig, FOOT + " · leading AK4 jet · details on the next page", page_no)
+save(fig)
+page_no += 1
+
 fig = page()
 y = heading(fig, "Leading jets with partonFlavour 0 are pileup", y=96) + 20
 none_ee, none_mm = (genmatch(out, ch, "none") for ch in CHS)
