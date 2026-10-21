@@ -1,0 +1,230 @@
+How we get the jet flavour (hadronFlavour and partonFlavour) in the Z+b / Z+c study
+====================================================================================
+
+Written 2026-10-21 for the Run 3 Z(->ll)+b / Z(->ll)+c work (workflow Zb_Zc_ratio, AK4 jets,
+Summer22 DY MC). It answers three questions from the group meeting:
+
+  1. Where does partonFlavour come from? Do we calculate it ourselves?
+  2. Is this the official CMS way?
+  3. Where do the "99% of b jets and 95% of c jets" on slide 21 come from, and how do
+     they compare with anything official?
+
+
+SHORT ANSWER
+------------
+
+- We do NOT calculate partonFlavour ourselves. Every simulated jet in NanoAOD already
+  carries a number called Jet_partonFlavour, and we read that number as it is.
+- CMS fills that number with its own official tool. It is the same number every CMS
+  analysis gets from NanoAOD, so in that sense we ARE using it the official way.
+- The only thing we do is sort the number into five groups (b, c, uds, g, none).
+- The "99% / 95%" on slide 21 is NOT taken from any CMS page. We measured it ourselves on
+  our 20-files-per-sample DY MC. CMS gives no official percentage to compare it with. The
+  CMS page only says that the two flavour labels disagree "in rare instances".
+
+
+PART 1. WHAT "JET FLAVOUR" MEANS IN SIMULATION
+-----------------------------------------------
+
+A jet is a spray of particles that starts from one quark or gluon. In real data we never
+know which quark or gluon started a jet. In simulation (MC) we do know, because the
+generator keeps a record of every particle it made.
+
+CMS uses that record to give each simulated jet a "truth" label. There are two labels, and
+NanoAOD stores both of them for every jet:
+
+  Jet_hadronFlavour   based on HADRONS (the particles a quark turns into)
+  Jet_partonFlavour   based on PARTONS (the quarks and gluons themselves)
+
+Both labels are produced by the same CMS tool and in the same way. Only the input differs:
+one looks at hadrons, the other looks at partons.
+
+
+PART 2. HOW CMS PUTS THE LABEL ON A JET (THE "GHOST" TRICK)
+------------------------------------------------------------
+
+The problem: you have a jet and a list of quarks/hadrons from the generator. Which ones
+"belong" to the jet?
+
+The old way was to draw a circle around the jet and see what falls inside. CMS stopped
+doing that because the answer depends on the circle size you choose.
+
+The current way (called "ghost association") works like this:
+
+  Step 1. Take the generator particles you care about (B hadrons, C hadrons, or quarks and
+          gluons).
+  Step 2. Shrink their energy to almost zero (multiply it by 1e-18). Their direction stays
+          the same. They are now "ghosts": too weak to change the jet in any way.
+  Step 3. Run the jet-building algorithm again with the ghosts mixed in with the real
+          particles.
+  Step 4. Each ghost ends up inside exactly one jet, or in no jet at all. Look at which
+          ghosts landed inside your jet.
+
+Because the ghosts carry no energy, the jets come out exactly the same as before. The only
+new information is which ghosts each jet picked up. There is no circle and no size to choose.
+
+Rules for hadronFlavour (from ghost HADRONS):
+  5  (b)      the jet contains at least one B hadron
+  4  (c)      it contains a C hadron but no B hadron
+  0  (light)  it contains neither
+
+Rules for partonFlavour (from ghost QUARKS and GLUONS):
+  5  (b)      the jet contains at least one b quark
+  4  (c)      it contains a c quark but no b quark
+  1, 2, 3     only light quarks (d, u, s): the jet gets the flavour of the most energetic one
+  21          same as above, but the most energetic one is a gluon
+  0           no quark or gluon landed in the jet at all ("undefined")
+  (A minus sign means an antiquark, for example -5 is an anti-b.)
+
+The two labels are worked out separately. Neither is allowed to overwrite the other (in the
+CMS settings: hadronFlavourHasPriority = False). That is why they can disagree for a few
+jets (see Part 5).
+
+
+PART 3. WHERE THIS IS WRITTEN DOWN OFFICIALLY
+---------------------------------------------
+
+a) The CMS explanation page (public TWiki), section "Hadron parton based jet flavour":
+   https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideBTagMCTools#Hadron_parton_based_jet_flavour
+   It gives the rules in Part 2 and says:
+     - "the main use case for the hadron-based flavour is b tagging"
+     - the hadron-based flavour "cannot be used to distinguish different types of
+       light-flavour jets" (that is what partonFlavour is for: gluon vs u/d/s)
+     - "In rare instances a conflict between the hadron- and parton-based flavours can
+       occur." No numbers are given.
+
+b) The CMS software that writes the NanoAOD branch (CMSSW 13_0_X, used for Summer22):
+   - PhysicsTools/NanoAOD/python/jetMC_cff.py
+       partonFlavour = Var("partonFlavour()", "int16", doc="flavour from parton matching")
+       hadronFlavour = Var("hadronFlavour()", "uint8", doc="flavour from hadron ghost clustering")
+     NanoAOD just copies the value already stored on the MiniAOD jet.
+   - PhysicsTools/PatAlgos/python/mcMatchLayer0/jetFlavourId_cff.py
+       the module "patJetFlavourAssociation" is the tool "JetFlavourClustering" (the ghost
+       method of Part 2) with anti-kT, R = 0.4, ghostRescaling = 1e-18,
+       hadronFlavourHasPriority = False.
+   - PhysicsTools/PatAlgos/python/producersLayer1/jetProducer_cfi.py
+       useLegacyJetMCFlavour = False, so the ghost method is used (the old circle method
+       is only switched on for heavy-ion running).
+   - Run 3 NanoAOD jets are PUPPI jets ("slimmedJetsPuppi"). They are made in
+     PhysicsTools/PatAlgos/python/slimming/miniAOD_tools.py with addJetCollection(...,
+     labelName='Puppi', algo='AK', rParam=0.4). In PhysicsTools/PatAlgos/python/tools/
+     jetTools.py, addJetCollection makes a copy of the same patJetFlavourAssociation
+     (ghost method) for these jets. So PUPPI jets get the same official labels.
+
+   Note: the description text says "flavour from parton matching". That wording is left
+   over from the old method. The value really comes from the ghost method above.
+
+c) Checked in our own input file (2026-10-21), a Summer22 DY NanoAODv12 file:
+     /store/mc/Run3Summer22NanoAODv12/DYto2L-2Jets_MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/
+       NANOAODSIM/130X_mcRun3_2022_realistic_v5-v5/120000/02c39db3-e55f-45aa-b3e8-cca8f2fbe820.root
+     Jet_partonFlavour  int16   "flavour from parton matching"
+     Jet_hadronFlavour  uint8   "flavour from hadron ghost clustering"
+     nJet               "slimmedJetsPuppi, i.e. ak4 PFJets Puppi with JECs applied, ..."
+     partonFlavour values seen: -5 -4 -3 -2 -1 0 1 2 3 4 5 21
+     hadronFlavour values seen:  0 4 5
+
+
+PART 4. WHAT OUR CODE DOES
+--------------------------
+
+File: src/BTVNanoCommissioning/workflows/Zb_Zc_ratio.py
+
+For the leading AK4 jet in each selected event (pT > 30 GeV, |eta| < 2.5, jet ID,
+at least 0.4 away from both leptons), the code does two things:
+
+  Main label (hadronFlavour, function jet_flavour):
+      hadronFlavour == 5  ->  "b"
+      hadronFlavour == 4  ->  "c"
+      anything else       ->  "l" (light)
+
+  Extra label for comparison (partonFlavour, function parton_flavour):
+      take the number without its sign (anti-b counts as b, and so on), then
+      5        ->  "b"
+      4        ->  "c"
+      1, 2, 3  ->  "uds"
+      21       ->  "g"
+      0        ->  "none"
+
+That is all. No circles, no matching, no thresholds of our own. We do not change any
+jet's value. We only put the official numbers into groups.
+
+Our own choices (worth saying out loud):
+  - We ignore the sign, so quark and antiquark are treated the same.
+  - We put d, u and s into one group "uds".
+  - We only look at the leading jet in the event.
+  - For the Z+b / Z+c result itself we use hadronFlavour, as BTV recommends.
+    partonFlavour is only a cross-check, plus a way to split light jets into gluon and uds.
+
+So the answer to "are we doing partonFlavour the official way?" is: the label itself is
+the official CMS one, read straight from NanoAOD. The grouping above is the only part that
+is ours, and it is a plain relabelling, not a new definition.
+
+
+PART 5. THE NUMBERS ON SLIDE 21 (OUR OWN MEASUREMENT)
+-----------------------------------------------------
+
+Question asked: "for jets that hadronFlavour calls b (or c), how often does partonFlavour
+also call them b (or c)?"
+
+Sample: our 20-files-per-sample Summer22 DY MC run, Z->ee and Z->mumu added together.
+Output file: hists_zbzc_ak4_20files/merged/zbzc_ak4_20files.coffea
+
+"Raw" = plain count of MC events. "Weighted" = after cross-section weights, which is
+what the slide uses.
+
+  hadronFlavour b jets (raw 82,303 events)
+                     partonFlavour:   b        c       uds      g      none
+     raw                            99.40%   0.05%   0.34%   0.21%   0.00%
+     weighted                       99.31%   0.13%   0.15%   0.42%   0.00%
+
+  hadronFlavour c jets (raw 151,037 events)
+                     partonFlavour:   b        c       uds      g      none
+     raw                             0.28%  94.17%   3.66%   1.89%   0.00%
+     weighted                        0.10%  95.27%   2.81%   1.82%   0.01%
+
+  hadronFlavour light jets (raw 1,585,032 events)
+                     partonFlavour:   b        c       uds      g      none
+     raw                             0.11%   1.04%  71.30%  27.52%   0.03%
+     weighted                        0.15%   1.03%  67.01%  31.31%   0.50%
+
+So the slide's "99% of b jets and 95% of c jets" are the weighted numbers 99.31% and
+95.27%, rounded. Zee and Zmm agree with each other to within half a percent
+(c: 95.5% Zee, 95.1% Zmm).
+
+We checked these numbers two independent ways and they agree:
+  - from a plain event counter filled in the workflow ("nevt_migration", raw column)
+  - from two different weighted histograms (jet_pt, used by the slide, and z_mass)
+
+The older 1-file-per-sample deck shows 92% for c instead of 95%. That is just because it
+had too few events (Z->mumu alone came out at 90.5%). Use the 20-file number.
+
+Careful with the direction. The numbers above start from hadronFlavour. If you start from
+partonFlavour instead ("of jets that partonFlavour calls c, how many does hadronFlavour
+call c?"), you get about 90% instead of 95%. Most of the difference comes from light jets
+(no C hadron) that still picked up a c quark ghost. Light jets are so common that even 1% of
+them is a lot of jets.
+
+
+PART 6. HOW DIFFERENT ARE WE FROM "OFFICIAL"?
+---------------------------------------------
+
+- The flavour values: no difference at all. We read the official CMS values unchanged.
+- The agreement percentage (99% / 95%): CMS publishes no official number for this, so
+  there is nothing to compare it with directly. The CMS page only says disagreement happens
+  "in rare instances". Our result (under 1% of b jets and about 5% of c jets disagree) fits
+  that description.
+
+Why can the two labels disagree at all? A quark and the hadron it turns into do not fly in
+exactly the same direction. So, for jets near the edge, the quark ghost can land in one jet
+and the hadron ghost in a neighbouring jet, or outside every jet. Then the two labels
+differ. This is a normal feature of the method, not a bug in our code.
+
+
+PART 7. HOW TO REPRODUCE
+------------------------
+
+  source /uscms_data/d3/psrivast/micromamba/bin/activate zbb-btv
+  cd /uscms/home/psrivast/nobackup/BTVNanoCommissioning
+  # table above: section "hadron (rows) x parton (columns) flavour migration" in
+  #   hists_zbzc_ak4_20files/merged/yields.txt
+  # slide 21 number: function migration() in make_zbzc_ak4_slides_pdf.py
