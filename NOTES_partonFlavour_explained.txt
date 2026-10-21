@@ -17,7 +17,9 @@ SHORT ANSWER
   carries a number called Jet_partonFlavour, and we read that number as it is.
 - CMS fills that number with its own official tool. It is the same number every CMS
   analysis gets from NanoAOD, so in that sense we ARE using it the official way.
-- The only thing we do is sort the number into five groups (b, c, uds, g, none).
+- The only thing we do is sort the number into five groups (b, c, uds, g, none). This
+  follows the standard particle codes and is almost the same grouping as the official BTV
+  code (see Part 4).
 - The "99% / 95%" on slide 21 is NOT taken from any CMS page. We measured it ourselves on
   our 20-files-per-sample DY MC. CMS gives no official percentage to compare it with. The
   CMS page only says that the two flavour labels disagree "in rare instances".
@@ -156,8 +158,36 @@ Our own choices (worth saying out loud):
     partonFlavour is only a cross-check, plus a way to split light jets into gluon and uds.
 
 So the answer to "are we doing partonFlavour the official way?" is: the label itself is
-the official CMS one, read straight from NanoAOD. The grouping above is the only part that
-is ours, and it is a plain relabelling, not a new definition.
+the official CMS one, read straight from NanoAOD. The grouping above is a plain relabelling,
+not a new definition.
+
+Is the grouping made up? No. Two reasons:
+
+  a) The numbers are standard particle ID codes (PDG codes), used by CMS and by every
+     generator: 1 = d, 2 = u, 3 = s, 4 = c, 5 = b, 21 = gluon, minus sign = antiquark.
+     Calling 5 "b" and 4 "c" is just reading the code.
+
+  b) The official BTVNanoCommissioning code (upstream cms-btv-pog, branch master) groups
+     partonFlavour almost the same way. In
+       src/BTVNanoCommissioning/utils/histogramming/histograms/qgtag.py, function _flavor_label:
+         absflavs = np.abs(flav)       (drops the sign, same as ours)
+         1 or 2 -> ud,  3 -> s,  4 -> c,  5 -> b,  21 -> g,  anything else -> other
+
+     partonFlavour (no sign)   official BTV code    our workflow
+       5                         b                    b
+       4                         c                    c
+       1, 2                      ud                   uds
+       3                         s                    uds
+       21                        g                    g
+       0                         other                none
+
+     The only difference: BTV keeps s on its own, we put it together with u and d. Other
+     official workflows in the same repo (DY_sfl.py, utils/histogramming/histogrammer.py)
+     also treat partonFlavour = 0 as a separate "undefined" class, like our "none".
+
+  The slide 21 numbers (99% b, 95% c) only use the b and c groups, which are identical to
+  the official grouping. Merging s into uds only matters for the light-jet split (uds vs g),
+  and can be undone if the group prefers the BTV convention.
 
 
 PART 5. THE NUMBERS ON SLIDE 21 (OUR OWN MEASUREMENT)
