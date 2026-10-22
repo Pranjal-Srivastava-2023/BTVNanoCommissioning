@@ -181,6 +181,43 @@ Is the grouping made up? No. Two reasons:
        21                        g                    g
        0                         other                none
 
+     Where exactly (upstream cms-btv-pog/BTVNanoCommissioning, branch master, commit 38c34a8,
+     10 Aug 2026; links are fixed to that commit, so they keep working if master changes):
+
+       The grouping function, qgtag.py lines 6-21:
+         https://github.com/cms-btv-pog/BTVNanoCommissioning/blob/38c34a8699a881ddce2fac142d4a1c28dc4a392f/src/BTVNanoCommissioning/utils/histogramming/histograms/qgtag.py#L6-L21
+
+           def _flavor_label(flav):
+               absflavs = np.abs(flav)
+               labels = ak.where(
+                   (absflavs == 1) | (absflavs == 2),
+                   0,
+                   ak.where(
+                       absflavs == 3,
+                       1,
+                       ak.where(
+                           absflavs == 4,
+                           2,
+                           ak.where(absflavs == 5, 3, ak.where(absflavs == 21, 4, 5)),
+                       ),
+                   ),
+               )
+               return labels
+
+         Line 159 of the same file applies it to the jets:
+           _flavor_label(events[hobj].partonFlavour)
+
+       The names of the groups, axes/qgtag.py line 6:
+         https://github.com/cms-btv-pog/BTVNanoCommissioning/blob/38c34a8699a881ddce2fac142d4a1c28dc4a392f/src/BTVNanoCommissioning/utils/histogramming/axes/qgtag.py#L6
+
+           # PartonFlavour categories: 0=ud, 1=s, 2=c, 3=b, 4=g, 5=other
+
+       To read it in our working copy:
+         git show origin/master:src/BTVNanoCommissioning/utils/histogramming/histograms/qgtag.py
+
+     So in plain words: |partonFlavour| 1 or 2 -> ud, 3 -> s, 4 -> c, 5 -> b, 21 -> g,
+     anything else -> other. This is the quark/gluon-tagging part of the official framework.
+
      The only difference: BTV keeps s on its own, we put it together with u and d. Other
      official workflows in the same repo (DY_sfl.py, utils/histogramming/histogrammer.py)
      also treat partonFlavour = 0 as a separate "undefined" class, like our "none".
