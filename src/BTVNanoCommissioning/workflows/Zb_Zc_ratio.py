@@ -370,7 +370,8 @@ class NanoProcessor(processor.ProcessorABC):
             fill("z_pt", pt=ak.to_numpy(z.pt))
             fill("lep0_pt", pt=ak.to_numpy(l0[mask].pt))
             fill("lep1_pt", pt=ak.to_numpy(l1[mask].pt))
-            if not isRealData:
+            # pure pythia8 samples (WW, WZ, ZZ) have no LHE block
+            if not isRealData and "LHE" in ev.fields:
                 fill("lhe_vpt", pt=ak.to_numpy(ev.LHE.Vpt))
 
         return {dataset: output}
