@@ -24,6 +24,15 @@ SFs), opposite-sign lepton pair, PuppiMET; framework correctionlib SFs (pileup,
 lepton ID/iso/reco) instead of the old framework's histograms; no L1 prefiring
 weight (none in Run 3).
 
+Campaigns: Summer22 (2022 C-D), Summer22EE (2022 E-G), Summer23 (2023 C),
+Summer23BPix (2023 D), MC and data. The framework's common_shifts applies the
+JEC/JER (jets and type-1 PuppiMET), muon and electron scale/smearing and the
+jet veto map (events with any jet in a vetoed region are dropped). MC weights:
+pileup, lepton ID/iso/reco SFs and the single-lepton trigger SF of the leading
+lepton (IsoMu24 / Ele30_WPTight; the leading lepton has pT > 35, on the plateau).
+Data datasets must carry their run era (e.g. "Muon_Run2022C") so that the JEC
+era can be matched.
+
 The DY pT(ll)-binned samples (PTLL-X) are inclusive above X, so each one is
 restricted to its own LHE pT(ll) slice (STITCH below) and the inclusive sample
 covers pT(ll) < 100. sumw is over the full sample, before the slice cut.
@@ -34,12 +43,13 @@ import awkward as ak
 import hist
 from coffea import processor
 from coffea.analysis_tools import PackedSelection, Weights
-from BTVNanoCommissioning.helpers.func import dump_lumi
+from BTVNanoCommissioning.helpers.func import update, dump_lumi
 from BTVNanoCommissioning.helpers.update_branch import missing_branch
 from BTVNanoCommissioning.utils.correction import (
     load_lumi,
     load_SF,
     reweighting,
+    common_shifts,
     puwei,
     muSFs,
     eleSFs,
@@ -63,10 +73,8 @@ CHANNELS = ["Zee", "Zmm"]
 
 class NanoProcessor(processor.ProcessorABC):
     trigger_config = {
-        "Summer22": {
-            "eleTrig": ["Ele30_WPTight_Gsf"],
-            "muonTrig": ["IsoMu24"],
-        },
+        c: {"eleTrig": ["Ele30_WPTight_Gsf"], "muonTrig": ["IsoMu24"]}
+        for c in ["Summer22", "Summer22EE", "Summer23", "Summer23BPix"]
     }
     # (dataset-name substring, LHE pT(ll) lower edge, upper edge); first match wins
     STITCH = [
@@ -162,7 +170,54 @@ class NanoProcessor(processor.ProcessorABC):
     def process(self, events):
         events = missing_branch(events)
         sumws = reweighting(events, self.isSyst)
-        return self.process_shift(events, sumws, None)
+        isRealData = not hasattr(events, "genWeight")
+        dataset = events.metadata["dataset"]
+
+        def count(ev):
+            # (raw events, sum of genWeight) for the cutflow
+            if isRealData:
+                return len(ev), float(len(ev))
+            return len(ev), float(ak.sum(ev.genWeight))
+
+        pre = {"all": count(events)}
+        ## Lumi mask (data) / LHE pT(ll) stitching slice (DY MC)
+        req_lumi = np.ones(len(events), dtype="bool")
+        if isRealData:
+            req_lumi = self.lumiMask(events.run, events.luminosityBlock)
+        else:
+            for tag, lo, hi in self.STITCH:
+                if tag in dataset:
+                    vpt = ak.to_numpy(events.LHE.Vpt)
+                    req_lumi = (vpt >= lo) & (vpt < hi)
+                    break
+        events = events[req_lumi]
+        pre["lumi_slice"] = count(events)
+
+        ## JEC/JER + type-1 MET, lepton scale/smearing, jet veto map
+        if len(events) == 0:
+            vetoed_events, shifts = events, [({}, None)]
+        else:
+            vetoed_events, shifts = common_shifts(self, events)
+        pre["jetveto"] = count(vetoed_events)
+        output = processor.accumulate(
+            self.process_shift(update(vetoed_events, collections), sumws, name)
+            for collections, name in shifts
+        )
+
+        out = output[dataset]
+        if isRealData:
+            # golden-JSON lumisections processed, for brilcalc
+            dump_lumi(events, out)
+        # prepend the pre-selection steps to the per-channel cutflows
+        for key, idx, typ in (("cutflow_raw", 0, int), ("cutflow", 1, float)):
+            for c in CHANNELS:
+                steps = processor.defaultdict_accumulator(typ)
+                for step, n in pre.items():
+                    steps[step] = n[idx]
+                for step, n in out[key][c].items():
+                    steps[step] = n
+                out[key][c] = steps
+        return output
 
     def process_shift(self, events, sumws, shift_name):
         isRealData = not hasattr(events, "genWeight")
@@ -194,18 +249,6 @@ class NanoProcessor(processor.ProcessorABC):
                 c: processor.defaultdict_accumulator(float) for c in CHANNELS
             }
 
-        ## Lumi mask (data) / LHE pT(ll) stitching slice (DY MC)
-        req_lumi = np.ones(len(events), dtype="bool")
-        if isRealData:
-            req_lumi = self.lumiMask(events.run, events.luminosityBlock)
-            output = dump_lumi(events[req_lumi], output)
-        else:
-            for tag, lo, hi in self.STITCH:
-                if tag in dataset:
-                    vpt = ak.to_numpy(events.LHE.Vpt)
-                    req_lumi = (vpt >= lo) & (vpt < hi)
-                    break
-        events = events[req_lumi]
         if len(events) == 0:
             return {dataset: output}
 
@@ -234,8 +277,13 @@ class NanoProcessor(processor.ProcessorABC):
         mu = mu[mu.tightId]
         mu = mu[mu_iso(mu)]
 
+        # pT order can change after the scale/smearing corrections
+        ele = ele[ak.argsort(ele.pt, ascending=False)]
+        mu = mu[ak.argsort(mu.pt, ascending=False)]
+
         jets, lead, req_jet = self.select_jets(events, ele_jetveto, mu_jetveto)
-        req_met = ak.to_numpy(events.PuppiMET.pt < 50)
+        # events.MET = type-1 corrected PuppiMET from common_shifts
+        req_met = ak.to_numpy(events.MET.pt < 50)
 
         ## Per-channel selection
         genw = (
@@ -267,8 +315,6 @@ class NanoProcessor(processor.ProcessorABC):
             sel.add("MET", req_met)
             sel.add("jet", req_jet)
             steps = ["trigger", "leptons", "OS", "Zmass", "MET", "jet"]
-            cutflow[channel]["all"] += float(np.sum(genw))
-            cutflow_raw[channel]["all"] += len(events)
             for i, step in enumerate(steps):
                 passed = sel.all(*steps[: i + 1])
                 cutflow[channel][step] += float(np.sum(genw[passed]))
@@ -408,12 +454,15 @@ class NanoProcessor(processor.ProcessorABC):
 
     def mc_sf(self, ev, l0, l1, channel):
         """
-        Pileup x lepton ID/iso/reco SFs for the two Z leptons.
+        Pileup x lepton ID/iso/reco SFs for the two Z leptons x single-lepton
+        trigger SF of the leading lepton.
 
-        The framework's eleSFs resets its running product for every electron,
-        so passing both electrons at once would keep only the second one's SF;
-        each lepton is therefore evaluated separately and the products are
-        multiplied here. No trigger SF yet.
+        Each lepton's ID/iso/reco SF is evaluated separately and the products
+        are multiplied here (written for the old eleSFs, which kept only the
+        last electron's SF; still correct with the fixed version). The trigger
+        SF is evaluated here rather than through muSFs/eleSFs: the Run 3 POG
+        files give SFs only (no data/MC efficiencies for muons), and the
+        leading lepton (pT > 35) is on the trigger plateau.
         """
         w = Weights(len(ev))
         puwei(ev.Pileup.nTrueInt, self.SF_map, w, False)
@@ -425,7 +474,25 @@ class NanoProcessor(processor.ProcessorABC):
             else:
                 muSFs(lep, self.SF_map, wl, False, False)
             sf = sf * wl.weight()
-        return sf
+        if channel == "Zee":
+            # EGM year/scenario label, e.g. "2022Re-recoBCD", as in the ID SF key
+            year = next(iter(self.SF_map["EGM_cfg"])).split(" ")[1]
+            trig = self.SF_map["EGM_HLT"]["Electron-HLT-SF"].evaluate(
+                year,
+                "sf",
+                "HLT_SF_Ele30_TightID",
+                np.clip(ak.to_numpy(l0.eta + l0.deltaEtaSC), -2.5, 2.5),
+                np.clip(ak.to_numpy(l0.pt), 30.0, None),
+            )
+        else:
+            trig = self.SF_map["MUO"][
+                "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight"
+            ].evaluate(
+                np.clip(ak.to_numpy(l0.eta), -2.4, 2.399999),
+                np.clip(ak.to_numpy(l0.pt), 26.0, None),
+                "nominal",
+            )
+        return sf * trig
 
     def postprocess(self, accumulator):
         return accumulator

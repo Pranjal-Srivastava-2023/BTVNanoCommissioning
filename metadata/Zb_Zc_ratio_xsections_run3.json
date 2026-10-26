@@ -1,0 +1,12 @@
+{
+    "_comment": "13.6 TeV xsecs [pb] for the Zb_Zc_ratio Run 3 run (all four campaigns; same generators and energy). DY: as metadata/Zb_Zc_ratio_xsections_Summer22.json (inclusive MLL-50 from helpers/xsection.py; PTLL-X = inclusive x signed fraction of inclusive events with LHE_Vpt > X, measured on Summer22). TTto2L2Nu: NNLO, helpers/xsection.py. WW/WZ/ZZ: TOP-22-012 values from helpers/xsection.py (the higher-order numbers, not the LO GenXSecAnalyzer ones). Normalize as xsec * lumi[channel] / sumw; lumi per campaign and channel from hists_zbzc_run3/<campaign>/lumi.json.",
+    "DYto2L-2Jets_MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8": 6346.0,
+    "DYto2L-2Jets_MLL-50_PTLL-100_TuneCP5_13p6TeV_amcatnloFXFX-pythia8": 104.97,
+    "DYto2L-2Jets_MLL-50_PTLL-200_TuneCP5_13p6TeV_amcatnloFXFX-pythia8": 11.239,
+    "DYto2L-2Jets_MLL-50_PTLL-400_TuneCP5_13p6TeV_amcatnloFXFX-pythia8": 0.6433,
+    "DYto2L-2Jets_MLL-50_PTLL-600_TuneCP5_13p6TeV_amcatnloFXFX-pythia8": 0.09941,
+    "TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8": 98.88,
+    "WW_TuneCP5_13p6TeV_pythia8": 75.9,
+    "WZ_TuneCP5_13p6TeV_pythia8": 27.6,
+    "ZZ_TuneCP5_13p6TeV_pythia8": 12.17
+}
