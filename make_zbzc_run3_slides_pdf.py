@@ -51,6 +51,9 @@ for c in camps:
         OUT[c].update(load(f))
     LUMI[c] = json.load(open(f"hists_zbzc_run3/{c}/lumi.json"))
 LTOT = {ch: sum(LUMI[c][ch] for c in camps) for ch in CHS}
+VV_HAVE = sorted({ds.split("_")[0] for c in camps for ds in OUT[c] if ds.split("_")[0] in ("WW", "WZ", "ZZ")})
+ERA_TXT = " + ".join(ERAS[c] for c in camps)
+IS2023 = any("23" in c for c in camps)
 
 
 def kind(ds):
@@ -196,7 +199,8 @@ def num(v):
 fig = page(DARK)
 text(fig, 128, 260, "BTVNANOCOMMISSIONING · ZB_ZC_RATIO WORKFLOW", 28, "#7FB3E6", "bold")
 text(fig, 128, 340, "Z(→ℓℓ) + b/c jets in Run 3: first look at data", 88, LIGHT, "bold", width=1664, ls=1.1)
-text(fig, 128, 580, f"2022 and 2023 data vs MC, a small sample ({LTOT['Zmm'] / 1000:.1f} fb⁻¹ in Z→μμ, "
+text(fig, 128, 570, (args.which if len(camps) == 1 else "All campaigns"), 44, "#7FB3E6", "bold")
+text(fig, 128, 650, f"{ERA_TXT} data vs MC, a small sample ({LTOT['Zmm'] / 1000:.1f} fb⁻¹ in Z→μμ, "
      f"{LTOT['Zee'] / 1000:.1f} fb⁻¹ in Z→ee), AK4 jets", 44, "#C9D3E3", width=1664)
 text(fig, 128, 800, DATE, 28, "#C9D3E3")
 save(fig)
@@ -206,8 +210,10 @@ n = 2
 fig = page()
 y = heading(fig, "What is new since last time") + 40
 cw = (1664 - 2 * 32) / 3
-cards = [("DATA", "2022 + 2023", "First look at data. Muon and EGamma, 22Sep2023 reprocessing."),
-         ("CAMPAIGNS", "4", "Summer22, Summer22EE, Summer23, Summer23BPix, each with its own corrections."),
+cards = [("DATA", ERA_TXT, "First look at data. Muon and EGamma, 22Sep2023 reprocessing."),
+         ("CAMPAIGN", args.which if len(camps) == 1 else str(len(camps)),
+          "One of four campaigns run (Summer22, Summer22EE, Summer23, Summer23BPix). Each has its own "
+          "corrections and its own deck; they are not combined."),
          ("CORRECTIONS", "Full set", "Jet energy corrections, jet veto maps, lepton energy scale, "
                                       "lepton and trigger SFs. Electron SFs from Hsin-Wei's latest code.")]
 for i, (lab, big, small) in enumerate(cards):
@@ -242,9 +248,10 @@ y = table(fig, 128, y, cols, rows, 28, shade=(len(rows) - 1,) if len(camps) > 1 
 y = text(fig, 128, y, "The luminosity is that of the lumisections we actually processed (golden JSON), from brilcalc. "
          "Muon and EGamma files cover different lumisections, so each channel has its own luminosity and the "
          "MC is scaled to it.", 28, BODY, width=1664) + 24
-text(fig, 128, y, "In 2023 each PD is split in two halves (Muon0/Muon1, EGamma0/EGamma1) that share every "
-     "lumisection, each half holding about 50% of the events. We use only the first half and count half of "
-     "its luminosity.", 28, BODY, width=1664)
+if IS2023:
+    text(fig, 128, y, "In 2023 each PD is split in two halves (Muon0/Muon1, EGamma0/EGamma1) that share every "
+         "lumisection, each half holding about 50% of the events. We use only the first half and count half of "
+         "its luminosity.", 28, BODY, width=1664)
 footer(fig, FOOT, n)
 save(fig)
 n += 1
@@ -255,7 +262,8 @@ y = heading(fig, "MC samples") + 40
 rows = [["DY→ℓℓ, inclusive (MLL > 50)", "amcatnloFXFX", "6346", "pT(ℓℓ) < 100 GeV"],
         ["DY→ℓℓ, pT(ℓℓ) binned", "amcatnloFXFX", "105 / 11.2 / 0.64 / 0.10", "pT(ℓℓ) > 100 GeV, 4 bins"],
         ["tt̄ → 2ℓ2ν", "powheg", "98.9", "NNLO"],
-        ["WW / WZ / ZZ", "pythia8", "75.9 / 27.6 / 12.2", "inclusive"]]
+        [" / ".join(VV_HAVE), "pythia8", " / ".join({"WW": "75.9", "WZ": "27.6", "ZZ": "12.2"}[v] for v in VV_HAVE),
+         "inclusive" + ("" if "WW" in VV_HAVE else "; WW not run (too slow to read)")]]
 cols = [("Sample", 560, "left"), ("Generator", 260, "left"), ("σ [pb]", 400, "right"), ("Notes", 444, "left")]
 y = table(fig, 128, y, rows=rows, cols=cols, size=28) + 40
 text(fig, 128, y, "Same samples in all four campaigns (Run3Summer22/22EE/23/23BPix, NanoAODv12), 20 files each. "
@@ -287,7 +295,8 @@ for i, (title, items) in enumerate(blocks):
         yy = text(fig, cx + 40, yy, "• " + it, 28, DARK, width=cw - 80, ls=1.4) + 8
 y += 520 + 32
 text(fig, 128, y, "All corrections come from the official POG files for each campaign. "
-     "In 2022EE the electron ID SFs are lower (about 0.90–0.94 per electron), as expected after the ECAL endcap issue.",
+     + ("In 2022EE the electron ID SFs are lower (about 0.90–0.94 per electron), as expected after the ECAL endcap issue."
+        if "Summer22EE" in camps else ""),
      26, BODY, width=1664)
 footer(fig, FOOT, n)
 save(fig)
@@ -308,7 +317,7 @@ y = table(fig, 128, y, cols, rows, 26, shade=tuple(shade)) + 36
 text(fig, 128, y, "MC here is before SFs (generator weight × σ × L / Σw only), so data/MC is expected a few % "
      "below 1 at the lepton steps. The first step only makes sense from the trigger on, since each data PD "
      "is already trigger-selected.", 26, BODY, width=1664)
-footer(fig, FOOT + " · events after each step, all campaigns summed", n)
+footer(fig, FOOT + " · events after each step" + (", all campaigns summed" if len(camps) > 1 else ""), n)
 save(fig)
 n += 1
 
@@ -329,7 +338,7 @@ for ch, chname in CHS.items():
     y = text(fig, 128, y, f"{chname}: DY + b is {100 * Y[ch]['b'] / dy[ch]:.1f}% and DY + c is "
              f"{100 * Y[ch]['c'] / dy[ch]:.1f}% of DY (c/b = {Y[ch]['c'] / Y[ch]['b']:.2f}); tt̄ + VV is "
              f"{100 * (Y[ch]['tt'] + Y[ch]['VV']) / Y[ch]['MC']:.1f}% of the MC.", 28, BODY, width=1664) + 12
-footer(fig, FOOT + " · MC with all weights · all campaigns summed", n)
+footer(fig, FOOT + " · MC with all weights" + (" · all campaigns summed" if len(camps) > 1 else ""), n)
 save(fig)
 n += 1
 

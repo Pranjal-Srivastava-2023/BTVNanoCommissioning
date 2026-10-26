@@ -80,7 +80,9 @@ PARTON = {"axis": "pflav", "dy": ["none", "g", "uds", "c", "b"],
                     "c": "DY + c (parton)", "b": "DY + b (parton)"},
           "color": {"none": "#d9d9d9", "g": "#6aa84f", "uds": "#9e9e9e",
                     "c": "#7fb3e6", "b": "#f2a65a"}}
-BKG = {"tt": ("$t\\bar{t}$ (2L2Nu)", "#8e44ad"), "VV": ("VV (WW, WZ, ZZ)", "#16a085")}
+# diboson label lists the samples actually run (Summer22 WW was dropped: reads too slow)
+VV_HAVE = sorted({ds.split("_")[0] for c in camps for ds in OUT[c] if ds.split("_")[0] in ("WW", "WZ", "ZZ")})
+BKG = {"tt": ("$t\\bar{t}$ (2L2Nu)", "#8e44ad"), "VV": (f"VV ({', '.join(VV_HAVE)})", "#16a085")}
 
 
 def components(var, ch, flav):
