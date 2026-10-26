@@ -1,6 +1,6 @@
 """Data/MC plots, cutflow and yield tables for the Zb_Zc_ratio Run 3 run (AK4).
 
-Reads the per-dataset outputs in hists_zbzc_run3/<campaign>/ (run_zbzc_run3.sh) and
+Reads the per-dataset outputs in hists_zbzc_run3/<campaign>/zbzc_run3/ (run_zbzc_run3.sh) and
 the processed lumi per channel (zbzc_lumi.py -> lumi.json). Each MC sample is scaled
 by xsec * lumi[channel] / sumw (metadata/Zb_Zc_ratio_xsections_run3.json); data in
 each channel come from its own PD only (Zmm: Muon/Muon0, Zee: EGamma/EGamma0).
@@ -47,7 +47,7 @@ os.makedirs(plotdir, exist_ok=True)
 OUT, LUMI = {}, {}
 for c in camps:
     OUT[c] = {}
-    for f in sorted(glob.glob(f"hists_zbzc_run3/{c}/zbzc_run3_*.coffea")):
+    for f in sorted(glob.glob(f"hists_zbzc_run3/{c}/zbzc_run3/zbzc_run3_*.coffea")):
         OUT[c].update(load(f))
     LUMI[c] = json.load(open(f"hists_zbzc_run3/{c}/lumi.json"))
 LUMI_TOT = {ch: sum(LUMI[c][ch] for c in camps) for ch in CHANNELS}

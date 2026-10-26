@@ -1,6 +1,6 @@
 """Integrated luminosity of the data actually processed by the Zb_Zc_ratio Run 3 run.
 
-For each data output in hists_zbzc_run3/<campaign>/ the golden-JSON lumisections the
+For each data output in hists_zbzc_run3/<campaign>/zbzc_run3/ the golden-JSON lumisections the
 workflow saw (dump_lumi: "run", "lumi") are written to a brilcalc JSON and run
 through brilcalc (normtag_PHYSICS, the framework's choice for 2022/2023) inside the
 BRIL Apptainer image. 2023 data use only the "0" half of the split PDs
@@ -67,7 +67,7 @@ def brilcalc(pairs, fname):
 for camp in sys.argv[1:] or CAMPAIGNS:
     d = f"hists_zbzc_run3/{camp}"
     result = {"Zee": 0.0, "Zmm": 0.0, "datasets": {}}
-    for f in sorted(glob.glob(f"{d}/zbzc_run3_*.coffea")):
+    for f in sorted(glob.glob(f"{d}/zbzc_run3/zbzc_run3_*.coffea")):
         for ds, o in load(f).items():
             ch = channel(ds)
             if ch is None:
