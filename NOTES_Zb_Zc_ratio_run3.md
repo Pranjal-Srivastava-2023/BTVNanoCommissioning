@@ -22,6 +22,10 @@ Open items found (not fixed):
    23BPix Zee data/MC 0.95 vs Zmm 0.99 -> look at electron SFs/smearing there.
 3. Still pending from before: JME-style jet veto, two-electron (trigger-matched) trigger SF,
    muSFs trigger clip bug in Hsin-Wei's code (tell her), WW missing in Summer22.
+4. 2026-10-26 evening: n_jet (n_fj for AK8) is now filled for Z events BEFORE the jet cut
+   (fill_njet; 0-jet MC = flav l / pflav none), all other histos still after the full selection.
+   Current hists_zbzc_run3 outputs predate this (0 bin empty, the deck says so); next run fills it.
+   Tested on 1 Muon0_Run2023D + 1 DY PTLL-100 file: n_jet total = cutflow MET step, n>=1 = jet_pt.
 
 ## (earlier) RESUME HERE (2026-10-26, 15:50 CDT): first Run 3 data/MC run in progress
 

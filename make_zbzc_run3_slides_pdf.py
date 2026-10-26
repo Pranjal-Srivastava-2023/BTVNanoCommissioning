@@ -591,6 +591,8 @@ if len(camps) > 1:
     n += 1
 
 # ------------------------------------------------------------------ plots
+# outputs made before the workflow filled N jets ahead of the jet cut have an empty 0 bin
+NJET0 = any(o["n_jet"][{"n": 0}].sum(flow=True).value > 0 for c in camps for o in OUT[c].values())
 PLOTS = [
     ("z_mass", "Dilepton mass", "The Z peak in data and MC. Linear y-axis."),
     ("z_pt", "Dilepton pT", "pT of the Z candidate. No cut on it."),
@@ -598,7 +600,10 @@ PLOTS = [
     ("lep1_pt", "Subleading-lepton pT", "Subleading lepton, pT > 25 GeV required."),
     ("jet_pt", "Leading AK4 jet pT", "Leading lepton-cleaned AK4 jet, pT > 30 GeV required."),
     ("jet_eta", "Leading AK4 jet η", "Pseudorapidity of the leading jet, |η| < 2.5."),
-    ("n_jet", "Number of AK4 jets", "Jets with pT > 30 GeV and |η| < 2.5. The last bin holds 5 or more jets."),
+    ("n_jet", "Number of AK4 jets", "Jets with pT > 30 GeV and |η| < 2.5. The last bin holds 5 or more jets. "
+     + ("Filled before the at-least-one-jet cut, so the 0 bin holds the Z events without a jet."
+        if NJET0 else "These outputs were filled after the at-least-one-jet cut, so the 0 bin is empty. "
+        "The workflow now fills it before that cut; the next run will have the 0-jet bin.")),
     ("jet_PNetB", "PNet b-tag score", "Leading jet. b jets sit near 1, light jets near 0."),
     ("jet_PNetCvL", "PNet charm vs light", "Leading jet."),
     ("jet_PNetCvB", "PNet charm vs b", "Leading jet."),

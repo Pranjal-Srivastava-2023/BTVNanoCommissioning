@@ -320,16 +320,26 @@ class NanoProcessor(processor.ProcessorABC):
                 cutflow[channel][step] += float(np.sum(genw[passed]))
                 cutflow_raw[channel][step] += int(np.sum(passed))
 
+            # Z events before the jet requirement: only the jet multiplicity is
+            # filled here, so that its 0 bin is populated
+            zmask = sel.all(*steps[:-1])
+            if self.noHist or not zmask.any():
+                continue
+            zweight = genw[zmask]
+            if not isRealData:
+                zweight = zweight * self.mc_sf(
+                    events[zmask], l0[zmask], l1[zmask], channel
+                )
+            self.fill_njet(output, channel, isRealData, lead[zmask], jets[zmask], zweight)
+
             mask = sel.all(*steps)
-            if self.noHist or not mask.any():
+            if not mask.any():
                 continue
 
             ev = events[mask]
             jet = lead[mask]
             z = zcand[mask]
-            weight = genw[mask]
-            if not isRealData:
-                weight = weight * self.mc_sf(ev, l0[mask], l1[mask], channel)
+            weight = zweight[req_jet[zmask]]
 
             if isRealData:
                 flav = np.full(len(ev), "data")
@@ -436,7 +446,6 @@ class NanoProcessor(processor.ProcessorABC):
             fill("jet_PNetCvL", score=cvl)
             fill("jet_PNetCvB", score=cvb)
             fill("jet_CvL_CvB", cvl=cvl, cvb=cvb)
-            fill("n_jet", n=ak.to_numpy(ak.num(jets)))
             return
         xbb = ak.to_numpy(jet.particleNet_XbbVsQCD)
         xcc = ak.to_numpy(jet.particleNet_XccVsQCD)
@@ -451,7 +460,25 @@ class NanoProcessor(processor.ProcessorABC):
             "fj_tau21",
             tau21=ak.to_numpy(ak.where(jet.tau1 > 0, jet.tau2 / jet.tau1, -1.0)),
         )
-        fill("n_fj", n=ak.to_numpy(ak.num(jets)))
+
+    def fill_njet(self, output, channel, isRealData, lead, jets, weight):
+        """
+        Jet multiplicity of the Z events before the jet requirement. Flavour
+        from the leading jet; MC events without a jet count as light (parton
+        flavour "none").
+        """
+        n = len(weight)
+        has_jet = ak.to_numpy(~ak.is_none(lead))
+        flavs = {"flav": np.full(n, "data" if isRealData else "l", dtype="<U4")}
+        if self.jet == "AK4":
+            flavs["pflav"] = np.full(n, "data" if isRealData else "none", dtype="<U4")
+        if not isRealData and has_jet.any():
+            flavs["flav"][has_jet] = self.jet_flavour(lead[has_jet])
+            if self.jet == "AK4":
+                flavs["pflav"][has_jet] = self.parton_flavour(lead[has_jet])
+        output["n_jet" if self.jet == "AK4" else "n_fj"].fill(
+            channel=channel, **flavs, n=ak.to_numpy(ak.num(jets)), weight=weight
+        )
 
     def mc_sf(self, ev, l0, l1, channel):
         """
