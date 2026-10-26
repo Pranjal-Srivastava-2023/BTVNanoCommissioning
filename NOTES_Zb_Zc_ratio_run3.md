@@ -31,7 +31,7 @@ bins plus inclusive, TTto2L2Nu, WW, WZ, ZZ) and 20 data files per channel per ca
 WW; Summer22EE DY PTLL-400 (rerun), PTLL-600, TTto2L2Nu, WZ, ZZ. Summer23 and Summer23BPix are
 complete. `postprocess_zbzc_run3.sh` waits for the 12 driver logs to say ALL DONE and every
 `rerun_*.log` to say RERUN DONE, then runs `zbzc_lumi.py`, `plot_zbzc_run3.py` for each campaign
-and `all`, and a draft deck (summary page empty). Log: `logs_zbzc_run3/postprocess.log`.
+and a draft deck per campaign (summary page empty). Log: `logs_zbzc_run3/postprocess.log`.
 `stall_watchdog_zbzc_run3.sh` kills runners with < 5 s CPU in 10 min (drivers retry).
 
 **On resume:**
@@ -39,8 +39,9 @@ and `all`, and a draft deck (summary page empty). Log: `logs_zbzc_run3/postproce
    `grep -H exit logs_zbzc_run3/*/driver_*.log logs_zbzc_run3/*/rerun_*.log | grep -v 'exit 0'`.
    A sample whose 3 tries all failed: `./rerun_zbzc_run3.sh <campaign> <dataset>`, then rerun
    `zbzc_lumi.py` / plots / deck by hand.
-2. Open question for the user: keep 2023 in the combined plots, or make 2022 the main result
-   and 2023 a backup section (my default: the latter).
+2. Decided (user, 2026-10-26): keep the campaigns separate, no combined 2022+2023 output.
+   Post-processing makes plots, yields and a draft deck per campaign
+   (`hists_zbzc_run3/<campaign>/slides_zbzc_run3_<campaign>.pdf`).
 3. Look at the plots/yields, write the summary JSON (plain sentences + conclusion box), rerun
    `python make_zbzc_run3_slides_pdf.py all --summary <json>`, commit outputs and push.
 
