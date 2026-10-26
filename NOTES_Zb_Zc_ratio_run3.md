@@ -2,7 +2,28 @@
 
 Run 2 QCD_sf work is in `SESSION_NOTES.md`; this file is only the Run 3 ratio measurement.
 
-## RESUME HERE (2026-10-26, 15:50 CDT): first Run 3 data/MC run in progress
+## RESUME HERE (2026-10-26, 17:30 CDT): small Run 3 data/MC run finished, decks done
+
+All 50 samples done, post-processing done, everything committed and pushed (3d6121d).
+Decks: `hists_zbzc_run3/<campaign>/slides_zbzc_run3_<campaign>.pdf` (23 pages each), rebuilt with
+`python make_zbzc_run3_slides_pdf.py <campaign> --summary summary_zbzc_run3.json`. New pages: data
+DAS names + lumi, golden JSON source/check, MC DAS processing strings, corrections/SFs table (POG files
+and keys), POG recommendations vs us (2 pages), Hsin-Wei's merge.
+
+Data/MC after full selection (Zee / Zmm): Summer22 0.96/0.96, 22EE 0.98/0.99, 23 0.97/0.99,
+23BPix 0.95/0.99 (stat ~0.01). Four samples lost one file to an XRootD timeout (22EE DY MLL-50,
+23 DY PTLL-100/600, 23 EGamma0 C); lumi and sumw only count what was read, so it stays consistent.
+
+Open items found (not fixed):
+1. `load_lumi` (utils/correction.py) builds `Collisions{campaign[-2:]}` -> "CollisionsEE"/"Collisionsix"
+   for Summer22EE/Summer23BPix, so they use the repo golden JSON copies = pre-2026-tracker-review
+   versions. 15/6634 Summer23BPix LS no longer golden, 0 in 22EE. Fix: use campaign[6:8].
+2. Z->ee peak 1.5-4% wider (RMS) in MC than data in all campaigns (largest 23BPix); muons fine.
+   23BPix Zee data/MC 0.95 vs Zmm 0.99 -> look at electron SFs/smearing there.
+3. Still pending from before: JME-style jet veto, two-electron (trigger-matched) trigger SF,
+   muSFs trigger clip bug in Hsin-Wei's code (tell her), WW missing in Summer22.
+
+## (earlier) RESUME HERE (2026-10-26, 15:50 CDT): first Run 3 data/MC run in progress
 
 **Goal (group go-ahead after the meeting):** small interactive run, MC and data together, for
 Run3Summer22 (2022 C–D), Run3Summer22EE (2022 E–G), Run3Summer23 (2023 C) and Run3Summer23BPix
