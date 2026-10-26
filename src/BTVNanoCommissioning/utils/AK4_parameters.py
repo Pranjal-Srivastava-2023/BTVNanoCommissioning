@@ -26,23 +26,24 @@ correction_config = {
         "default": {
             "DC": "Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt",
             "LUM": None,
-            "JME": {
-                "MC": "Summer20UL16APVNanoV15_V1 Summer20UL16APV_JRV5",
-                "Run2016B": "Summer20UL16APVNanoV15_V1",
-                "Run2016C": "Summer20UL16APVNanoV15_V1",
-                "Run2016D": "Summer20UL16APVNanoV15_V1",
-                "Run2016E": "Summer20UL16APVNanoV15_V1",
-                "Run2016F": "Summer20UL16APVNanoV15_V1",
-            },
-            "jetveto": {"Summer19UL16_V1": "jetvetomap"},
-            "JME_path": "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/Run2-2016preVFP-UL-NanoAODv15/latest/jet_jerc.json.gz",
+            #"JME": {
+            #    "MC": "Summer20UL16APVNanoV15_V1 Summer20UL16APV_JRV5",
+            #    "Run2016B": "Summer20UL16APVNanoV15_V1",
+            #    "Run2016C": "Summer20UL16APVNanoV15_V1",
+            #    "Run2016D": "Summer20UL16APVNanoV15_V1",
+            #    "Run2016E": "Summer20UL16APVNanoV15_V1",
+            #    "Run2016F": "Summer20UL16APVNanoV15_V1",
+            #},
+            #"jetveto": {"Summer19UL16_V1": "jetvetomap"},
+            #"JME_path": "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/Run2-2016preVFP-UL-NanoAODv15/latest/jet_jerc.json.gz",
             "MUO": {
                 "mu_ID": "NUM_TightID_DEN_TrackerMuons",
                 "mu_Iso": "NUM_TightRelIso_DEN_TightIDandIPCut",
             },
             "EGM": {
-                "ele_Reco 2016 Electron-ID-SF": "",
-                "ele_ID 2016 Electron-ID-SF": "wp80iso",
+                "ele_Reco 2016preVFP UL-Electron-ID-SF": "RecoAbove20",
+                "ele_ID 2016preVFP UL-Electron-ID-SF": "Tight",
+                "ele_Trig EGamma_SF2D": "egammaTrigEffi_wp90noiso_preVFP_EGM2D_2016.root",
             },
             "muonSS": "",
             "electronSS": [
@@ -53,10 +54,10 @@ correction_config = {
             "cvmfs_override": {
                 "MUO": "Run2-2016preVFP-UL-NanoAODv9",  # Nanov15 unavailable
                 "muonSS": "Run2-2016preVFP-UL-NanoAODv9",  # Nanov15 unavailable
-                "EGM": "Run2-2016preVFP-UL-NanoAODv15",
-                "electronSS": "Run2-2016preVFP-UL-NanoAODv15",
-                "jetveto": "Run2-2016preVFP-UL-NanoAODv15",
-                "JME": "Run2-2016preVFP-UL-NanoAODv15",
+                "EGM": "Run2-2016preVFP-UL-NanoAODv9",
+                "electronSS": "Run2-2016preVFP-UL-NanoAODv9",
+                "jetveto": "Run2-2016preVFP-UL-NanoAOD9",
+                "JME": "Run2-2016preVFP-UL-NanoAODv9",
             },
         },
         "tt_semilep_mu": {
@@ -77,21 +78,22 @@ correction_config = {
         "default": {
             "DC": "Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt",
             "LUM": None,
-            "JME": {
-                "MC": "Summer20UL16NanoV15_V1 Summer20UL16_JRV5",
-                "Run2016F": "Summer20UL16NanoV15_V1",
-                "Run2016G": "Summer20UL16NanoV15_V1",
-                "Run2016H": "Summer20UL16NanoV15_V1",
-            },
-            "jetveto": {"Summer19UL16_V1": "jetvetomap"},
-            "JME_path": "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/Run2-2016postVFP-UL-NanoAODv15/latest/jet_jerc.json.gz",
+            #"JME": {
+             #   "MC": "Summer20UL16NanoV15_V1 Summer20UL16_JRV5",
+             #   "Run2016F": "Summer20UL16NanoV15_V1",
+             #   "Run2016G": "Summer20UL16NanoV15_V1",
+             #   "Run2016H": "Summer20UL16NanoV15_V1",
+            #},
+            #"jetveto": {"Summer19UL16_V1": "jetvetomap"},
+            #"JME_path": "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/Run2-2016postVFP-UL-NanoAODv15/latest/jet_jerc.json.gz",
             "MUO": {
                 "mu_ID": "NUM_TightID_DEN_TrackerMuons",
                 "mu_Iso": "NUM_TightRelIso_DEN_TightIDandIPCut",
             },
             "EGM": {
-                "ele_Reco 2016 Electron-ID-SF": "",
-                "ele_ID 2016 Electron-ID-SF": "wp80iso",
+                "ele_Reco 2016postVFP UL-Electron-ID-SF": "RecoAbove20",
+                "ele_ID 2016postVFP UL-Electron-ID-SF": "Tight",
+                "ele_Trig EGamma_SF2D": "egammaTrigEffi_wp90noiso_postVFP_EGM2D_2016.root",
             },
             "muonSS": "",
             "electronSS": [
@@ -102,10 +104,10 @@ correction_config = {
             "cvmfs_override": {
                 "MUO": "Run2-2016postVFP-UL-NanoAODv9",  # Nanov15 unavailable
                 "muonSS": "Run2-2016postVFP-UL-NanoAODv9",  # Nanov15 unavailable
-                "EGM": "Run2-2016postVFP-UL-NanoAODv15",
-                "electronSS": "Run2-2016postVFP-UL-NanoAODv15",
-                "jetveto": "Run2-2016postVFP-UL-NanoAODv15",
-                "JME": "Run2-2016postVFP-UL-NanoAODv15",
+                "EGM": "Run2-2016postVFP-UL-NanoAODv9",
+                "electronSS": "Run2-2016postVFP-UL-NanoAODv9",
+                "jetveto": "Run2-2016postVFP-UL-NanoAODv9",
+                "JME": "Run2-2016postVFP-UL-NanoAODv9",
             },
         },
         "tt_semilep_mu": {
@@ -126,23 +128,24 @@ correction_config = {
         "default": {
             "DC": "Cert_294927-306462_13TeV_UL2017_Collisions17_MuonJSON.txt",
             "LUM": None,
-            "JME": {
-                "MC": "Summer20UL17NanoV15_V1 Summer19UL17_JRV4",
-                "Run2017B": "Summer20UL17NanoV15_V1",
-                "Run2017C": "Summer20UL17NanoV15_V1",
-                "Run2017D": "Summer20UL17NanoV15_V1",
-                "Run2017E": "Summer20UL17NanoV15_V1",
-                "Run2017F": "Summer20UL17NanoV15_V1",
-            },
-            "jetveto": {"Summer19UL17_V1": "jetvetomap"},
-            "JME_path": "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/Run2-2017-UL-NanoAODv15/latest/jet_jerc.json.gz",
+            #"JME": {
+            #    "MC": "Summer20UL17NanoV15_V1 Summer19UL17_JRV4",
+            #    "Run2017B": "Summer20UL17NanoV15_V1",
+            #    "Run2017C": "Summer20UL17NanoV15_V1",
+            #    "Run2017D": "Summer20UL17NanoV15_V1",
+            #    "Run2017E": "Summer20UL17NanoV15_V1",
+            #    "Run2017F": "Summer20UL17NanoV15_V1",
+            #},
+            #"jetveto": {"Summer19UL17_V1": "jetvetomap"},
+            #"JME_path": "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/Run2-2017-UL-NanoAODv15/latest/jet_jerc.json.gz",
             "MUO": {
                 "mu_ID": "NUM_TightID_DEN_TrackerMuons",
                 "mu_Iso": "NUM_TightRelIso_DEN_TightIDandIPCut",
             },
             "EGM": {
-                "ele_Reco 2017 Electron-ID-SF": "",
-                "ele_ID 2017 Electron-ID-SF": "wp80iso",
+                "ele_Reco 2017 UL-Electron-ID-SF": "RecoAbove20",
+                "ele_ID 2017 UL-Electron-ID-SF": "Tight",
+                "ele_Trig EGamma_SF2D": "egammaTrigEffi_wp90noiso_EGM2D_2017.root",
             },
             "muonSS": "",
             "electronSS": [
@@ -153,9 +156,9 @@ correction_config = {
             "cvmfs_override": {
                 "MUO": "Run2-2017-UL-NanoAODv9",  # Nanov15 unavailable
                 "muonSS": "Run2-2017-UL-NanoAODv9",  # Nanov15 unavailable
-                "EGM": "Run2-2017-UL-NanoAODv15",
-                "electronSS": "Run2-2017-UL-NanoAODv15",
-                "jetveto": "Run2-2017-UL-NanoAODv15",
+                "EGM": "Run2-2017-UL-NanoAODv9",
+                "electronSS": "Run2-2017-UL-NanoAODv9",
+                "jetveto": "Run2-2017-UL-NanoAODv9",
             },
         },
         "tt_semilep_mu": {
@@ -176,22 +179,26 @@ correction_config = {
         "default": {
             "DC": "Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt",
             "LUM": "puweight_2018_UL.HLTPFJet40.histo",
-            "JME": {
-                "MC": "Summer20UL18NanoV15_V1 Summer19UL18_JRV3",
-                "Run2018A": "Summer20UL18NanoV15_V1",
-                "Run2018B": "Summer20UL18NanoV15_V1",
-                "Run2018C": "Summer20UL18NanoV15_V1",
-                "Run2018D": "Summer20UL18NanoV15_V1",
-            },
-            "jetveto": {"Summer19UL18_V1": "jetvetomap"},
-            "JME_path": "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/Run2-2018-UL-NanoAODv15/latest/jet_jerc.json.gz",
+            #"JME": {
+            #    "MC": "Summer20UL18NanoV15_V1 Summer19UL18_JRV3",
+            #    "Run2018A": "Summer20UL18NanoV15_V1",
+            #    "Run2018B": "Summer20UL18NanoV15_V1",
+            #    "Run2018C": "Summer20UL18NanoV15_V1",
+            #    "Run2018D": "Summer20UL18NanoV15_V1",
+            #},
+            #"jetveto": {"Summer19UL18_V1": "jetvetomap"},
+            #"JME_path": "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/Run2-2018-UL-NanoAODv15/latest/jet_jerc.json.gz",
             "MUO": {
                 "mu_ID": "NUM_TightID_DEN_TrackerMuons",
                 "mu_Iso": "NUM_TightRelIso_DEN_TightIDandIPCut",
             },
             "EGM": {
-                "ele_Reco 2018 Electron-ID-SF": "",
-                "ele_ID 2018 Electron-ID-SF": "wp80iso",
+                #"ele_Reco 2018 Electron-ID-SF": "",
+                "ele_Reco 2018 UL-Electron-ID-SF": "RecoAbove20",
+                "ele_ID 2018 UL-Electron-ID-SF": "Tight",
+                "ele_Trig EGamma_SF2D": "egammaTrigEffi_wp90noiso_EGM2D_2018.root",
+
+                #"ele_ID 2018 Electron-ID-SF": "wp80iso",
             },
             "muonSS": "",
             "electronSS": [
@@ -202,9 +209,9 @@ correction_config = {
             "cvmfs_override": {
                 "MUO": "Run2-2018-UL-NanoAODv9",  # Nanov15 unavailable
                 "muonSS": "Run2-2018-UL-NanoAODv9",  # Nanov15 unavailable
-                "EGM": "Run2-2018-UL-NanoAODv15",
-                "electronSS": "Run2-2018-UL-NanoAODv15",
-                "jetveto": "Run2-2018-UL-NanoAODv15",
+                "EGM": "Run2-2018-UL-NanoAODv9",
+                "electronSS": "Run2-2018-UL-NanoAODv9",
+                "jetveto": "Run2-2018-UL-NanoAODv9",
             },
         },
         "tt_semilep_mu": {

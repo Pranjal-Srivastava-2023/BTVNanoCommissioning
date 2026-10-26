@@ -16,6 +16,7 @@ from .histograms.qcd_smu import get_histograms as qcd_smu_hists
 from .histograms.validation import get_histograms as validation_hists
 from .histograms.wc import get_histograms as wc_hists
 from .histograms.qgtag import get_histograms as qgtag_hists
+from .histograms.custom_analysis import get_histograms as custom_analysis_hists
 
 
 def get_axes_collections(
@@ -59,6 +60,7 @@ def get_hist_collections(axes: dict, hist_collections: list, **kwargs):
         "validation": validation_hists,
         "Wc": wc_hists,
         "qgtag": qgtag_hists,
+        "custom_analysis": custom_analysis_hists,
     }
 
     output = {}

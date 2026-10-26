@@ -288,7 +288,7 @@ def load_SF(year, campaign, selMod="default", syst=False):
             if (
                 "histo.json" in "\t".join(list(conf["EGM"].values()))
                 or "histo.txt" in "\t".join(list(conf["EGM"].values()))
-                or "histo.root" in "\t".join(list(conf["EGM"].values()))
+                or "root" in "\t".join(list(conf["EGM"].values()))
             ):
                 _ele_path = f"BTVNanoCommissioning.data.EGM.{campaign}"
                 ext = extractor()
@@ -299,7 +299,7 @@ def load_SF(year, campaign, selMod="default", syst=False):
                             for k in correct_map["EGM_cfg"].keys()
                             if "histo.json" in correct_map["EGM_cfg"][k]
                             or "histo.txt" in correct_map["EGM_cfg"][k]
-                            or "histo.root" in correct_map["EGM_cfg"][k]
+                            or "root" in correct_map["EGM_cfg"][k]
                         ],
                         [
                             stack.enter_context(importlib.resources.path(_ele_path, f))
@@ -313,7 +313,7 @@ def load_SF(year, campaign, selMod="default", syst=False):
                             for paths, file in zip(inputs, real_paths)
                             if "histo.json" in str(file)
                             or "histo.txt" in str(file)
-                            or "histo.root" in str(file)
+                            or "root" in str(file)
                         ]
                     )
                     if syst:
@@ -2340,10 +2340,65 @@ def btagSFs(event, correct_map, weights, SFtype, syst=False):
     return weights
 
 
+def _dphi(a, b):
+    return (a - b + np.pi) % (2 * np.pi) - np.pi
+
+def add_ele_trig_sf(pruned_ev, evaluator, weights, name="ele_Trig",
+                    bits=2, pt_thresh=30.0, dr_max=0.2):
+    """Electron trigger SF via trigger-object matching (mirrors CalTrigSF in Selector.cpp).
+ 
+    - trigger object: highest-pT TrigObj with |id|==11, (filterBits & bits) != 0, pt > pt_thresh
+      (use the same bits / threshold as your C++ config)
+    - matched electron: the closer of the two selected electrons, with dR < dr_max
+    - SF = evaluator[name](supercluster eta, pt) of the matched electron; 1.0 if no match
+    - only applied to Zee events when pruned_ev has an is_zee field
+    """
+    
+    try:
+        lookup = evaluator[name]
+    except KeyError:
+        return weights
+ 
+    tobj = pruned_ev.TrigObj
+    sel = (abs(tobj.id) == 11) & ((tobj.filterBits & bits) != 0) & (tobj.pt > pt_thresh)
+    tobj = tobj[sel]
+    best = ak.firsts(tobj[ak.argmax(tobj.pt, axis=1, keepdims=True)])  # None if no object
+ 
+    ele = ak.pad_none(pruned_ev.SelElectron, 2, axis=1, clip=True)     # exactly 2 slots
+    e_eta = ak.to_numpy(ak.fill_none(ele.eta, 999.0)).astype(np.float64)    # (n, 2); empty slot -> far away
+    e_phi = ak.to_numpy(ak.fill_none(ele.phi, 0.0)).astype(np.float64)
+    b_eta = ak.to_numpy(ak.fill_none(best.eta, np.nan)).astype(np.float64)  # (n,); no trigger object -> nan
+    b_phi = ak.to_numpy(ak.fill_none(best.phi, np.nan)).astype(np.float64)
+    dr = np.sqrt((e_eta - b_eta[:, None]) ** 2 + _dphi(e_phi, b_phi[:, None]) ** 2)
+    dr = np.where(np.isfinite(dr), dr, 999.0)                                       # (n, 2)
+ 
+    use0 = (dr[:, 0] < dr[:, 1]) & (dr[:, 0] < dr_max)
+    use1 = (dr[:, 1] < dr[:, 0]) & (dr[:, 1] < dr_max)
+    
+    
+    def _pick(arr, fallback):
+        a = ak.to_numpy(ak.fill_none(arr, fallback)).astype(np.float64)
+        return np.where(use0, a[:, 0], np.where(use1, a[:, 1], fallback))
+ 
+    pt = _pick(ele.pt, 30.0)
+    eta_sc = _pick(ele.eta + ele.deltaEtaSC, 0.0)    # x = eta, y = pT
+ 
+    sf = np.asarray(lookup(eta_sc, pt), dtype=np.float64)
+    matched = use0 | use1
+    if "is_zee" in pruned_ev.fields:
+        matched = matched & ak.to_numpy(pruned_ev.is_zee)
+    weights.add(name, np.where(matched, sf, 1.0))
+    return weights
+
 def eleSFs(ele, correct_map, weights, syst=True, isHLT=False):
     allele = ele if ele.ndim > 1 else ak.singletons(ele)
+    #raise RuntimeError(f"Available EGM correction names: {list(correct_map['EGM'].keys())}")
 
     for sf in correct_map["EGM_cfg"].keys():
+        # Only apply SFs for lepton pass HLT
+        if not isHLT and "Trig" in sf:
+            continue 
+            
         sf_tokens = sf.split(" ")
         sf_name = sf_tokens[0]
         sf_campaign = sf_tokens[1]
@@ -2352,64 +2407,129 @@ def eleSFs(ele, correct_map, weights, syst=True, isHLT=False):
             sf_campaign = "2024Prompt"
 
         ## Only apply SFs for lepton pass HLT filter
-        if not isHLT and "Trig" in sf:
-            continue
+        #if not isHLT and "Trig" in sf:
+            #continue
         sf_type = sf_name
+        
+        sfs_alle = np.ones(len(allele), dtype=np.float64)
+        sfs_alle_up = np.ones(len(allele), dtype=np.float64)
+        sfs_alle_down = np.ones(len(allele), dtype=np.float64)
+        
         for nele in range(ak.num(allele.pt)[0]):
+
             ele = allele[:, nele]
             ele_etaSC = ak.fill_none(ele.eta + ele.deltaEtaSC, -2.5)
             masknone = ak.is_none(ele.pt)
-            sfs_alle, sfs_alle_up, sfs_alle_down = (
-                np.ones_like(allele[:, 0].pt),
-                np.ones_like(allele[:, 0].pt),
-                np.ones_like(allele[:, 0].pt),
-            )
-
+            ele_pt_safe = ak.fill_none(ele.pt, 20.0)  # placeholder; masked out via masknone below
+            ele_phi_safe = ak.fill_none(ele.phi, 0.0)
+ 
+            #sfs_alle, sfs_alle_up, sfs_alle_down = (
+            #    np.ones_like(allele[:, 0].pt),
+            #    np.ones_like(allele[:, 0].pt),
+            #    np.ones_like(allele[:, 0].pt),
+            #)
             if "correctionlib" in str(type(correct_map["EGM"])):
-                ## reco SFs, split by pT
                 if "Reco" in sf:
-                    ele_pt = np.clip(ele.pt, 20, 74.99999)
-                    ele_pt_low = np.where(ele.pt >= 20, 19.99999, ele.pt)
-                    ele_pt_high = np.clip(ele.pt, 75, 10000)
-                    ## phi is used in Summer23
-                    if "Summer23" in correct_map["campaign"]:
+                    ele_pt = np.clip(ele_pt_safe, 20, 74.99999)
+                    ele_pt_low = np.where(ele_pt_safe >= 20, 19.99999, ele_pt_safe)
+                    ele_pt_high = np.clip(ele_pt_safe, 75, 10000)
+                    if sf_id.startswith("UL-"):
                         sfs_low = np.where(
                             (ele.pt < 20.0) & ~masknone,
                             correct_map["EGM"][sf_id].evaluate(
-                                sf_campaign,
-                                "sf",
-                                "RecoBelow20",
-                                ele_etaSC,
-                                ele_pt_low,
-                                ele.phi,
+                                sf_campaign, "sf", "RecoBelow20", ele_etaSC, ele_pt_low,
+                            ),
+                            1.0,
+                        )
+                        sfs = np.where(
+                            (ele.pt >= 20.0) & ~masknone,
+                            correct_map["EGM"][sf_id].evaluate(
+                                sf_campaign, "sf", "RecoAbove20", ele_etaSC, 
+                                np.clip(ele_pt_safe, 20, 10000),  
+                            ),
+                            sfs_low,
+                        )
+                    elif "Summer23" in correct_map["campaign"]:
+                        sfs_low = np.where(
+                            (ele_pt_safe < 20.0) & ~masknone,
+                            correct_map["EGM"][sf_id].evaluate(
+                                sf_campaign, "sf", "RecoBelow20", ele_etaSC, ele_pt_low, ele_phi_safe,
                             ),
                             1.0,
                         )
                         sfs_high = np.where(
-                            (ele.pt >= 75.0) & ~masknone,
+                            (ele_pt_safe >= 75.0) & ~masknone,
                             correct_map["EGM"][sf_id].evaluate(
-                                sf_campaign,
-                                "sf",
-                                "RecoAbove75",
-                                ele_etaSC,
-                                ele_pt_high,
-                                ele.phi,
+                                sf_campaign, "sf", "RecoAbove75", ele_etaSC, ele_pt_high, ele_phi_safe,
                             ),
-                            sfs_low,
+                            sfs_low, 
                         )
                         sfs = np.where(
-                            (ele.pt >= 20.0) & (ele.pt < 75.0) & ~masknone,
+                            (ele_pt_safe >= 20.0) & (ele_pt_safe < 75.0) & ~masknone,
                             correct_map["EGM"][sf_id].evaluate(
-                                sf_campaign,
-                                "sf",
-                                "Reco20to75",
-                                ele_etaSC,
-                                ele_pt,
-                                ele.phi,
+                                sf_campaign, "sf", "Reco20to75", ele_etaSC, ele_pt_safe, ele_phi_safe,
                             ),
                             sfs_high,
                         )
                         sfs = np.where(masknone, 1.0, sfs)
+        
+        
+        
+        #for nele in range(ak.num(allele.pt)[0]):
+        #    ele = allele[:, nele]
+        #    ele_etaSC = ak.fill_none(ele.eta + ele.deltaEtaSC, -2.5)
+        #    masknone = ak.is_none(ele.pt)
+        #    sfs_alle, sfs_alle_up, sfs_alle_down = (
+        #        np.ones_like(allele[:, 0].pt),
+        #        np.ones_like(allele[:, 0].pt),
+        #        np.ones_like(allele[:, 0].pt),
+        #    )
+
+        #    if "correctionlib" in str(type(correct_map["EGM"])):
+                ## reco SFs, split by pT
+        #        if "Reco" in sf:
+        #            ele_pt = np.clip(ele.pt, 20, 74.99999)
+        #            ele_pt_low = np.where(ele.pt >= 20, 19.99999, ele.pt)
+        #            ele_pt_high = np.clip(ele.pt, 75, 10000)
+                    ## phi is used in Summer23
+        #           if "Summer23" in correct_map["campaign"]:
+        #                sfs_low = np.where(
+        #                    (ele.pt < 20.0) & ~masknone,
+        #                    correct_map["EGM"][sf_id].evaluate(
+        #                        sf_campaign,
+        #                        "sf",
+        #                        "RecoBelow20",
+        #                        ele_etaSC,
+        #                        ele_pt_low,
+        #                        ele.phi,
+        #                    ),
+        #                    1.0,
+        #                )
+        #                sfs_high = np.where(
+        #                    (ele.pt >= 75.0) & ~masknone,
+        #                    correct_map["EGM"][sf_id].evaluate(
+        #                        sf_campaign,
+        #                        "sf",
+        #                        "RecoAbove75",
+        #                        ele_etaSC,
+        #                        ele_pt_high,
+        #                        ele.phi,
+        #                    ),
+        #                    sfs_low,
+        #                )
+        #                sfs = np.where(
+        #                    (ele.pt >= 20.0) & (ele.pt < 75.0) & ~masknone,
+        #                    correct_map["EGM"][sf_id].evaluate(
+        #                        sf_campaign,
+        #                        "sf",
+        #                        "Reco20to75",
+        #                        ele_etaSC,
+        #                        ele_pt,
+        #                        ele.phi,
+        #                    ),
+        #                    sfs_high,
+        #                )
+        #                sfs = np.where(masknone, 1.0, sfs)
 
                         if syst != False:
                             sfs_up_low = np.where(
@@ -2800,6 +2920,7 @@ def eleSFs(ele, correct_map, weights, syst=True, isHLT=False):
                 sfs_alle_up = sfs_alle_up * sfs_up
 
         sfname = sf_name
+        
         if syst:
             weights.add(sfname, sfs_alle, sfs_alle_up, sfs_alle_down)
         else:
@@ -2824,19 +2945,40 @@ def muSFs(mu, correct_map, weights, syst=False, isHLT=False):
             np.ones_like(allmu[:, 0].pt),
         )
         sf_type = sf_name
+        
+
         for nmu in range(ak.num(allmu.pt)[0]):
             mu = allmu[:, nmu]
             masknone = ak.is_none(mu.pt)
+            mu_pt_safe = ak.fill_none(mu.pt, 15.0)  # placeholder; masked out below regardless
+            
             if "Trig" in sf:
-                mu_pt = np.clip(mu.pt, 26.0, None)
+                mu_pt = np.clip(mu_pt_safe, 26.0, None)
             else:
                 pt_min = (
                     10.0
                     if correct_map["campaign"] in ["Summer24", "Winter25", "Prompt25"]
                     else 15.0
                 )
-                mu_pt = np.clip(mu.pt, pt_min, None)
-            mu_eta = np.clip(mu.eta, -2.4, 2.399999)
+            mu_pt = np.clip(mu_pt_safe, pt_min, None)
+            mu_eta = np.clip(ak.fill_none(mu.eta, 0.0), -2.4, 2.399999)
+    
+    
+    
+        
+        #for nmu in range(ak.num(allmu.pt)[0]):
+         #   mu = allmu[:, nmu]
+         #   masknone = ak.is_none(mu.pt)
+         #   if "Trig" in sf:
+         #       mu_pt = np.clip(mu.pt, 26.0, None)
+         #   else:
+         #       pt_min = (
+         #           10.0
+         #           if correct_map["campaign"] in ["Summer24", "Winter25", "Prompt25"]
+         #           else 15.0
+         #       )
+         #       mu_pt = np.clip(mu.pt, pt_min, None)
+         #   mu_eta = np.clip(mu.eta, -2.4, 2.399999)
             sfs = 1.0
             if "correctionlib" in str(type(correct_map["MUO"])):
                 sfs = np.where(
@@ -3921,6 +4063,14 @@ def common_shifts(self, events):
 
 
 # common weights
+ELE_TRIG_MATCH = {
+    "2018-UL": dict(bits=2, pt_thresh=32),     # replace with your 2018 C++ values
+    "2017-UL": dict(bits=2, pt_thresh=32),
+    "2016postVFP-UL": dict(bits=2, pt_thresh=27),
+    "2016preVFP-UL": dict(bits=2, pt_thresh=27)
+}
+
+
 def weight_manager(pruned_ev, SF_map, isSyst, campaign=None):
     """
     Example for Scaling Factors (SFs):
@@ -3956,6 +4106,8 @@ def weight_manager(pruned_ev, SF_map, isSyst, campaign=None):
             muSFs(pruned_ev.SelMuon, SF_map, weights, syst_wei, True)
         if "EGM" in SF_map.keys() and "SelElectron" in pruned_ev.fields:
             eleSFs(pruned_ev.SelElectron, SF_map, weights, syst_wei, False)
+            if "EGM_custom" in SF_map and "TrigObj" in pruned_ev.fields and campaign in ELE_TRIG_MATCH:
+                add_ele_trig_sf(pruned_ev, SF_map["EGM_custom"], weights, **ELE_TRIG_MATCH[campaign])  
         if (
             "ctag" in SF_map.keys() or "btag" in SF_map.keys()
         ) and "SelJet" in pruned_ev.fields:
