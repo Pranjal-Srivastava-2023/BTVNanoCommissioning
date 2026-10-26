@@ -1,0 +1,50 @@
+Zb_Zc_ratio Run 3, AK4, Summer22 (2022 C-D), 13.6 TeV, 20 files per MC sample and per data channel
+
+== processed lumi [/pb] (brilcalc on the golden-JSON lumisections seen; 2023 x0.5 for the half PDs)
+campaign             Zee       Zmm
+Summer22          389.49    741.81
+
+== Summer22 Zee: raw events passing each step
+dataset                        all  lumi_slice     jetveto     trigger     leptons          OS       Zmass         MET         jet
+DYPTLL-100                 3270227     2933762     2756512      791906      226379      224096      207482      167860      161626
+DYPTLL-200                 2891779     2735083     2553029      871037      325210      320807      292206      197994      195548
+DYPTLL-400                 1799275     1560230     1455325      539820      248815      244499      219738      113864      113635
+DYPTLL-600                 1236732     1236732     1160846      287657      130426      127889      106334       45705       45662
+DY                         3358914     3266113     3147519      520892      159827      158851      153207      142359       36744
+EGamma_Run2022C           12643681     9191985     8811342     3349887       67504       66916       63751       61643       10733
+EGamma_Run2022D            5041098     4424975     4245240     1731537       47697       47290       45174       43638        7651
+-- Summer22 Zee: MC sum(genWeight) scaled to lumi (no SFs) vs data, per step (data PD is trigger-selected: data/MC means something from 'trigger' on)
+MC                         2517254     2471967     2387244      398068      126444      125692      121364      113236       21326
+data                      17684779    13616960    13056582     5081424      115201      114206      108925      105281       18384
+data/MC                      7.025       5.509       5.469      12.765       0.911       0.909       0.898       0.930       0.862
+
+== Summer22 Zmm: raw events passing each step
+dataset                        all  lumi_slice     jetveto     trigger     leptons          OS       Zmass         MET         jet
+DYPTLL-100                 3270227     2933762     2756512      827960      347316      347268      321204      274877      263846
+DYPTLL-200                 2891779     2735083     2553029      882693      468108      468046      424675      333224      328588
+DYPTLL-400                 1799275     1560230     1455325      549480      339729      339693      301209      199965      199508
+DYPTLL-600                 1236732     1236732     1160846      407915      261848      261821      226642      123181      123122
+DY                         3358914     3266113     3147519      659502      277217      277208      267537      249530       63501
+Muon_Run2022C             12571267     9837281     9452527     5201719      234868      234763      222352      216268       36362
+Muon_Run2022D              7731646     6976643     6700857     3757104      167104      167051      158350      153712       26694
+-- Summer22 Zmm: MC sum(genWeight) scaled to lumi (no SFs) vs data, per step (data PD is trigger-selected: data/MC means something from 'trigger' on)
+MC                         4794286     4708033     4546672      965726      416430      416418      402340      376702       68927
+data                      20302913    16813924    16153384     8958823      401972      401814      380702      369980       63056
+data/MC                      4.235       3.571       3.553       9.277       0.965       0.965       0.946       0.982       0.915
+
+== hadronFlavour: yields after full selection (MC with all weights)
+               l         c         b        tt        VV        MC      data   data/MC
+Zee      16753.8    1529.5     709.6       0.0       0.0   18992.9     18384     0.968
+  +-       194.2      61.3      44.9       0.0       0.0     208.5       136     0.013
+  DY   b frac 0.037   c frac 0.081   c/b 2.16
+Zmm      56937.7    5303.6    2760.4       0.0       0.0   65001.7     63056     0.970
+  +-       514.4     166.7     121.0       0.0       0.0     554.1       251     0.009
+  DY   b frac 0.042   c frac 0.082   c/b 1.92
+
+== partonFlavour: yields after full selection (MC with all weights)
+            none         g       uds         c         b        tt        VV        MC      data   data/MC
+Zee         73.6    5177.6   11379.5    1637.5     724.6       0.0       0.0   18992.9     18384     0.968
+  +-         9.6     105.8     161.6      63.2      45.4       0.0       0.0     208.5       136     0.013
+Zmm        342.3   18140.8   38053.3    5645.3    2820.0       0.0       0.0   65001.7     63056     0.970
+  +-        30.7     284.9     424.9     171.8     122.0       0.0       0.0     554.1       251     0.009
+

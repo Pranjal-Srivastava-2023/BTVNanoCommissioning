@@ -3,7 +3,7 @@
 # make the lumi, plots, tables and a draft deck (summary page left to be written).
 # usage: nohup setsid ./postprocess_zbzc_run3.sh > logs_zbzc_run3/postprocess.log 2>&1 &
 cd "$(dirname "$0")"
-until [ "$(cat logs_zbzc_run3/*/driver_*.log | grep -c 'ALL DONE')" -eq 12 ]; do sleep 120; done
+until [ "$(cat logs_zbzc_run3/*/driver_*.log | grep -c 'ALL DONE')" -eq 12 ] && ! grep -L 'RERUN DONE' logs_zbzc_run3/*/rerun_*.log 2>/dev/null | grep -q .; do sleep 120; done
 echo "$(date +%T) all jobs done"
 grep -H exit logs_zbzc_run3/*/driver_*.log | grep -v 'exit 0' && echo "WARNING: failed tries above"
 source /uscms_data/d3/psrivast/micromamba/bin/activate zbb-btv

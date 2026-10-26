@@ -1,0 +1,15 @@
+12:51:09 DYto2L-2Jets_MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 try 1
+13:19:24 DYto2L-2Jets_MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 exit 0
+13:19:24 DYto2L-2Jets_MLL-50_PTLL-100_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 try 1
+14:08:12 DYto2L-2Jets_MLL-50_PTLL-100_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 exit 0
+14:08:12 DYto2L-2Jets_MLL-50_PTLL-200_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 try 1
+14:18:26 DYto2L-2Jets_MLL-50_PTLL-200_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 exit 0
+14:18:26 DYto2L-2Jets_MLL-50_PTLL-400_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 try 1
+14:41:24 DYto2L-2Jets_MLL-50_PTLL-400_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 exit 0
+14:41:24 DYto2L-2Jets_MLL-50_PTLL-600_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 try 1
+14:51:47 DYto2L-2Jets_MLL-50_PTLL-600_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 exit 0
+14:51:47 TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8 try 1
+15:17:33 TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8 exit 0
+15:17:33 WW_TuneCP5_13p6TeV_pythia8 try 1
+15:17:38 stopped before WW (WW/WZ/ZZ in driver_vv.log)
+15:17:38 ALL DONE

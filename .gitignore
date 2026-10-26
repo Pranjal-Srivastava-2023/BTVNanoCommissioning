@@ -44,3 +44,7 @@ hists_zbzc*/**
 !hists_zbzc*/*/*.pdf
 !hists_zbzc*/*/plots/
 !hists_zbzc*/*/plots/**
+# Zb_Zc_ratio Run 3 small run: per-dataset .coffea, lumi JSONs, bookkeeping logs
+!hists_zbzc_run3/*/zbzc_run3/
+!hists_zbzc_run3/*/zbzc_run3/*.coffea
+!hists_zbzc*/*/*.json
