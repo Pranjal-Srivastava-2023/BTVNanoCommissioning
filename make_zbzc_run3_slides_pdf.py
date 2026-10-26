@@ -143,7 +143,9 @@ def summed(ch):
 
 
 Y = {ch: summed(ch) for ch in CHS}
-STEPS = ["trigger", "leptons", "OS", "Zmass", "MET", "jet"]
+# starts after the trigger: the triggered PDs also hold single-lepton events (mostly W->lnu)
+# that are not simulated, so data/MC only means something once two leptons are required
+STEPS = ["leptons", "OS", "Zmass", "MET", "jet"]
 
 
 def cutflow(ch):
@@ -531,7 +533,7 @@ n += 1
 # ------------------------------------------------------------------ cutflow data vs MC
 fig = page()
 y = heading(fig, "Cutflow: data vs MC") + 30
-cols = [("", 240, "left")] + [(s, 236, "right") for s in STEPS]
+cols = [("", 244, "left")] + [(s, 284, "right") for s in STEPS]
 rows, shade = [], []
 for ch, chname in CHS.items():
     mc, dat = cutflow(ch)
@@ -540,11 +542,10 @@ for ch, chname in CHS.items():
              ["data / MC"] + [f"{d / m:.2f}" if m else "–" for d, m in zip(dat, mc)]]
     shade.append(len(rows) - 1)
 y = table(fig, 128, y, cols, rows, 26, shade=tuple(shade)) + 36
-text(fig, 128, y, "Data/MC only means something from the two-lepton step on. At the trigger step the data are "
-     "mostly single-lepton events (W→ℓν, multijet) that fire the same trigger but are not simulated: we only "
-     "have DY, tt̄ and VV. The two-lepton cut keeps 2–5% of the triggered data but 30–40% of the MC, and "
-     "data/MC drops from about 10 to about 1. MC here is before SFs (generator weight × σ × L / Σw only), "
-     "so data/MC is expected a few % off 1 at the lepton steps.", 24, BODY, width=1664)
+text(fig, 128, y, "Events that fired the trigger and then passed each step. The table starts after the trigger: "
+     "the triggered data also hold many single-lepton events (mostly W→ℓν) that we do not simulate, so data/MC "
+     "only means something once two leptons are required. MC here has no SFs or pileup weight yet (generator "
+     "weight × σ × L / Σw only); data/MC with all weights is on the next page.", 26, BODY, width=1664)
 footer(fig, FOOT + " · events after each step" + (", all campaigns summed" if len(camps) > 1 else ""), n)
 save(fig)
 n += 1
