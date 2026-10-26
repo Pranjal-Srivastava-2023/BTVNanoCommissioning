@@ -11,3 +11,9 @@
 15:39:50 DYto2L-2Jets_MLL-50_PTLL-400_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 try 3
 15:40:22 DYto2L-2Jets_MLL-50_PTLL-400_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 exit 143
 15:40:22 DYto2L-2Jets_MLL-50_PTLL-600_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 try 1
+15:49:35 DYto2L-2Jets_MLL-50_PTLL-600_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 exit 0
+15:49:35 TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8 try 1
+16:15:39 TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8 exit 0
+16:15:39 WW_TuneCP5_13p6TeV_pythia8 try 1
+16:15:54 stopped before WW (WW/WZ/ZZ in driver_vv.log)
+16:15:54 ALL DONE

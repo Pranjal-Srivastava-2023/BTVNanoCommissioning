@@ -1,0 +1,43 @@
+{
+  "Summer22": {
+    "title": "Data and MC agree to about 4% in both channels",
+    "body": "With 0.39 fb⁻¹ in Z→ee and 0.74 fb⁻¹ in Z→μμ, data/MC after the full selection is 0.96 ± 0.01 in both channels. The Z peak, the jet pT and η and the PNet scores have the same shape in data and MC. DY + b is about 4% and DY + c about 8% of the DY events. The 4% deficit is more than the statistical uncertainty, but of the size the DY cross section, luminosity and lepton SFs allow together. We are on track to scale up.",
+    "next": [
+      "Full run on condor, after fixing the golden JSON path and moving to the JME-style jet veto.",
+      "Electron trigger SF from both electrons, matched to the trigger object as in Hsin-Wei's Run 2 code.",
+      "Find out why the Z→ee peak is wider in MC than in data (electron smearing).",
+      "WW was not run here (too slow to read); add it in the full run.",
+      "b/c-tag SFs once we cut on the tagger; decide what to do without c-tag shape SFs."
+    ]
+  },
+  "Summer22EE": {
+    "title": "Data and MC agree within 2% in both channels",
+    "body": "With 0.63 fb⁻¹ in Z→ee and 0.84 fb⁻¹ in Z→μμ, data/MC after the full selection is 0.98 ± 0.01 (Z→ee) and 0.99 ± 0.01 (Z→μμ). The Z peak, the jet pT and η and the PNet scores have the same shape in data and MC. DY + b is about 3.5% and DY + c about 8.5% of the DY events. The lower electron ID SFs of 2022EE are in, and the electron channel comes out fine. This campaign is in good shape.",
+    "next": [
+      "Full run on condor, after fixing the golden JSON path (this campaign read the older repo copy) and moving to the JME-style jet veto.",
+      "Electron trigger SF from both electrons, matched to the trigger object as in Hsin-Wei's Run 2 code.",
+      "Find out why the Z→ee peak is wider in MC than in data (electron smearing).",
+      "b/c-tag SFs once we cut on the tagger; decide what to do without c-tag shape SFs."
+    ]
+  },
+  "Summer23": {
+    "title": "Data and MC agree within 3% in both channels",
+    "body": "With 0.57 fb⁻¹ in Z→ee and 0.60 fb⁻¹ in Z→μμ (Muon0 and EGamma0, half of their luminosity), data/MC after the full selection is 0.97 ± 0.01 (Z→ee) and 0.99 ± 0.01 (Z→μμ). The Z peak, the jet pT and η and the PNet scores have the same shape in data and MC. DY + b is about 4% and DY + c about 8.5% of the DY events. The half-PD treatment of 2023 works. This campaign is in good shape.",
+    "next": [
+      "Full run on condor, after moving to the JME-style jet veto.",
+      "Electron trigger SF from both electrons, matched to the trigger object as in Hsin-Wei's Run 2 code.",
+      "Find out why the Z→ee peak is wider in MC than in data (electron smearing).",
+      "b/c-tag SFs once we cut on the tagger; decide what to do without c-tag shape SFs."
+    ]
+  },
+  "Summer23BPix": {
+    "title": "Muons agree within 1%, electrons are 5% low",
+    "body": "With 0.62 fb⁻¹ in each channel (Muon0 and EGamma0, half of their luminosity), data/MC after the full selection is 0.99 ± 0.01 in Z→μμ but 0.95 ± 0.01 in Z→ee. Shapes agree, but the Z→ee peak is about 4% wider in MC than in data, the largest of the four campaigns. Since the muons are fine, the electron side (SFs or smearing) is the place to look. DY + b is about 4% and DY + c about 8% of the DY events.",
+    "next": [
+      "Look at the electron SFs and smearing in 2023 BPix: this is the one real open item.",
+      "Full run on condor, after fixing the golden JSON path (this campaign read the older repo copy) and moving to the JME-style jet veto.",
+      "Electron trigger SF from both electrons, matched to the trigger object as in Hsin-Wei's Run 2 code.",
+      "b/c-tag SFs once we cut on the tagger; decide what to do without c-tag shape SFs."
+    ]
+  }
+}

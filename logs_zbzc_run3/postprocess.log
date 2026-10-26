@@ -1,0 +1,35 @@
+16:21:33 all jobs done
+logs_zbzc_run3/Summer22/driver_vv.log:15:28:12 WW_TuneCP5_13p6TeV_pythia8 exit 143
+logs_zbzc_run3/Summer22/driver_vv.log:16:02:18 WW_TuneCP5_13p6TeV_pythia8 exit 143
+logs_zbzc_run3/Summer22/driver_vv.log:16:05:17 WW_TuneCP5_13p6TeV_pythia8 exit 143
+logs_zbzc_run3/Summer22EE/driver_mc.log:15:28:12 DYto2L-2Jets_MLL-50_PTLL-400_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 exit 143
+logs_zbzc_run3/Summer22EE/driver_mc.log:15:39:50 DYto2L-2Jets_MLL-50_PTLL-400_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 exit 143
+logs_zbzc_run3/Summer22EE/driver_mc.log:15:40:22 DYto2L-2Jets_MLL-50_PTLL-400_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 exit 143
+WARNING: failed tries above
+Summer22      EGamma_Run2022C        1389 LS     224.06 /pb  x1.0
+Summer22      EGamma_Run2022D         620 LS     165.43 /pb  x1.0
+Summer22      Muon_Run2022C          1861 LS     430.93 /pb  x1.0
+Summer22      Muon_Run2022D          1102 LS     310.88 /pb  x1.0
+Summer22      Zee 389.49 /pb   Zmm 741.81 /pb
+Summer22EE    EGamma_Run2022E         640 LS     157.68 /pb  x1.0
+Summer22EE    EGamma_Run2022F        1202 LS     425.21 /pb  x1.0
+Summer22EE    EGamma_Run2022G         139 LS      51.64 /pb  x1.0
+Summer22EE    Muon_Run2022E           584 LS     178.51 /pb  x1.0
+Summer22EE    Muon_Run2022F          1535 LS     549.71 /pb  x1.0
+Summer22EE    Muon_Run2022G           289 LS     109.15 /pb  x1.0
+Summer22EE    Zee 634.53 /pb   Zmm 837.37 /pb
+Summer23      EGamma0_Run2023C       3588 LS    1132.64 /pb  x0.5
+Summer23      Muon0_Run2023C         3526 LS    1209.54 /pb  x0.5
+Summer23      Zee 566.32 /pb   Zmm 604.77 /pb
+Summer23BPix  EGamma0_Run2023D       3409 LS    1249.85 /pb  x0.5
+Summer23BPix  Muon0_Run2023D         3694 LS    1244.10 /pb  x0.5
+Summer23BPix  Zee 624.93 /pb   Zmm 622.05 /pb
+16:24:52 plots Summer22
+16:25:37 plots Summer22EE
+16:26:34 plots Summer23
+16:27:14 plots Summer23BPix
+wrote hists_zbzc_run3/Summer22/slides_zbzc_run3_Summer22.pdf (19 pages)
+wrote hists_zbzc_run3/Summer22EE/slides_zbzc_run3_Summer22EE.pdf (19 pages)
+wrote hists_zbzc_run3/Summer23/slides_zbzc_run3_Summer23.pdf (19 pages)
+wrote hists_zbzc_run3/Summer23BPix/slides_zbzc_run3_Summer23BPix.pdf (19 pages)
+16:28:19 postprocess done

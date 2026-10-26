@@ -1,0 +1,3 @@
+16:06:47 Summer22 WW deadline set for 17:15 (kill if still running; driver then ends, postprocess proceeds)
+16:09:30 WW deadline helper (from the interrupted session) stopped: WW already dropped by the user's request at 16:05
+16:28:45 postprocess done, watchdog exits
