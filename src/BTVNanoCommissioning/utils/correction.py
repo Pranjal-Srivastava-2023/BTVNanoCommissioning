@@ -1950,9 +1950,17 @@ def EGM_shifts(shifts, correct_map, events, isRealData, systematic=False):
             "smear", ele_pt, ele_r9, np.abs(ele_etaSC)
         )
         smear = ak.unflatten(smear, n_ele)
-        # since the smearing is stochastic, a random number is needed for each event
-        rng = np.random.default_rng(seed=125)
-        random_numbers = rng.normal(loc=0.0, scale=1.0, size=len(ele.pt))
+        # since the smearing is stochastic, a random number is needed for each electron
+        # (len(ele.pt) is the number of events: one number per event smeared both
+        # electrons of a Z->ee pair together and over-smeared m(ee)).
+        # Seeded from the chunk's first event so chunks do not repeat the same numbers.
+        seed = [125]
+        if len(events) > 0:
+            seed += [int(events.run[0]), int(events.luminosityBlock[0]), int(events.event[0])]
+        rng = np.random.default_rng(seed=seed)
+        random_numbers = ak.unflatten(
+            rng.normal(loc=0.0, scale=1.0, size=len(ele_pt)), n_ele
+        )
         ele_pt_corr = ele.pt * (1 + smear * random_numbers)
 
     # scale and smearing uncertainties should be evaluated on the original MC only

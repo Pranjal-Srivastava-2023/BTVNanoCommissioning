@@ -2,6 +2,22 @@
 
 Run 2 QCD_sf work is in `SESSION_NOTES.md`; this file is only the Run 3 ratio measurement.
 
+## 2026-10-28: Z->ee peak, electron smearing fix
+
+Z->ee MC peak was 5-11% wider than data, with data looking slightly to the right. Cause:
+`EGM_shifts` (utils/correction.py) drew `rng.normal(size=len(ele.pt))`, i.e. one random number
+per EVENT, so both electrons of a pair were smeared together (m(ee) over-smeared). Fixed in our
+fork only: one number per electron, seeded from the chunk's first event. Upstream master 38c34a8
+has the same bug (not reported).
+
+Test: `run_zbzc_run3_smearfix.sh <c>` reran DY + ttbar (20 files) into `hists_zbzc_run3_smearfix/`;
+`python compare_zee_smearfix.py` -> `<c>/z_mass_smearfix.png`, `zee_smearfix_summary.txt`.
+Zee sigma data/MC old -> new: 22 0.951 -> 0.986, 22EE 0.936 -> 1.003, 23 0.944 -> 1.004,
+23BPix 0.900 -> 0.971. Peak offset data - MC unchanged: +0.05/+0.07/+0.03/+0.08 GeV (<= 0.09%),
+inside the EGM scale uncertainty (0.05-0.15% barrel per electron); data scale correction itself
+is applied (+0.95% per electron on a 2023D file). Zmm unchanged (control). Zee yields unchanged,
+so 23BPix Zee 0.95 vs Zmm 0.99 is NOT explained by the smearing.
+
 ## RESUME HERE (2026-10-26, 17:30 CDT): small Run 3 data/MC run finished, decks done
 
 All 50 samples done, post-processing done, everything committed and pushed (3d6121d).
