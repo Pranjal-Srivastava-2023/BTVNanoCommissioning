@@ -87,11 +87,12 @@ for c in camps:
         for ds in OUT[c]:
             if ds == tag or ds.startswith(tag + "_TuneCP5"):
                 NFAIL[c][ds] = len(bad)
-    # golden JSON: load_lumi takes cvmfs Collisions<campaign[-2:]>/latest, else the repo copy
+    # golden JSON: load_lumi takes cvmfs Collisions<first two digits of the campaign>/latest
+    # (campaign[-2:] before 2026-10-28), else the repo copy
     dc = correction_config[c]["default"]["DC"]
     year = c[6:8]
     latest = f"{CVMFS}/DC/Collisions{year}/latest/{dc}"
-    used = f"{CVMFS}/DC/Collisions{c[-2:]}/latest/{dc}"
+    used = f"{CVMFS}/DC/Collisions{re.search(r'[0-9][0-9]', c).group(0)}/latest/{dc}"
     if not os.path.exists(used):
         used = f"src/BTVNanoCommissioning/data/DC/{dc}"
     processed = set()
@@ -294,7 +295,9 @@ y += 330 + 48
 text(fig, 128, y, "This is a small, quick run: 20 files per MC sample and 20 data files per channel and campaign, "
      "run interactively. The aim is to see whether data and MC agree before we scale up. "
      "The selection is the same as in the MC-only study: two leptons on the Z peak and at least one AK4 jet "
-     "with pT > 30 GeV. No b- or c-tag requirement yet.", 30, BODY, width=1664)
+     "with pT > 30 GeV. No b- or c-tag requirement yet. Since the 26 October run: electron smearing bug "
+     "fixed, JME jet veto recipe, trigger SF from both electrons, newest golden JSON in every campaign, "
+     "WW added for Summer22, and many more kinematic plots.", 30, BODY, width=1664)
 footer(fig, FOOT, n)
 save(fig)
 n += 1
@@ -459,8 +462,8 @@ POG_PAGES = [
         ["Jet ID (JME)", "Tight lepton veto ID; the NanoAODv12 jetId branch needs the JME fix", "Fix applied",
          "Same"],
         ["Jet veto map (JME)", "Veto the event if a jet with pT > 15 GeV, tight ID, EM fraction < 0.9 and away "
-         "from muons falls in the map", "Framework vetoes on any jet in the map. Drops about 6% of Z→μμ events "
-         "instead of 1–2%; data/MC moves by 0.3% or less", "Differs"],
+         "from muons falls in the map", "As recommended (since 28 Oct; before, any jet in the map vetoed the "
+         "event and about 6% of Z→μμ events were lost instead of 1–2%)", "Same"],
         ["Rare high-pT jets (JME)", "Reject jets with rawFactor > 0.9 (known JEC issue)",
          "Not applied. About 1 event in a million, mostly forward, outside |η| < 2.5", "Not yet"]]),
     ("Leptons and tagging", [
@@ -469,11 +472,11 @@ POG_PAGES = [
          "Leading muon only (pT > 35 GeV, on the plateau). Effect of using both muons not checked yet", "Simplified"],
         ["Electron ID and reco (EGM)", "Cut-based Tight ID, SFs for the 22Sep2023 re-reco", "As recommended", "Same"],
         ["Electron trigger SF (EGM)", "HLT_SF_Ele30_TightID per electron",
-         "Leading electron only. Using both electrons raises the Z→ee MC by 1.1–1.9% (quick estimate)",
-         "Simplified"],
+         "Both electrons: event SF from the EGM data and MC efficiencies (either electron can fire). "
+         "Raises the Z→ee MC by about 1% compared with the leading electron alone", "Same"],
         ["Lepton energy scale (EGM, MUO)", "Scale in data, smearing in MC",
-         "Same files and recipe. The Z→ee peak is 1.5–4% wider in MC than in data (all four campaigns), to be "
-         "understood", "Check"],
+         "Same files and recipe. Fixed a framework bug: the MC smearing used one random number per event, so "
+         "both electrons moved together and the MC Z→ee peak was 5–10% too wide", "Same"],
         ["b/c tagging (BTV)", "AK4 PUPPI, pT > 20, |η| < 2.5, tight ID, hadronFlavour. PNet b: fixed-WP and shape "
          "SFs; PNet c: fixed-WP SFs only", "pT > 30, |η| < 2.5, tight ID, hadronFlavour. No tag SFs yet "
          "(no tag cut)", "Not yet"],
@@ -489,7 +492,8 @@ for i, (sub, rows) in enumerate(POG_PAGES):
     if i == 0:
         text(fig, 128, y, "Read on 26 October 2026: BTV scale factor page, MUO usage recommendations, JME jet energy "
              "scale page, EGamma Run 3 TWiki (last edited 2023, older than the cvmfs files we use). Jet veto recipe "
-             "from the JME jet veto map recommendation. The 6% and 1–2% are quick estimates on one chunk.",
+             "from the JME jet veto map recommendation. The 6% and 1–2% are quick estimates on one chunk "
+             "of the 26 October run.",
              20, MUTED, width=1664)
     else:
         text(fig, 128, y, "c-tagging has no shape SFs for 2022/2023, only fixed working points. A template fit in "
@@ -609,6 +613,31 @@ PLOTS = [
     ("jet_PNetCvL", "PNet charm vs light", "Leading jet."),
     ("jet_PNetCvB", "PNet charm vs b", "Leading jet."),
 ]
+# kinematics added 2026-10-28; only shown when the outputs have them
+MORE = [
+    ("lep0_eta", "Leading-lepton η", "Pseudorapidity of the leading lepton."),
+    ("lep1_eta", "Subleading-lepton η", "Pseudorapidity of the subleading lepton."),
+    ("lep0_phi", "Leading-lepton φ", "Flat in a perfect detector. Dips point to detector holes."),
+    ("lep1_phi", "Subleading-lepton φ", "Flat in a perfect detector. Dips point to detector holes."),
+    ("dR_ll", "ΔR between the two leptons", "Small ΔR means a boosted Z."),
+    ("dphi_ll", "Δφ between the two leptons", "Back-to-back leptons sit at π."),
+    ("z_eta", "Dilepton η", "Pseudorapidity of the Z candidate."),
+    ("jet_phi", "Leading AK4 jet φ", "Flat in a perfect detector. The jet veto map removes some regions."),
+    ("jet1_pt", "Subleading AK4 jet pT", "Events with at least two jets."),
+    ("jet1_eta", "Subleading AK4 jet η", "Events with at least two jets."),
+    ("dR_jj", "ΔR between the two leading jets", "Events with at least two jets."),
+    ("dphi_jj", "Δφ between the two leading jets", "Events with at least two jets."),
+    ("m_jj", "Mass of the two leading jets", "Events with at least two jets."),
+    ("dphi_zj", "Δφ between the Z and the leading jet", "Near π when the jet recoils against the Z."),
+    ("dR_zj", "ΔR between the Z and the leading jet", ""),
+    ("dR_lj_min", "Closest lepton to the leading jet", "Smallest ΔR between the leading jet and a lepton. "
+     "Jets within 0.4 of a lepton are removed."),
+    ("pt_balance", "Jet pT / Z pT", "Leading-jet pT over Z pT. Near 1 when the jet balances the Z. "
+     "Values above 4 are not shown."),
+    ("met_pt", "Missing transverse momentum", "PUPPI MET, after the < 50 GeV cut."),
+    ("npv", "Number of primary vertices", "Good primary vertices. A check of the pileup reweighting."),
+]
+PLOTS += [p for p in MORE if all(p[0] in o for c in camps for o in OUT[c].values())]
 PLOT_FOOT = FOOT + " · Z→ee left, Z→μμ right · band: MC stat. uncertainty"
 for name, title, caption in PLOTS:
     fig = page()
@@ -642,6 +671,17 @@ image(fig, os.path.join(indir, "plots", "jet_CvL_CvB.png"), y)
 footer(fig, FOOT, n)
 save(fig)
 n += 1
+
+# lepton eta-phi data/MC map
+if os.path.exists(os.path.join(indir, "plots", "lep_eta_phi_ratio.png")):
+    fig = page()
+    y = heading(fig, "Where are the leptons? Data / MC in η and φ", y=96) + 16
+    y = text(fig, 128, y, "Both Z leptons. MC normalised to data, so only the shape is compared. "
+             "Blue cells: fewer events in data than in MC. Red: more.", 28, BODY, width=1664) + 24
+    image(fig, os.path.join(indir, "plots", "lep_eta_phi_ratio.png"), y, hmax=1000 - 12 - y)
+    footer(fig, FOOT, n)
+    save(fig)
+    n += 1
 
 # summary
 summ = json.load(open(args.summary)) if args.summary else {
