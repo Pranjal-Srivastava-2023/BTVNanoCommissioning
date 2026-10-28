@@ -1,15 +1,19 @@
-12:51:09 DYto2L-2Jets_MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 try 1
-12:58:30 DYto2L-2Jets_MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 exit 0
-12:58:30 DYto2L-2Jets_MLL-50_PTLL-100_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 try 1
-13:11:27 DYto2L-2Jets_MLL-50_PTLL-100_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 exit 0
-13:11:27 DYto2L-2Jets_MLL-50_PTLL-200_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 try 1
-13:40:05 DYto2L-2Jets_MLL-50_PTLL-200_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 exit 0
-13:40:05 DYto2L-2Jets_MLL-50_PTLL-400_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 try 1
-14:10:53 DYto2L-2Jets_MLL-50_PTLL-400_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 exit 0
-14:10:53 DYto2L-2Jets_MLL-50_PTLL-600_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 try 1
-14:23:04 DYto2L-2Jets_MLL-50_PTLL-600_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 exit 0
-14:23:04 TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8 try 1
-15:34:03 TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8 exit 0
-15:34:03 WW_TuneCP5_13p6TeV_pythia8 try 1
-15:34:09 stopped before WW (WW/WZ/ZZ in driver_vv.log)
-15:34:09 ALL DONE
+13:50:51 DYto2L-2Jets_MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 try 1
+14:02:35 DYto2L-2Jets_MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 exit 0
+14:02:35 DYto2L-2Jets_MLL-50_PTLL-100_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 try 1
+14:18:16 DYto2L-2Jets_MLL-50_PTLL-100_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 exit 0
+14:18:16 DYto2L-2Jets_MLL-50_PTLL-200_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 try 1
+14:31:49 DYto2L-2Jets_MLL-50_PTLL-200_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 exit 0
+14:31:49 DYto2L-2Jets_MLL-50_PTLL-400_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 try 1
+14:43:08 DYto2L-2Jets_MLL-50_PTLL-400_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 exit 0
+14:43:08 DYto2L-2Jets_MLL-50_PTLL-600_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 try 1
+14:49:07 DYto2L-2Jets_MLL-50_PTLL-600_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 exit 0
+14:49:07 TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8 try 1
+15:13:29 TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8 exit 0
+15:13:29 WW_TuneCP5_13p6TeV_pythia8 try 1
+15:34:16 WW_TuneCP5_13p6TeV_pythia8 exit 0
+15:34:16 WZ_TuneCP5_13p6TeV_pythia8 try 1
+15:44:58 WZ_TuneCP5_13p6TeV_pythia8 exit 0
+15:44:58 ZZ_TuneCP5_13p6TeV_pythia8 try 1
+15:49:34 ZZ_TuneCP5_13p6TeV_pythia8 exit 0
+15:49:34 ALL DONE

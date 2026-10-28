@@ -1,3 +1,6 @@
-16:06:47 Summer22 WW deadline set for 17:15 (kill if still running; driver then ends, postprocess proceeds)
-16:09:30 WW deadline helper (from the interrupted session) stopped: WW already dropped by the user's request at 16:05
-16:28:45 postprocess done, watchdog exits
+14:20:55 killing stalled pid 1691202: run3_Summer22EE.json DYto2L-2Jets_MLL-50_PTLL-100_TuneCP5_13p6TeV_amcatnloFXFX-pythia8
+14:36:04 killing stalled pid 1699411: run3_Summer22EE.json DYto2L-2Jets_MLL-50_PTLL-100_TuneCP5_13p6TeV_amcatnloFXFX-pythia8
+14:56:06 killing stalled pid 1699874: run3_Summer23.json EGamma0_Run2023C
+15:06:10 killing stalled pid 1700652: run3_Summer23.json DYto2L-2Jets_MLL-50_PTLL-100_TuneCP5_13p6TeV_amcatnloFXFX-pythia8
+15:26:11 killing stalled pid 1717642: run3_Summer23.json EGamma0_Run2023C
+16:56:17 postprocess done, watchdog exits

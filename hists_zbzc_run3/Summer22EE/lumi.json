@@ -1,5 +1,5 @@
 {
-  "Zee": 634.530147463,
+  "Zee": 634.843481336,
   "Zmm": 837.367318585,
   "datasets": {
     "EGamma_Run2022E": {
@@ -8,8 +8,8 @@
       "factor": 1.0
     },
     "EGamma_Run2022F": {
-      "nls": 1202,
-      "brilcalc_pb": 425.206257561,
+      "nls": 1204,
+      "brilcalc_pb": 425.519591434,
       "factor": 1.0
     },
     "EGamma_Run2022G": {

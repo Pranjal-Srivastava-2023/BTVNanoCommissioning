@@ -2,6 +2,36 @@
 
 Run 2 QCD_sf work is in `SESSION_NOTES.md`; this file is only the Run 3 ratio measurement.
 
+## RESUME HERE (2026-10-28, 17:15 CDT): second small Run 3 run done, decks rebuilt
+
+Rerun of all four campaigns (data + MC, 20 files, VV incl. Summer22 WW) after these changes
+(commits 52b72bf, 39fd67f, e2d86a4 + this one):
+- EGM_shifts: one smearing random number per electron (was per event) -> Z->ee width now matches.
+- load_lumi: year from the first two digits of the campaign (22EE/23BPix now read the cvmfs
+  golden JSON; 23BPix loses 17 lumisections, -0.2% lumi).
+- common_shifts: opt-in JME jet veto recipe (self.jetveto_jme in Zb_Zc_ratio): +3.5% Z->mumu
+  events in data and MC alike.
+- Zee trigger SF from both electrons (EGM data/MC Ele30 efficiencies); Zmm still leading muon
+  (MUO gives no efficiencies). sumw_trigsf keeps the leading-only version.
+- 19 new kinematic histograms + lepton eta-phi map; deck pages for them (43 pages per deck).
+- Reads: many files switched to root://cmsdcadisk.fnal.gov//dcache/uscmsdisk/store/... in the
+  metadata JSONs; Summer22 WW and 10 Summer23 EGamma0_C files are LOCAL copies under
+  /uscms_data/d3/psrivast/zbzc_local/ (files.txt there has the /store paths). Every sample read
+  all its files this time.
+
+Data/MC after full selection (Zee / Zmm, stat ~0.01): 22 0.948/0.967, 22EE 0.969/0.985,
+23 0.965/0.985, 23BPix 0.941/0.988. Zee went down 0.5-1.5% from the two-electron trigger SF.
+
+Open:
+1. 23BPix Zee deficit: data/MC by electron eta EE- 0.90, EB- 0.93, EB+ 0.95, EE+ 0.98 (muons flat).
+   Before SFs Zee is 0.966. 2023D Tight-ID SFs are > 1 (1.01-1.02 per electron) vs 0.96-0.98 in
+   2022. eleSFs == direct correctionlib (phi incl.); EGamma0/1 split is exactly 50%. EGM file year
+   key "2023PromptD" in the 23DSep23 folder -> ask EGM.
+2. Muon trigger SF from both muons needs MC efficiencies (derive from our DY MC?).
+3. N PV shapes differ by channel: 20 data files = few runs; not representative (full run).
+4. N jets >= 3: data 15-25% above MC (DY 2-jet FxFx), 0-jet bin data/MC ~1.08.
+5. Note for Hsin-Wei (muSFs trigger clip line outside else, c7c65ae) drafted, not sent.
+
 ## 2026-10-28: Z->ee peak, electron smearing fix
 
 Z->ee MC peak was 5-11% wider than data, with data looking slightly to the right. Cause:

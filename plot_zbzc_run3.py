@@ -25,6 +25,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import mplhep as hep
+import hist
 import numpy as np
 from coffea.util import load
 
@@ -219,16 +220,21 @@ if all("lep_eta_phi" in o for c in camps for o in OUT[c].values()):
     fig, axes = plt.subplots(1, 2, figsize=(22, 8))
     for ax, ch in zip(axes, CHANNELS):
         comp = components("lep_eta_phi", ch, HADRON)
+        # coarse cells (1.0 in eta x pi/4 in phi): ~1000 electrons per cell instead of ~50
+        comp = {k: v[::hist.rebin(5), ::hist.rebin(4)] for k, v in comp.items()}
         mc = sum(comp[k] for k in list(BKG) + HADRON["dy"])
         d, m = comp["data"].values(), mc.values()
         with np.errstate(divide="ignore", invalid="ignore"):
             r = np.where(m > 0, d / (m * d.sum() / m.sum()), np.nan)
         e = comp["data"].axes
-        im = ax.pcolormesh(e[0].edges, e[1].edges, r.T, cmap="RdBu_r", vmin=0.7, vmax=1.3)
+        im = ax.pcolormesh(e[0].edges, e[1].edges, r.T, cmap="RdBu_r", vmin=0.85, vmax=1.15)
         fig.colorbar(im, ax=ax, label="data / MC (MC normalised to data)")
+        for i, x in enumerate(e[0].centers):
+            for j, y in enumerate(e[1].centers):
+                ax.text(x, y, f"{r[i, j]:.2f}", ha="center", va="center", fontsize=11)
         ax.set_xlabel(e[0].label)
         ax.set_ylabel(e[1].label)
-        ax.text(0.04, 0.94, CH_LABEL[ch], transform=ax.transAxes, fontsize=20, va="top")
+        ax.set_title(CH_LABEL[ch], fontsize=20, loc="center", pad=28)
         cms_label(ax, ch, fontsize=13)
     fig.tight_layout()
     fig.savefig(os.path.join(plotdir, "lep_eta_phi_ratio.png"), dpi=90)

@@ -1,10 +1,10 @@
 {
-  "Zee": 566.32143394,
+  "Zee": 596.156357735,
   "Zmm": 604.769935523,
   "datasets": {
     "EGamma0_Run2023C": {
-      "nls": 3588,
-      "brilcalc_pb": 1132.64286788,
+      "nls": 3756,
+      "brilcalc_pb": 1192.31271547,
       "factor": 0.5
     },
     "Muon0_Run2023C": {

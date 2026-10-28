@@ -65,9 +65,13 @@ CVMFS = "/cvmfs/cms-griddata.cern.ch/cat/metadata"
 
 
 def das(c, ds):
-    """(primary dataset, processed dataset, tier) from the first file of the fileset JSON."""
-    f = FILESET[c][ds][0]
-    m = re.search(r"/store/(?:mc|data)/([^/]+)/([^/]+)/([^/]+)/([^/]+)/", f)
+    """(primary dataset, processed dataset, tier) from the first /store file of the fileset JSON
+    (for local copies, from the files.txt of /store paths next to them)."""
+    files = FILESET[c][ds]
+    store = [f for f in files if "/store/" in f]
+    if not store:
+        store = open(os.path.join(os.path.dirname(files[0]), "files.txt")).read().split()
+    m = re.search(r"/store/(?:mc|data)/([^/]+)/([^/]+)/([^/]+)/([^/]+)/", store[0])
     return m.group(2), f"{m.group(1)}-{m.group(4)}", m.group(3)
 
 
@@ -472,11 +476,11 @@ POG_PAGES = [
          "Leading muon only (pT > 35 GeV, on the plateau). Effect of using both muons not checked yet", "Simplified"],
         ["Electron ID and reco (EGM)", "Cut-based Tight ID, SFs for the 22Sep2023 re-reco", "As recommended", "Same"],
         ["Electron trigger SF (EGM)", "HLT_SF_Ele30_TightID per electron",
-         "Both electrons: event SF from the EGM data and MC efficiencies (either electron can fire). "
-         "Raises the Z→ee MC by about 1% compared with the leading electron alone", "Same"],
+         "Both electrons, from the EGM data and MC efficiencies. Z→ee MC about 1% higher than with the "
+         "leading electron alone", "Same"],
         ["Lepton energy scale (EGM, MUO)", "Scale in data, smearing in MC",
-         "Same files and recipe. Fixed a framework bug: the MC smearing used one random number per event, so "
-         "both electrons moved together and the MC Z→ee peak was 5–10% too wide", "Same"],
+         "Same recipe. Fixed a framework bug (one smearing number per event): MC Z→ee peak was 5–10% "
+         "too wide", "Same"],
         ["b/c tagging (BTV)", "AK4 PUPPI, pT > 20, |η| < 2.5, tight ID, hadronFlavour. PNet b: fixed-WP and shape "
          "SFs; PNet c: fixed-WP SFs only", "pT > 30, |η| < 2.5, tight ID, hadronFlavour. No tag SFs yet "
          "(no tag cut)", "Not yet"],
@@ -635,7 +639,8 @@ MORE = [
     ("pt_balance", "Jet pT / Z pT", "Leading-jet pT over Z pT. Near 1 when the jet balances the Z. "
      "Values above 4 are not shown."),
     ("met_pt", "Missing transverse momentum", "PUPPI MET, after the < 50 GeV cut."),
-    ("npv", "Number of primary vertices", "Good primary vertices. A check of the pileup reweighting."),
+    ("npv", "Number of primary vertices", "Good primary vertices. Each channel reads only 20 data files from "
+     "a few runs, so its pileup is not that of the whole era. Most of the shape difference comes from that."),
 ]
 PLOTS += [p for p in MORE if all(p[0] in o for c in camps for o in OUT[c].values())]
 PLOT_FOOT = FOOT + " · Z→ee left, Z→μμ right · band: MC stat. uncertainty"
@@ -677,7 +682,7 @@ if os.path.exists(os.path.join(indir, "plots", "lep_eta_phi_ratio.png")):
     fig = page()
     y = heading(fig, "Where are the leptons? Data / MC in η and φ", y=96) + 16
     y = text(fig, 128, y, "Both Z leptons. MC normalised to data, so only the shape is compared. "
-             "Blue cells: fewer events in data than in MC. Red: more.", 28, BODY, width=1664) + 24
+             "Cells are 1.0 in η by π/4 in φ. Blue: fewer events in data than in MC. Red: more.", 28, BODY, width=1664) + 24
     image(fig, os.path.join(indir, "plots", "lep_eta_phi_ratio.png"), y, hmax=1000 - 12 - y)
     footer(fig, FOOT, n)
     save(fig)

@@ -1,5 +1,9 @@
-12:51:09 Muon0_Run2023C try 1
-13:27:06 Muon0_Run2023C exit 0
-13:27:06 EGamma0_Run2023C try 1
-14:41:03 EGamma0_Run2023C exit 0
-14:41:03 ALL DONE
+13:50:51 Muon0_Run2023C try 1
+14:21:18 Muon0_Run2023C exit 0
+14:21:18 EGamma0_Run2023C try 1
+14:56:08 EGamma0_Run2023C exit 143
+14:56:11 EGamma0_Run2023C try 2
+15:26:11 EGamma0_Run2023C exit 143
+15:26:11 EGamma0_Run2023C try 3
+15:31:08 EGamma0_Run2023C exit 143
+15:31:08 ALL DONE
