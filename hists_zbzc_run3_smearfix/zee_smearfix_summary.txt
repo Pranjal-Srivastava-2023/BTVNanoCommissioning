@@ -1,0 +1,35 @@
+Z peak, data vs MC, before (old) and after (new) the electron smearing fix
+Gaussian fit to 86-96 GeV; dm = data - MC peak; sigma in GeV; yield = data/MC in 71-111 GeV
+
+Summer22 (2022 C-D)
+  Zee: data peak 90.675 +- 0.027  sigma 2.69  median 90.164
+       old MC  peak 90.629 +- 0.043  sigma 2.83  median 90.056 | dm +0.046 GeV (+0.05%)  dmedian +0.108  sigma data/MC 0.951  yield 0.961
+       new MC  peak 90.625 +- 0.040  sigma 2.73  median 90.061 | dm +0.050 GeV (+0.06%)  dmedian +0.103  sigma data/MC 0.986  yield 0.961
+  Zmm: data peak 90.994 +- 0.011  sigma 2.30  median 90.468
+       old MC  peak 90.956 +- 0.024  sigma 2.33  median 90.429 | dm +0.038 GeV (+0.04%)  dmedian +0.039  sigma data/MC 0.987  yield 0.963
+       new MC  peak 90.956 +- 0.024  sigma 2.33  median 90.429 | dm +0.038 GeV (+0.04%)  dmedian +0.039  sigma data/MC 0.987  yield 0.963
+
+Summer22EE (2022 E-G)
+  Zee: data peak 90.672 +- 0.024  sigma 2.76  median 90.137
+       old MC  peak 90.609 +- 0.046  sigma 2.95  median 90.051 | dm +0.063 GeV (+0.07%)  dmedian +0.086  sigma data/MC 0.936  yield 0.984
+       new MC  peak 90.599 +- 0.040  sigma 2.76  median 90.053 | dm +0.074 GeV (+0.08%)  dmedian +0.084  sigma data/MC 1.003  yield 0.986
+  Zmm: data peak 90.993 +- 0.011  sigma 2.33  median 90.477
+       old MC  peak 91.027 +- 0.024  sigma 2.36  median 90.506 | dm -0.034 GeV (-0.04%)  dmedian -0.029  sigma data/MC 0.987  yield 0.989
+       new MC  peak 91.020 +- 0.023  sigma 2.34  median 90.495 | dm -0.027 GeV (-0.03%)  dmedian -0.018  sigma data/MC 0.992  yield 0.989
+
+Summer23 (2023 C)
+  Zee: data peak 90.895 +- 0.022  sigma 2.75  median 90.362
+       old MC  peak 90.872 +- 0.033  sigma 2.91  median 90.351 | dm +0.023 GeV (+0.03%)  dmedian +0.011  sigma data/MC 0.944  yield 0.973
+       new MC  peak 90.870 +- 0.030  sigma 2.74  median 90.339 | dm +0.025 GeV (+0.03%)  dmedian +0.023  sigma data/MC 1.004  yield 0.974
+  Zmm: data peak 90.995 +- 0.012  sigma 2.35  median 90.490
+       old MC  peak 90.961 +- 0.017  sigma 2.36  median 90.442 | dm +0.034 GeV (+0.04%)  dmedian +0.047  sigma data/MC 0.993  yield 0.987
+       new MC  peak 90.961 +- 0.017  sigma 2.36  median 90.442 | dm +0.034 GeV (+0.04%)  dmedian +0.047  sigma data/MC 0.993  yield 0.987
+
+Summer23BPix (2023 D)
+  Zee: data peak 90.899 +- 0.022  sigma 2.80  median 90.363
+       old MC  peak 90.821 +- 0.041  sigma 3.11  median 90.304 | dm +0.078 GeV (+0.09%)  dmedian +0.059  sigma data/MC 0.900  yield 0.946
+       new MC  peak 90.823 +- 0.036  sigma 2.88  median 90.278 | dm +0.077 GeV (+0.08%)  dmedian +0.084  sigma data/MC 0.971  yield 0.948
+  Zmm: data peak 90.993 +- 0.012  sigma 2.32  median 90.476
+       old MC  peak 90.967 +- 0.019  sigma 2.34  median 90.443 | dm +0.025 GeV (+0.03%)  dmedian +0.033  sigma data/MC 0.993  yield 0.988
+       new MC  peak 90.967 +- 0.019  sigma 2.34  median 90.443 | dm +0.025 GeV (+0.03%)  dmedian +0.033  sigma data/MC 0.993  yield 0.988
+
