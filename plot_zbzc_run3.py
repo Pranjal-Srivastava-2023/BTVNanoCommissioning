@@ -186,6 +186,11 @@ def stack(var, flav, suffix=""):
 
 VARS = ["z_mass", "z_pt", "lep0_pt", "lep1_pt", "jet_pt", "jet_eta", "jet_PNetB",
         "jet_PNetCvL", "jet_PNetCvB", "n_jet", "lhe_vpt"]
+# kinematics added 2026-10-28 (only in outputs from that run on)
+NEW_VARS = ["z_eta", "lep0_eta", "lep1_eta", "lep0_phi", "lep1_phi", "dR_ll", "dphi_ll",
+            "jet_phi", "jet1_pt", "jet1_eta", "dR_jj", "dphi_jj", "m_jj", "dphi_zj", "dR_zj",
+            "dR_lj_min", "pt_balance", "met_pt", "npv"]
+VARS += [v for v in NEW_VARS if all(v in o for c in camps for o in OUT[c].values())]
 for var in VARS:
     stack(var, HADRON)
     stack(var, PARTON, "_parton")
@@ -208,6 +213,26 @@ for ax, (title, key) in zip(axes, groups.items()):
 fig.tight_layout()
 fig.savefig(os.path.join(plotdir, "jet_CvL_CvB.png"), dpi=90)
 plt.close(fig)
+
+# lepton eta-phi: data/MC per channel (both Z leptons; shows e.g. the 2023D BPix hole)
+if all("lep_eta_phi" in o for c in camps for o in OUT[c].values()):
+    fig, axes = plt.subplots(1, 2, figsize=(22, 8))
+    for ax, ch in zip(axes, CHANNELS):
+        comp = components("lep_eta_phi", ch, HADRON)
+        mc = sum(comp[k] for k in list(BKG) + HADRON["dy"])
+        d, m = comp["data"].values(), mc.values()
+        with np.errstate(divide="ignore", invalid="ignore"):
+            r = np.where(m > 0, d / (m * d.sum() / m.sum()), np.nan)
+        e = comp["data"].axes
+        im = ax.pcolormesh(e[0].edges, e[1].edges, r.T, cmap="RdBu_r", vmin=0.7, vmax=1.3)
+        fig.colorbar(im, ax=ax, label="data / MC (MC normalised to data)")
+        ax.set_xlabel(e[0].label)
+        ax.set_ylabel(e[1].label)
+        ax.text(0.04, 0.94, CH_LABEL[ch], transform=ax.transAxes, fontsize=20, va="top")
+        cms_label(ax, ch, fontsize=13)
+    fig.tight_layout()
+    fig.savefig(os.path.join(plotdir, "lep_eta_phi_ratio.png"), dpi=90)
+    plt.close(fig)
 
 # ---------------------------------------------------------------- tables
 L = [f"Zb_Zc_ratio Run 3, AK4, {which} ({ERAS[which]}), 13.6 TeV, 20 files per MC sample "

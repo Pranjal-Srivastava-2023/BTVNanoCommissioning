@@ -508,7 +508,10 @@ def load_lumi(campaign):
     FileNotFoundError: If the luminosity mask file does not exist.
     """
 
-    _lumi_path = f"/cvmfs/cms-griddata.cern.ch/cat/metadata/DC/Collisions{campaign[-2:]}/latest/{config[campaign]['default']['DC']}"
+    # year from the first two digits of the campaign: campaign[-2:] gave "EE" / "ix" for
+    # Summer22EE / Summer23BPix, which silently fell back to the (older) repo copies
+    _yy = re.search(r"\d\d", campaign)
+    _lumi_path = f"/cvmfs/cms-griddata.cern.ch/cat/metadata/DC/Collisions{_yy.group(0) if _yy else ''}/latest/{config[campaign]['default']['DC']}"
     if os.path.exists(_lumi_path):
         return LumiMask(_lumi_path)
     else:
@@ -627,6 +630,29 @@ def jetveto(jets, correct_map):
             ak.broadcast_arrays(jets.eta, 100),
             ak.zeros_like(jets.eta),
         )
+
+
+def jetveto_jme_mask(jets, muons):
+    """
+    Jets that may veto an event in the JME Run 3 jet veto map recipe: corrected
+    pT > 15 GeV, tight jet ID (with the NanoAODv12 jetId fix above |eta| = 2.7),
+    charged + neutral EM fraction < 0.9 (no electrons/photons) and no PF muon
+    within dR < 0.2. Opt-in in common_shifts via a workflow attribute
+    `jetveto_jme = True`; otherwise every jet in a vetoed region vetoes the event.
+    """
+    aeta = abs(jets.eta)
+    tight = ak.where(
+        aeta <= 2.7,
+        jets.jetId >= 2,
+        ak.where(
+            aeta <= 3.0,
+            (jets.jetId >= 2) & (jets.neHEF < 0.99),
+            (jets.jetId >= 2) & (jets.neEmEF < 0.4),
+        ),
+    )
+    pfmu = muons[muons.isPFcand]
+    no_mu = ak.all(jets.metric_table(pfmu) >= 0.2, axis=2)
+    return (jets.pt > 15) & tight & (jets.chEmEF + jets.neEmEF < 0.9) & no_mu
 
 
 # from https://gitlab.cern.ch/cms-analysis-corrections/JME/examples/-/blob/latest/jercExample.py
@@ -4059,6 +4085,11 @@ def common_shifts(self, events):
     # Apply jet veto
     if "jetveto" in self.SF_map.keys():
         jet_veto = jetveto(events.Jet, self.SF_map)
+        if getattr(self, "jetveto_jme", False):
+            # JME recipe: only jets used by the analysis-level veto
+            jet_veto = ak.where(
+                jetveto_jme_mask(shifts[0][0]["Jet"], events.Muon), jet_veto, 0.0
+            )
         event_veto = ak.any(jet_veto > 0, axis=1)
         vetoed_events = events[~event_veto]
         for collections, _ in shifts:
