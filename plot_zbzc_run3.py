@@ -41,6 +41,12 @@ XS = json.load(open("metadata/Zb_Zc_ratio_xsections_run3.json"))
 which = sys.argv[1]
 camps = CAMPAIGNS if which == "all" else [which]
 outdir = f"hists_zbzc_run3/{which}"
+# ZBZC_DIAG=<variant>: replace the datasets that have a diag_zbzc_met.py output (DY, data)
+# by hists_zbzc_diag/<campaign>/diag_<variant>_*.coffea (same files); ttbar and VV stay
+# nominal. Plots go to hists_zbzc_diag/<campaign>/stack_<variant>/.
+DIAG = os.environ.get("ZBZC_DIAG")
+if DIAG:
+    outdir = f"hists_zbzc_diag/{which}/stack_{DIAG}"
 plotdir = os.path.join(outdir, "plots")
 os.makedirs(plotdir, exist_ok=True)
 
@@ -50,6 +56,9 @@ for c in camps:
     OUT[c] = {}
     for f in sorted(glob.glob(f"hists_zbzc_run3/{c}/zbzc_run3/zbzc_run3_*.coffea")):
         OUT[c].update(load(f))
+    if DIAG:
+        for f in sorted(glob.glob(f"hists_zbzc_diag/{c}/diag_{DIAG}_*.coffea")):
+            OUT[c].update(load(f))
     LUMI[c] = json.load(open(f"hists_zbzc_run3/{c}/lumi.json"))
 LUMI_TOT = {ch: sum(LUMI[c][ch] for c in camps) for ch in CHANNELS}
 
