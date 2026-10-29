@@ -38,6 +38,10 @@ era can be matched.
 The DY pT(ll)-binned samples (PTLL-X) are inclusive above X, so each one is
 restricted to its own LHE pT(ll) slice (STITCH below) and the inclusive sample
 covers pT(ll) < 100. sumw is over the full sample, before the slice cut.
+
+stage_* histograms: Z pT, LHE pT(ll), lepton pT/eta and MET for all Z events
+before the MET and jet cuts, split by which of the two cuts they pass (STAGES),
+to tell generator-level Z pT mismodelling from jet/MET effects.
 """
 
 import numpy as np
@@ -71,6 +75,9 @@ FLAVOURS = {
 }
 PARTON_FLAVOURS = ["b", "c", "uds", "g", "none", "data"]
 CHANNELS = ["Zee", "Zmm"]
+# stage_* histograms: Z events (trigger, leptons, OS, Z mass) split by which of
+# the MET < 50 and >= 1 jet cuts they pass
+STAGES = ["none", "MET", "jet", "MET+jet"]
 
 
 class NanoProcessor(processor.ProcessorABC):
@@ -164,6 +171,20 @@ class NanoProcessor(processor.ProcessorABC):
                 "fj_tau21": h(Reg(25, 0, 1, name="tau21", label=r"AK8 jet $\tau_{21}$")),
                 "n_fj": h(hist.axis.Integer(0, 6, name="n", label="N AK8 jets")),
             }
+        # Z events before the MET and jet cuts (data/MC slope study)
+        st = hist.axis.StrCategory(STAGES, name="stage")
+        V = hist.axis.Variable
+        ptll_bins = [0, 5, 10, 15, 20, 25, 30, 40, 50, 60, 80, 100, 125, 150, 200, 250, 300, 400, 600, 1000]
+        hists.update(
+            {
+                "stage_z_pt": h(st, V(ptll_bins, name="pt", label="$p_T^{\\ell\\ell}$ [GeV]")),
+                "stage_lhe_vpt": h(st, V(ptll_bins, name="pt", label="LHE $p_T^{\\ell\\ell}$ [GeV]")),
+                "stage_lep0_pt": h(st, V([35, 40, 45, 50, 55, 60, 70, 80, 100, 125, 150, 200, 300, 500, 1000], name="pt", label="Leading lepton $p_T$ [GeV]")),
+                "stage_lep1_pt": h(st, V([25, 30, 35, 40, 45, 50, 60, 70, 80, 100, 150, 200, 500], name="pt", label="Subleading lepton $p_T$ [GeV]")),
+                "stage_lep0_eta": h(st, Reg(25, -2.5, 2.5, name="eta", label="Leading lepton $\\eta$")),
+                "stage_met_pt": h(st, Reg(40, 0, 200, name="pt", label="PUPPI $p_T^{miss}$ [GeV]")),
+            }
+        )
         hists.update(
             {
                 "z_mass": h(Reg(40, 71, 111, name="mass", label="$m_{\\ell\\ell}$ [GeV]")),
@@ -357,16 +378,28 @@ class NanoProcessor(processor.ProcessorABC):
                 cutflow[channel][step] += float(np.sum(genw[passed]))
                 cutflow_raw[channel][step] += int(np.sum(passed))
 
+            # Z events before the MET and jet cuts: stage_* histograms
+            zpre = sel.all(*steps[:-2])
+            if self.noHist or not zpre.any():
+                continue
+            preweight = genw[zpre]
+            if not isRealData:
+                sf, sf_lead = self.mc_sf(events[zpre], l0[zpre], l1[zpre], channel)
+                preweight_lead = preweight * sf_lead
+                preweight = preweight * sf
+            self.fill_stage(
+                output, channel, isRealData, events[zpre], lead[zpre],
+                zcand[zpre], l0[zpre], l1[zpre], req_met[zpre], req_jet[zpre], preweight,
+            )
+
             # Z events before the jet requirement: only the jet multiplicity is
             # filled here, so that its 0 bin is populated
             zmask = sel.all(*steps[:-1])
-            if self.noHist or not zmask.any():
+            if not zmask.any():
                 continue
-            zweight = genw[zmask]
+            zweight = preweight[req_met[zpre]]
             if not isRealData:
-                sf, sf_lead = self.mc_sf(events[zmask], l0[zmask], l1[zmask], channel)
-                zweight_lead = zweight * sf_lead
-                zweight = zweight * sf
+                zweight_lead = preweight_lead[req_met[zpre]]
                 output["sumw_trigsf"][channel]["Z_pair"] += float(np.sum(zweight))
                 output["sumw_trigsf"][channel]["Z_lead"] += float(np.sum(zweight_lead))
                 output["sumw_trigsf"][channel]["jet_pair"] += float(
@@ -551,7 +584,15 @@ class NanoProcessor(processor.ProcessorABC):
         from the leading jet; MC events without a jet count as light (parton
         flavour "none").
         """
-        n = len(weight)
+        flavs = self.z_flavours(isRealData, lead)
+        output["n_jet" if self.jet == "AK4" else "n_fj"].fill(
+            channel=channel, **flavs, n=ak.to_numpy(ak.num(jets)), weight=weight
+        )
+
+    def z_flavours(self, isRealData, lead):
+        """Flavour axes for Z events with or without a selected jet: from the
+        leading jet; MC events without a jet count as light (parton flavour "none")."""
+        n = len(lead)
         has_jet = ak.to_numpy(~ak.is_none(lead))
         flavs = {"flav": np.full(n, "data" if isRealData else "l", dtype="<U4")}
         if self.jet == "AK4":
@@ -560,9 +601,21 @@ class NanoProcessor(processor.ProcessorABC):
             flavs["flav"][has_jet] = self.jet_flavour(lead[has_jet])
             if self.jet == "AK4":
                 flavs["pflav"][has_jet] = self.parton_flavour(lead[has_jet])
-        output["n_jet" if self.jet == "AK4" else "n_fj"].fill(
-            channel=channel, **flavs, n=ak.to_numpy(ak.num(jets)), weight=weight
-        )
+        return flavs
+
+    def fill_stage(self, output, channel, isRealData, ev, lead, z, l0, l1, met, jet, weight):
+        """stage_* histograms for the Z events before the MET and jet cuts, with
+        the stage axis telling which of the two cuts each event passes."""
+        flavs = self.z_flavours(isRealData, lead)
+        stage = np.select([met & jet, met, jet], ["MET+jet", "MET", "jet"], default="none")
+        common = dict(channel=channel, stage=stage, **flavs, weight=weight)
+        output["stage_z_pt"].fill(pt=ak.to_numpy(z.pt), **common)
+        output["stage_lep0_pt"].fill(pt=ak.to_numpy(l0.pt), **common)
+        output["stage_lep1_pt"].fill(pt=ak.to_numpy(l1.pt), **common)
+        output["stage_lep0_eta"].fill(eta=ak.to_numpy(l0.eta), **common)
+        output["stage_met_pt"].fill(pt=ak.to_numpy(ev.MET.pt), **common)
+        if not isRealData and "LHE" in ev.fields:
+            output["stage_lhe_vpt"].fill(pt=ak.to_numpy(ev.LHE.Vpt), **common)
 
     def mc_sf(self, ev, l0, l1, channel):
         """

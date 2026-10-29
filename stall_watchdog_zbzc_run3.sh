@@ -1,10 +1,11 @@
 #!/bin/bash
 # Kill Zb_Zc_ratio runner processes that stall on xrootd reads (CPU time grows by
 # < 5 s over two 5-minute checks); the run_zbzc_run3*.sh drivers then retry them.
-# Stops once postprocess_zbzc_run3.sh has finished.
+# Stops once postprocess_zbzc_run3.sh has finished (logs_$ZBZC_RUN/postprocess.log).
 cd "$(dirname "$0")"
+RUN=${ZBZC_RUN:-zbzc_run3}
 declare -A last stuck
-while ! grep -q 'postprocess done' logs_zbzc_run3/postprocess.log 2>/dev/null; do
+while ! grep -q 'postprocess done' logs_$RUN/postprocess.log 2>/dev/null; do
   for pid in $(pgrep -f '^python runner.py --wf Zb_Zc_ratio'); do
     t=$(ps -o time= -p $pid | awk -F: '{print $1*3600 + $2*60 + $3}')
     [ -z "$t" ] && continue

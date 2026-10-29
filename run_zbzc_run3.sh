@@ -7,6 +7,7 @@
 # (the reads are xrootd-bound, so the MC and data parts of a campaign can run as
 # two parallel jobs)
 # output: hists_zbzc_run3/<campaign>/zbzc_run3/zbzc_run3_<dataset>.coffea, logs in logs_zbzc_run3/<campaign>/
+# (ZBZC_RUN=zbzc_run3_stage writes to hists_zbzc_run3_stage/, logs_zbzc_run3_stage/ instead)
 CAMP=$1
 PART=${2:-all}
 case $CAMP in
@@ -17,8 +18,9 @@ esac
 cd "$(dirname "$0")"
 source /uscms_data/d3/psrivast/micromamba/bin/activate zbb-btv
 JSON=metadata/Zb_Zc_ratio_run3_$CAMP.json
-OUT=hists_zbzc_run3/$CAMP
-LOG=logs_zbzc_run3/$CAMP; mkdir -p "$LOG"
+RUN=${ZBZC_RUN:-zbzc_run3}
+OUT=hists_$RUN/$CAMP
+LOG=logs_$RUN/$CAMP; mkdir -p "$LOG"
 DSETS=$(python3 -c "
 import json
 keys = list(json.load(open('$JSON')))
