@@ -2,7 +2,30 @@
 
 Run 2 QCD_sf work is in `SESSION_NOTES.md`; this file is only the Run 3 ratio measurement.
 
-## RESUME HERE (2026-10-29, 02:00 CDT): third small run, data/MC slope fixed
+## RESUME HERE (2026-10-29, ~03:15 CDT): pending decision on the Z pT weights
+
+State when paused:
+- Meeting deck (user's choice of content): hists_zbzc_compare/slides_zbzc_fixes_before_after.pdf, 9 pages
+  (make_zbzc_fix_slides_pdf.py <before_dir>; before_dir = `git archive fb54afd hists_zbzc_run3 | tar -x -C <dir>`).
+  Pages 2-5 Z mass, all campaigns: before/after = old vs per-electron smearing (52b72bf), from the
+  28 Oct smearing test run (hists_zbzc_run3_smearfix). Width data/MC 0.90-0.95 -> 0.97-1.00; peak offset
+  unchanged (Zee data +0.03-0.08 GeV, within EGM scale unc.). Pages 6-9 leading-lepton pT STACK plots,
+  all campaigns: before = 2nd run fb54afd, after = 3rd run b48a524; exactly two changes between them:
+  type-1 MET EmEF < 0.9 for v12 (1c3ce15) AND DY Z pT weights (8311570). The deck does not yet say
+  explicitly what before/after is on each page type (user asked; offered to add a line).
+- User doubts the Z pT reweighting ("are we even allowed to tinker with MC... clearly it hasn't worked").
+  My answer: reweighting is common for MC used as a tool (bkg/eff, with syst), but here Z+jets IS the
+  measurement (biases the comparison/ratio; normally handled by unfolding + model-dependence syst), the
+  weights were derived inclusively before the jet cut but applied to Z+jet (first Z pT bin still 7-11% high
+  in 2023, 22EE got worse), and circular for Zmm. Keep the two BUG fixes (smearing, T1 MET EmEF).
+- PROPOSED, NOT DONE, awaiting user OK: (1) zpt_reweight default -> False in workflows/Zb_Zc_ratio.py
+  (keep code as optional syst study); (2) one more small run with only the two bug fixes (~2 h, MC on one
+  node, data on another via launch_zbzc_run3_node.sh, <= 4 jobs/node) -> clean "after" for all campaigns,
+  separating the MET fix from the weights; then redo the stack pages of the deck.
+- Also still open: 43-page decks' summary_zbzc_run3.json over-claims ("slope gone", "flat"); 2022 jet/MET
+  excess (JER inputs); 23BPix Zee ~3% below Zmm (EGM question, not drafted); full condor run (ask first).
+
+## (2026-10-29, 02:00 CDT): third small run
 
 Where the data/MC slope in Z pT / lepton pT came from (study dbbad0a, diagnostics c8676d5):
 1. DY generator Z pT shape, all campaigns, both channels, before any cut.
