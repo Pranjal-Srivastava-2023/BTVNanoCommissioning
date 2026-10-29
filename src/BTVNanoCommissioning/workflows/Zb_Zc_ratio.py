@@ -42,7 +42,15 @@ covers pT(ll) < 100. sumw is over the full sample, before the slice cut.
 stage_* histograms: Z pT, LHE pT(ll), lepton pT/eta and MET for all Z events
 before the MET and jet cuts, split by which of the two cuts they pass (STAGES),
 to tell generator-level Z pT mismodelling from jet/MET effects.
+
+DY MC Z pT weights (zpt_reweight=True, default): per campaign, in bins of reco
+pT(ll), from Z->mumu data/MC before the MET and jet cuts, normalised so that the
+total DY yield is unchanged (data/ZbZc/zpt_weights_run3.json, made by
+derive_zbzc_zpt_weights.py from an unweighted run). Applied to both channels.
 """
+
+import json
+import os
 
 import numpy as np
 import awkward as ak
@@ -78,6 +86,9 @@ CHANNELS = ["Zee", "Zmm"]
 # stage_* histograms: Z events (trigger, leptons, OS, Z mass) split by which of
 # the MET < 50 and >= 1 jet cuts they pass
 STAGES = ["none", "MET", "jet", "MET+jet"]
+ZPT_WEIGHTS = os.path.join(
+    os.path.dirname(__file__), "..", "data", "ZbZc", "zpt_weights_run3.json"
+)
 
 
 class NanoProcessor(processor.ProcessorABC):
@@ -104,6 +115,7 @@ class NanoProcessor(processor.ProcessorABC):
         noHist=False,
         chunksize=75000,
         jet="AK4",
+        zpt_reweight=True,
     ):
         if campaign not in self.trigger_config:
             raise KeyError(
@@ -125,6 +137,18 @@ class NanoProcessor(processor.ProcessorABC):
         self.jetveto_jme = True
         self.lumiMask = load_lumi(self._campaign)
         self.SF_map = load_SF(self._year, self._campaign)
+        # DY MC: Z pT shape weights from Z->mumu (derive_zbzc_zpt_weights.py)
+        self.zpt_weights = None
+        if zpt_reweight:
+            with open(ZPT_WEIGHTS) as f:
+                w = json.load(f)[campaign]
+            self.zpt_weights = (np.array(w["edges"], dtype=float), np.array(w["weights"]))
+
+    def zpt_weight(self, zpt):
+        """Z pT shape weight of DY MC events (reco pT(ll); last bin open)."""
+        edges, w = self.zpt_weights
+        idx = np.clip(np.searchsorted(edges, zpt, side="right") - 1, 0, len(w) - 1)
+        return w[idx]
 
     def make_hists(self):
         ch = hist.axis.StrCategory(CHANNELS, name="channel")
@@ -385,6 +409,9 @@ class NanoProcessor(processor.ProcessorABC):
             preweight = genw[zpre]
             if not isRealData:
                 sf, sf_lead = self.mc_sf(events[zpre], l0[zpre], l1[zpre], channel)
+                if self.zpt_weights is not None and dataset.startswith("DYto2L"):
+                    zw = self.zpt_weight(ak.to_numpy(zcand[zpre].pt))
+                    sf, sf_lead = sf * zw, sf_lead * zw
                 preweight_lead = preweight * sf_lead
                 preweight = preweight * sf
             self.fill_stage(
