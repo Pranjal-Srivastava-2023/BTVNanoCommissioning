@@ -1,38 +1,38 @@
 {
-  "Summer22": {
-    "title": "Muons and electrons both 3–5% low, same as last time",
-    "body": "With 0.39 fb⁻¹ in Z→ee and 0.74 fb⁻¹ in Z→μμ, data/MC after the full selection is 0.95 ± 0.01 (Z→ee) and 0.97 ± 0.01 (Z→μμ). Both channels are low by a similar amount, so this looks like normalization (DY cross section, luminosity), not leptons. WW is now included. The Z→ee peak now has the same width in data and MC. DY + b is about 4% and DY + c about 8% of the DY events.",
-    "next": [
-      "Muon trigger SF from both muons, like the electrons now. Needs MC trigger efficiencies, which MUO does not provide.",
-      "Full run on condor to get the pileup and jet-multiplicity shapes right (20 data files is too few).",
-      "b/c-tag SFs once we cut on the tagger; decide what to do without c-tag shape SFs."
-    ]
-  },
-  "Summer22EE": {
-    "title": "Data and MC agree within 3% in both channels",
-    "body": "With 0.63 fb⁻¹ in Z→ee and 0.84 fb⁻¹ in Z→μμ, data/MC after the full selection is 0.97 ± 0.01 (Z→ee) and 0.99 ± 0.01 (Z→μμ). Z→ee moved down by 1.5% because the trigger SF now uses both electrons. Electrons are low in both endcaps (about 0.95), as expected after the 2022 ECAL endcap issue. The Z→ee peak now has the same width in data and MC. This campaign is in good shape.",
-    "next": [
-      "Muon trigger SF from both muons, like the electrons now.",
-      "Full run on condor to get the pileup and jet-multiplicity shapes right (20 data files is too few).",
-      "b/c-tag SFs once we cut on the tagger; decide what to do without c-tag shape SFs."
-    ]
-  },
-  "Summer23": {
-    "title": "Data and MC agree within 3.5% in both channels",
-    "body": "With 0.60 fb⁻¹ in each channel (Muon0 and EGamma0, half of their luminosity), data/MC after the full selection is 0.97 ± 0.01 (Z→ee) and 0.99 ± 0.01 (Z→μμ). All 20 EGamma files were read this time. The Z→ee peak now has the same width in data and MC. This campaign is in good shape.",
-    "next": [
-      "Muon trigger SF from both muons, like the electrons now.",
-      "Full run on condor to get the pileup and jet-multiplicity shapes right (20 data files is too few).",
-      "b/c-tag SFs once we cut on the tagger; decide what to do without c-tag shape SFs."
-    ]
-  },
-  "Summer23BPix": {
-    "title": "Muons agree within 1%, electrons are 6% low, mostly at negative η",
-    "body": "With 0.62 fb⁻¹ in each channel, data/MC is 0.99 ± 0.01 in Z→μμ but 0.94 ± 0.01 in Z→ee. The electron deficit grows towards negative η: 0.98 in the positive endcap, 0.90 in the negative endcap. Muons show nothing like it. Before SFs, Z→ee data/MC is 0.97. The 2023D electron ID SFs are above 1 and push the MC up, while in 2022 they push it down. So the electron SFs for 2023D are the place to look. The Z→ee peak width is now within 3% of data.",
-    "next": [
-      "Ask EGM about the 2023D electron ID SFs: the file is in the 22Sep2023 folder but labelled 2023PromptD.",
-      "Muon trigger SF from both muons, like the electrons now.",
-      "Full run on condor to get the pileup and jet-multiplicity shapes right (20 data files is too few)."
-    ]
-  }
+ "Summer22": {
+  "title": "Slope mostly gone; 2022 MC still has too many jets",
+  "body": "Two fixes in this run. The DY MC now gets the Z pT shape from Z→μμ data, and electrons no longer make fake MET (jets that are really an electron are left out of the MET, as in the JME recipe). Data/MC is now 0.97 ± 0.01 (Z→ee) and 0.99 ± 0.01 (Z→μμ), up from 0.95 and 0.97. A small slope in Z pT is left in both channels: about 0.95 below 30 GeV and 1.04 above 100 GeV.",
+  "next": [
+   "2022 jets: the MC has about 5% more jets and a bigger MET tail than data. Without JER smearing most of the MET tail goes away, but not the extra jets. Next: check the 2022 JER inputs with JME.",
+   "Full run on condor, to get the pileup and jet-multiplicity shapes right.",
+   "b/c-tag SFs once we cut on the tagger."
+  ]
+ },
+ "Summer22EE": {
+  "title": "Slope mostly gone; 2022 MC still has too many jets",
+  "body": "Two fixes in this run. The DY MC now gets the Z pT shape from Z→μμ data, and electrons no longer make fake MET (jets that are really an electron are left out of the MET, as in the JME recipe). Data/MC is now 0.99 ± 0.01 (Z→ee) and 1.01 ± 0.01 (Z→μμ), up from 0.97 and 0.99. A small slope in Z pT is left in both channels: about 0.94 below 30 GeV and 1.05–1.08 above 60 GeV.",
+  "next": [
+   "2022 jets: the MC has more jets and a bigger MET tail than data, as in 2022 C-D. Next: check the 2022 JER inputs with JME.",
+   "Full run on condor, to get the pileup and jet-multiplicity shapes right.",
+   "b/c-tag SFs once we cut on the tagger."
+  ]
+ },
+ "Summer23": {
+  "title": "Slope gone: data and MC agree within 1–2%",
+  "body": "Two fixes in this run. The DY MC now gets the Z pT shape from Z→μμ data, and electrons no longer make fake MET (jets that are really an electron are left out of the MET, as in the JME recipe). Data/MC is now 0.99 ± 0.01 (Z→ee) and 1.00 ± 0.01 (Z→μμ), up from 0.97 and 0.99. Data/MC is flat in Z pT in both channels.",
+  "next": [
+   "Full run on condor, to get the pileup and jet-multiplicity shapes right.",
+   "Muon trigger SF from both muons, like the electrons. Needs MC trigger efficiencies, which MUO does not provide.",
+   "b/c-tag SFs once we cut on the tagger."
+  ]
+ },
+ "Summer23BPix": {
+  "title": "Slope gone; electrons still about 3% below muons",
+  "body": "Two fixes in this run. The DY MC now gets the Z pT shape from Z→μμ data, and electrons no longer make fake MET (jets that are really an electron are left out of the MET, as in the JME recipe). The MET fix matters most here: leading-electron pT 200–300 GeV went from 0.61 to 0.91. Data/MC is now 0.98 ± 0.01 (Z→ee) and 1.01 ± 0.01 (Z→μμ), up from 0.94 and 0.99, and flat in Z pT.",
+  "next": [
+   "Electrons are still about 3% below muons, mostly at negative η, before any jet cut. Ask EGM about the 2023D electron ID SFs.",
+   "Full run on condor, to get the pileup and jet-multiplicity shapes right.",
+   "b/c-tag SFs once we cut on the tagger."
+  ]
+ }
 }

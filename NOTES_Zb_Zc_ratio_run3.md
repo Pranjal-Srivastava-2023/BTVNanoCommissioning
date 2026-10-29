@@ -2,6 +2,35 @@
 
 Run 2 QCD_sf work is in `SESSION_NOTES.md`; this file is only the Run 3 ratio measurement.
 
+## RESUME HERE (2026-10-29, 02:00 CDT): third small run, data/MC slope fixed
+
+Where the data/MC slope in Z pT / lepton pT came from (study dbbad0a, diagnostics c8676d5):
+1. DY generator Z pT shape, all campaigns, both channels, before any cut.
+   Fix: DY Z pT weights from Z->mumu (derive_zbzc_zpt_weights.py ->
+   src/BTVNanoCommissioning/data/ZbZc/zpt_weights_run3.json, workflow zpt_reweight=True, 8311570).
+2. Electrons' own jets in type-1 MET (correction.py applied the JME EmEF < 0.9 cut only for
+   NanoAODv15) -> fake MET, MET < 50 removes high-pT Z->ee data events (23BPix worst).
+   Fix: calc_T1_MET applies EmEF < 0.9 also for Summer22/22EE/23/23BPix (1c3ce15, fork only).
+3. 2022 only: MC has ~2x the MET > 50 tail and ~5% more >= 1 jet events. Without JER smearing
+   (diag nojer) most of the MET tail goes away, not the jets. OPEN (2022 JER inputs, JRV2).
+
+Third small run (all 50 samples, first try, no stalls; MC on cmslpc364, data on cmslpc304 via
+launch_zbzc_run3_node.sh): data/MC after the full selection, Z->ee / Z->mumu
+| campaign | before (fb54afd) | now |
+| Summer22 | 0.948 / 0.967 | 0.973 / 0.987 |
+| Summer22EE | 0.969 / 0.985 | 0.995 / 1.006 |
+| Summer23 | 0.965 / 0.985 | 0.985 / 0.999 |
+| Summer23BPix | 0.941 / 0.988 | 0.978 / 1.012 |
+2023: flat in Z pT and lepton pT. 2022: mild rising slope left after the jet cut (~0.95 below
+30 GeV, 1.04-1.08 above 60-100 GeV), item 3. 23BPix leading-electron pT 200-300 GeV 0.61 -> 0.91.
+Per-range numbers: hists_zbzc_run3/slope_check_run3.txt. Decks rebuilt with
+summary_zbzc_run3.json (43 pages; corrections table has the MET cut and the Z pT weight row).
+
+Open: 2022 jets/JER (item 3); 23BPix Z->ee ~3% below Z->mumu, mostly negative eta -> EGM
+(2023D ID SFs; question not drafted yet); full condor run (ask user first); muon two-lepton
+trigger SF; b/c-tag SFs. Gotchas: run <= 4 local jobs per 11.7 GB node; ssh shells lack
+X509_USER_PROXY; scripts building the processor must pass isSyst=False (bool).
+
 ## RESUME HERE (2026-10-28, 17:15 CDT): second small Run 3 run done, decks rebuilt
 
 Rerun of all four campaigns (data + MC, 20 files, VV incl. Summer22 WW) after these changes

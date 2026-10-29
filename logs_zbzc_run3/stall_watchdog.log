@@ -1,6 +1,0 @@
-14:20:55 killing stalled pid 1691202: run3_Summer22EE.json DYto2L-2Jets_MLL-50_PTLL-100_TuneCP5_13p6TeV_amcatnloFXFX-pythia8
-14:36:04 killing stalled pid 1699411: run3_Summer22EE.json DYto2L-2Jets_MLL-50_PTLL-100_TuneCP5_13p6TeV_amcatnloFXFX-pythia8
-14:56:06 killing stalled pid 1699874: run3_Summer23.json EGamma0_Run2023C
-15:06:10 killing stalled pid 1700652: run3_Summer23.json DYto2L-2Jets_MLL-50_PTLL-100_TuneCP5_13p6TeV_amcatnloFXFX-pythia8
-15:26:11 killing stalled pid 1717642: run3_Summer23.json EGamma0_Run2023C
-16:56:17 postprocess done, watchdog exits

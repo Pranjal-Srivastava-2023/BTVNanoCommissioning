@@ -429,7 +429,7 @@ fig = page()
 y = heading(fig, "Corrections and scale factors") + 30
 rows = [["Jet energy corrections", "data + MC", "JME jet_jerc", f"{JEC} (data: with residuals)"],
         ["Jet energy resolution", "MC", "JME jet_jerc, jer_smear", JER],
-        ["MET", "data + MC", "from the corrected jets", "type-1 PuppiMET"],
+        ["MET", "data + MC", "from the corrected jets", "type-1 PuppiMET, jets with EM fraction < 0.9"],
         ["Jet veto map", "data + MC", "JME jetvetomaps", JETVETO],
         ["Muon momentum scale and resolution", "data + MC", "MUO muon_scalesmearing", "Run 3 recipe"],
         ["Electron energy scale / smearing", "data / MC", "EGM electronSS_EtDependent", "Scale / SmearAndSyst"],
@@ -437,13 +437,14 @@ rows = [["Jet energy corrections", "data + MC", "JME jet_jerc", f"{JEC} (data: w
         ["Muon ID and isolation SF", "MC", "MUO muon_Z", "NUM_TightID_DEN_TrackerMuons, NUM_TightPFIso_DEN_TightID"],
         ["Muon trigger SF (leading muon)", "MC", "MUO muon_Z", "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight"],
         ["Electron ID and reco SF", "MC", "EGM electron", f"Electron-ID-SF: Tight and Reco ({EGM_ERA})"],
-        ["Electron trigger SF (leading electron)", "MC", "EGM electronHlt", "HLT_SF_Ele30_TightID"],
+        ["Electron trigger SF (either electron)", "MC", "EGM electronHlt", "HLT_SF_Ele30_TightID"],
+        ["DY Z pT weight", "DY MC", "ours, from Z→μμ data", "data/ZbZc/zpt_weights_run3.json"],
         ["b- and c-tag SF", "MC", "BTV btagging, ctagging", "not applied yet (no tag cut)"]]
 cols = [("Correction", 470, "left"), ("Applied to", 190, "left"), ("POG file", 400, "left"),
         ("Key / tag", 604, "left")]
 y = wtable(fig, 128, y, cols, rows, 20) + 16
-text(fig, 128, y, f"Every file is the official one on cvmfs: {CVMFS}/<POG>/{_cvmfs_dir(c0, 'JME')}/latest/. "
-     "The framework uses them for all BTV workflows."
+text(fig, 128, y, f"Every POG file is the official one on cvmfs: {CVMFS}/<POG>/{_cvmfs_dir(c0, 'JME')}/latest/. "
+     "The framework uses them for all BTV workflows. The Z pT weight is ours (DY MC vs Z→μμ data, before the MET and jet cuts)."
      + (" In 2022EE the electron ID SFs are lower (about 0.90–0.94 per electron), as expected after the ECAL "
         "endcap issue." if c0 == "Summer22EE" else ""), 20, BODY, width=1664)
 footer(fig, FOOT, n)

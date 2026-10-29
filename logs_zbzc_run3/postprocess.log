@@ -1,13 +1,4 @@
-16:45:56 all jobs done
-logs_zbzc_run3/Summer22EE/driver_mc.log:14:20:56 DYto2L-2Jets_MLL-50_PTLL-100_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 exit 143
-logs_zbzc_run3/Summer22EE/driver_mc.log:14:36:04 DYto2L-2Jets_MLL-50_PTLL-100_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 exit 143
-logs_zbzc_run3/Summer22EE/driver_mc.log:14:37:29 DYto2L-2Jets_MLL-50_PTLL-100_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 exit 143
-logs_zbzc_run3/Summer23/driver_data.log:14:56:08 EGamma0_Run2023C exit 143
-logs_zbzc_run3/Summer23/driver_data.log:15:26:11 EGamma0_Run2023C exit 143
-logs_zbzc_run3/Summer23/driver_data.log:15:31:08 EGamma0_Run2023C exit 143
-logs_zbzc_run3/Summer23/driver_mc.log:15:06:10 DYto2L-2Jets_MLL-50_PTLL-100_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 exit 143
-logs_zbzc_run3/Summer23/driver_mc.log:15:06:37 DYto2L-2Jets_MLL-50_PTLL-100_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 exit 143
-WARNING: failed tries above
+01:37:41 all jobs done
 Summer22      EGamma_Run2022C        1389 LS     224.06 /pb  x1.0
 Summer22      EGamma_Run2022D         620 LS     165.43 /pb  x1.0
 Summer22      Muon_Run2022C          1861 LS     430.93 /pb  x1.0
@@ -26,18 +17,12 @@ Summer23      Zee 596.16 /pb   Zmm 604.77 /pb
 Summer23BPix  EGamma0_Run2023D       3401 LS    1247.12 /pb  x0.5
 Summer23BPix  Muon0_Run2023D         3685 LS    1241.16 /pb  x0.5
 Summer23BPix  Zee 623.56 /pb   Zmm 620.58 /pb
-16:48:58 plots Summer22
-16:50:12 plots Summer22EE
-16:51:29 plots Summer23
-16:52:49 plots Summer23BPix
-Traceback (most recent call last):
-  File "/uscms_data/d3/psrivast/BTVNanoCommissioning/make_zbzc_run3_slides_pdf.py", line 390, in <module>
-    pd_, proc, tier = das(c0, ds)
-  File "/uscms_data/d3/psrivast/BTVNanoCommissioning/make_zbzc_run3_slides_pdf.py", line 71, in das
-    return m.group(2), f"{m.group(1)}-{m.group(4)}", m.group(3)
-AttributeError: 'NoneType' object has no attribute 'group'
-deck Summer22 FAILED
+01:40:47 plots Summer22
+01:42:07 plots Summer22EE
+01:43:26 plots Summer23
+01:44:42 plots Summer23BPix
+wrote hists_zbzc_run3/Summer22/slides_zbzc_run3_Summer22.pdf (43 pages)
 wrote hists_zbzc_run3/Summer22EE/slides_zbzc_run3_Summer22EE.pdf (43 pages)
 wrote hists_zbzc_run3/Summer23/slides_zbzc_run3_Summer23.pdf (43 pages)
 wrote hists_zbzc_run3/Summer23BPix/slides_zbzc_run3_Summer23BPix.pdf (43 pages)
-16:55:00 postprocess done
+01:46:34 postprocess done
