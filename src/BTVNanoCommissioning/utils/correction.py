@@ -908,13 +908,19 @@ def calc_T1_MET(
     MET_x_baseline = met_raw.pt * np.cos(met_raw.phi)
     MET_y_baseline = met_raw.pt * np.sin(met_raw.phi)
 
-    if campaign in ["Summer24", "Winter25", "Prompt25"]:  # NanoAODv15
+    # EmEF < 0.9 (JME type-1 recipe) also for the Run 3 NanoAODv12 campaigns: without it the
+    # electrons' own jets enter the type-1 sum and give fake MET in Z->ee (Zb_Zc_ratio, 23BPix:
+    # data/MC of MET < 50 at Z pT > 300 GeV 0.64 -> 1.03, diag_zbzc_met.py emef)
+    if campaign in [
+        "Summer24", "Winter25", "Prompt25",  # NanoAODv15
+        "Summer22", "Summer22EE", "Summer23", "Summer23BPix",  # NanoAODv12
+    ]:
         jet_mask = (
             (shifted_jets["pt_noMu_fullcorr"] > 15.0)
             & (abs(shifted_jets["eta"]) < 5.2)
             & (shifted_jets["EmEF"] < 0.9)
         )
-    else:  # NanoAODv12
+    else:  # other campaigns (Run 2 etc.): unchanged
         jet_mask = (shifted_jets["pt_noMu_fullcorr"] > 15.0) & (
             abs(shifted_jets["eta"]) < 5.2
         )
