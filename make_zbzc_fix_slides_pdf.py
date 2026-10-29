@@ -1,11 +1,8 @@
-"""Short group-meeting deck: what the 2026-10-28 fixes changed, before vs after.
-
-Fixes: electron smearing per electron (52b72bf), electrons' jets out of type-1 MET (1c3ce15),
-DY Z pT weights from Z->mumu (8311570). Before = second small run (fb54afd), after = third
-small run (b48a524), same 20 files per sample.
-Inputs: hists_zbzc_compare/ (compare_zbzc_before_after.py), hists_zbzc_diag/ (diag_zbzc_met.py),
-hists_zbzc_run3_smearfix/ (compare_zee_smearfix.py), slide-14 plots before (git fb54afd, path
-given as argument) and after (hists_zbzc_run3/Summer23BPix/plots/lep0_pt.png).
+"""Group-meeting deck, all four campaigns, before vs after:
+  - Z mass with the old and the fixed electron smearing (52b72bf), from
+    hists_zbzc_run3_smearfix/<campaign>/z_mass_smearfix.png (compare_zee_smearfix.py)
+  - leading-lepton pT stack plot before (second small run, fb54afd) and after (third small
+    run, b48a524: electrons' jets out of type-1 MET + DY Z pT weights), same 20 files.
 
 Usage:  python make_zbzc_fix_slides_pdf.py <before_dir> [--date "29 October 2026"]
 Output: hists_zbzc_compare/slides_zbzc_fixes_before_after.pdf
@@ -118,141 +115,68 @@ def save(fig):
     plt.close(fig)
 
 
-# ------------------------------------------------------------------ 1 cover
+# ------------------------------------------------------------------ cover
 fig = page(DARK)
-text(fig, 128, 300, "Z + jets Run 3: data/MC before and after the fixes", 64, "white", "bold", width=1600, ls=1.15)
-text(fig, 128, 520, "What changed, how we found it, and what is still open", 34, "#C9D3E3")
-text(fig, 128, 640, "Small run: 20 files per sample, four campaigns (2022 C–D, 2022 E–G, 2023 C, 2023 D)",
-     26, "#C9D3E3", width=1600)
+text(fig, 128, 300, "Z + jets Run 3: before and after, all campaigns", 64, "white", "bold", width=1600, ls=1.15)
+text(fig, 128, 520, "Z mass (electron smearing fix) and leading-lepton pT (MET fix + Z pT weights)", 32, "#C9D3E3",
+     width=1600)
+text(fig, 128, 640, "Small run: 20 files per sample · 2022 C–D, 2022 E–G, 2023 C, 2023 D", 26, "#C9D3E3", width=1600)
 text(fig, 128, 860, DATE, 26, "#C9D3E3")
 pdf.savefig(fig)
 plt.close(fig)
 n += 1
 
-# ------------------------------------------------------------------ 2 what we changed
-fig = page()
-y = heading(fig, "Three fixes", "Same files and same selection before and after. Only these changed.") + 40
-cols = [("Fix", 470, "left"), ("What was wrong", 720, "left"), ("How we found it", 474, "left")]
-rows = [["1. Electron smearing", "Both electrons got the same random", "Z→ee peak wider in MC"],
-        ["", "number, so MC Z→ee was too wide", "than in data"],
-        ["2. MET", "The electrons' own jets were counted", "High-pT Z→ee data lost"],
-        ["", "in the MET (fake MET in Z→ee)", "at the MET < 50 cut"],
-        ["3. Z pT weights", "The DY generator gets the Z pT", "Wiggle in Z pT before"],
-        ["", "shape wrong", "any cut, both channels"]]
-y = table(fig, 128, y, cols, rows, 26) + 40
-note(fig, y, "Fixes 1 and 2 are bugs. Fix 3 is a correction we derive.",
-     "Fix 1 and 2 change shared framework code, in our fork only. Fix 2 follows the JME type-1 MET recipe, "
-     "which the framework applied only for 2024–25 samples. Fix 3 weights DY MC to Z→μμ data and is checked on Z→ee.",
-     h=170)
-save(fig)
+CAMPS = [("Summer22", "2022 C–D"), ("Summer22EE", "2022 E–G"), ("Summer23", "2023 C"), ("Summer23BPix", "2023 D")]
 
-# ------------------------------------------------------------------ 3 fix 1: Z mass width
-fig = page()
-y = heading(fig, "Fix 1: Z→ee mass width (2023 D shown)",
-            "Red: MC before. Blue: MC after. Muons are not touched by this fix.") + 20
-y = image(fig, "hists_zbzc_run3_smearfix/Summer23BPix/z_mass_smearfix.png", y, hmax=470) + 14
-cols = [("Width data/MC (Z→ee)", 560, "left"), ("2022 C–D", 270, "right"), ("2022 E–G", 270, "right"),
-        ("2023 C", 270, "right"), ("2023 D", 270, "right")]
-y = table(fig, 128, y, cols, [["before", "0.95", "0.94", "0.94", "0.90"],
-                              ["after", "0.99", "1.00", "1.00", "0.97"]], 24) + 14
-note(fig, y, "Width fixed. The peak position did not move (this fix only changes the width).",
-     "Data peak is 0.03–0.08 GeV (< 0.1%) above MC for electrons, same as before. That is inside the EGM "
-     "energy-scale uncertainty (0.05–0.36%), so it is a systematic, not a bug.", style=OPEN, h=140)
-save(fig)
-
-# ------------------------------------------------------------------ 4 fix 2: why
-fig = page()
-y = heading(fig, "Fix 2: why high-pT electrons were lost (2023 D)",
-            "Fraction of Z events passing MET < 50 GeV, before the jet cut. Filled: now. Open: electrons' jets "
-            "left out of the MET.") + 16
-y = image(fig, "hists_zbzc_diag/Summer23BPix/plots/diag_emef_met_eff.png", y, hmax=620) + 16
-note(fig, y, "The electron's own jet made fake MET, more in data than in MC.",
-     "Z→ee data/MC of the MET cut: 0.81 at Z pT 200–300 GeV, 0.64 above 300. Without those jets: 0.97 and 1.03, "
-     "the same as Z→μμ. Muons do not change, as expected.", h=150)
-save(fig)
-
-# ------------------------------------------------------------------ 5 slide 14 before / after
-fig = page()
-y = heading(fig, "Leading-lepton pT in 2023 D: before and after",
-            "Same plot as slide 14 of the main deck. Left: before. Right: after.") + 30
-image(fig, f"{args.before_dir}/hists_zbzc_run3/Summer23BPix/plots/lep0_pt.png", y, x=128, w=820)
-yb = image(fig, "hists_zbzc_run3/Summer23BPix/plots/lep0_pt.png", y, x=972, w=820)
-text(fig, 128, y - 34, "Before", 28, MUTED, "bold")
-text(fig, 972, y - 34, "After", 28, "#C0392B", "bold")
-note(fig, yb + 30, "The Z→ee drop at high pT is gone.",
-     "Z→ee data/MC at leading pT 200–300 GeV: 0.61 → 0.91. Above 300 GeV: 0.53 → 1.03. Z→μμ barely changes.",
-     h=130)
-save(fig)
-
-# ------------------------------------------------------------------ 6-9 ratio before/after per campaign
-VERDICT = {
-    "Summer23BPix": ("2023 D: clear improvement in Z→ee", GOOD,
-                     "Z→ee at Z pT 200–300 GeV: 0.72 → 0.94, above 300: 0.53 → 0.95. Z→μμ gets a little flatter. "
-                     "Not fixed: the first bin (Z pT < 20 GeV) is still 1.08–1.11."),
-    "Summer23": ("2023 C: better at high pT, within errors elsewhere", GOOD,
-                 "Z pT above 200 GeV: 0.75–0.88 → 0.98–1.07 in both channels (each bin 1–2σ). "
-                 "Not fixed: first bin still 1.07–1.10."),
-    "Summer22": ("2022 C–D: level up 2%, shape not better", OPEN,
-                 "Totals 0.948/0.967 → 0.973/0.987. Shape: low at 20–40 GeV (0.92–0.95), high at 100–140 GeV "
-                 "(1.05), before and after. Likely the 2022 jet excess (page 11)."),
-    "Summer22EE": ("2022 E–G: level up 2%, shape slightly worse", OPEN,
-                   "Totals 0.969/0.985 → 0.995/1.006. Z→μμ at 60–300 GeV was 1.03–1.06, now 1.07–1.08. "
-                   "Low at 20–40 GeV as before. Same 2022 jet issue (page 11)."),
+# ------------------------------------------------------------------ Z mass, per campaign
+# zee_smearfix_summary.txt: Z->ee width data/MC old -> new; data - MC peak (GeV) old -> new, Z->ee and Z->mumu
+MASS = {
+    "Summer22": ("0.95", "0.99", "+0.05", "+0.05", "+0.04"),
+    "Summer22EE": ("0.94", "1.00", "+0.06", "+0.07", "−0.03"),
+    "Summer23": ("0.94", "1.00", "+0.02", "+0.03", "+0.03"),
+    "Summer23BPix": ("0.90", "0.97", "+0.08", "+0.08", "+0.03"),
 }
-for c, era in [("Summer23BPix", "2023 D"), ("Summer23", "2023 C"), ("Summer22", "2022 C–D"),
-               ("Summer22EE", "2022 E–G")]:
-    title, style, body = VERDICT[c]
+for c, era in CAMPS:
+    w0, w1, d0, d1, dm = MASS[c]
     fig = page()
-    y = heading(fig, f"Data/MC before and after: {era}",
-                "Full selection. Top: Z pT. Bottom: leading-lepton pT. Grey: before. Red: after. Wide bins, "
-                "errors = data + MC statistics.") + 10
-    y = image(fig, f"hists_zbzc_compare/ratio_{c}.png", y, hmax=620) + 12
-    note(fig, y, title, body, style=style, h=135)
+    y = heading(fig, f"Z mass, {era}: electron smearing before and after",
+                "Red dashed: MC with the old smearing. Blue: MC with the fix. Muons are not touched by this fix.") + 14
+    y = image(fig, f"hists_zbzc_run3_smearfix/{c}/z_mass_smearfix.png", y, hmax=500) + 10
+    cols = [("", 520, "left"), ("before", 380, "right"), ("after", 380, "right"), ("", 384, "left")]
+    y = table(fig, 128, y, cols, [["Z→ee width, data/MC", w0, w1, ""],
+                                  ["Z→ee peak, data − MC (GeV)", d0, d1, ""],
+                                  ["Z→μμ peak, data − MC (GeV)", dm, dm, ""]], 22) + 10
+    note(fig, y, f"Width: {w0} → {w1}. Peak position: unchanged.",
+         "The fix only changes the width. The electron peak offset (< 0.1%) is inside the EGM energy-scale "
+         "uncertainty (0.05–0.36%).", style=GOOD if float(w1) >= 0.97 else OPEN, h=110)
     save(fig)
 
-# ------------------------------------------------------------------ 10 fix 3 check
-fig = page()
-y = heading(fig, "Fix 3: Z pT weights, checked on Z→ee",
-            "All Z events, before the MET and jet cuts. Weights come from Z→μμ (bottom row, flat by "
-            "construction). Z→ee (top row) is the independent check.") + 16
-y = image(fig, "hists_zbzc_compare/zpt_weights_closure.png", y, hmax=600) + 16
-note(fig, y, "The weights remove the generator wiggle in Z→ee too.",
-     "Bin-to-bin spread of Z→ee data/MC: 7–8% → 3–6%. Totals unchanged. After the jet cut the effect is "
-     "smaller, and the first Z pT bin is still high (pages 6–7).", h=150)
-save(fig)
-
-# ------------------------------------------------------------------ 11 2022
-fig = page()
-y = heading(fig, "2022: extra MET and jets in MC (open)",
-            "MET of all Z events, 2022 C–D. Filled: now. Open: MC without jet energy smearing (JER). "
-            "Data is the same in both.") + 16
-y = image(fig, "hists_zbzc_diag/Summer22/plots/diag_nojer_met_pt.png", y, hmax=600) + 16
-note(fig, y, "Jet smearing makes most of the extra MET, but not the extra jets.",
-     "Data/MC above 50 GeV: about 0.5 → 0.8 without JER. MC events with ≥1 jet: 5% too many → 3%. "
-     "Turning JER off is only a test. Next: check the 2022 JER inputs (2023 uses newer ones and is fine).",
-     style=OPEN, h=150)
-save(fig)
-
-# ------------------------------------------------------------------ 12 summary
-fig = page()
-y = heading(fig, "Summary") + 30
-cols = [("Data/MC, Z→ee / Z→μμ", 560, "left"), ("before", 360, "right"), ("after", 360, "right"),
-        ("shape", 384, "left")]
-rows = [["2022 C–D", "0.948 / 0.967", "0.973 / 0.987", "not better"],
-        ["2022 E–G", "0.969 / 0.985", "0.995 / 1.006", "slightly worse"],
-        ["2023 C", "0.965 / 0.985", "0.985 / 0.999", "better at high pT"],
-        ["2023 D", "0.941 / 0.988", "0.978 / 1.012", "much better (Z→ee)"]]
-y = table(fig, 128, y, cols, rows, 28,
-          colors={"not better": "#C0561B", "slightly worse": "#C0561B", "better at high pT": "#2E7D32",
-                  "much better (Z→ee)": "#2E7D32"}) + 30
-y = note(fig, y, "Done: two real bugs fixed, and the big 2023 D electron slope is gone.",
-         "Z→ee width matches data. High-pT electrons are no longer lost to fake MET. All totals are now 0.97–1.01.",
-         h=120) + 20
-note(fig, y, "Open",
-     "2022 jets and MET (JER inputs). First Z pT bin 7–11% high in 2023. 2023 D electrons 3% below muons "
-     "(ask EGM). Z→ee peak offset < 0.1% (EGM scale systematic). 20 files are too few for few-% shapes: "
-     "full condor run next.", style=OPEN, h=170)
-save(fig)
+# ------------------------------------------------------------------ leading-lepton pT stack, per campaign
+LEP = {
+    "Summer22": ("Level about 2% higher; shape not better", OPEN,
+                 "Z→ee 60–200 GeV: 0.96–0.98 → 1.01–1.05. Z→μμ 200–300 GeV: 0.83 → 0.97. "
+                 "Below 60 GeV still 0.94–0.96 in both channels."),
+    "Summer22EE": ("Level about 2% higher; shape slightly worse", OPEN,
+                   "Above 60 GeV MC is now 5–10% low: Z→μμ 1.00–1.07 → 1.05–1.10, Z→ee 0.99–1.02 → 1.05–1.07. "
+                   "Below 60 GeV still 0.94–0.97."),
+    "Summer23": ("Better at high pT", GOOD,
+                 "Z→ee 140–300 GeV: 0.82–0.90 → 0.97–1.01. Z→μμ 140–300 GeV: 0.81–0.86 → 0.94–0.96. "
+                 "Each bin moves by 1–2σ."),
+    "Summer23BPix": ("The Z→ee drop at high pT is gone", GOOD,
+                     "Z→ee 200–300 GeV: 0.61 → 0.91, above 300: 0.53 → 1.03. Z→μμ barely changes. "
+                     "Electrons are still about 3% below muons overall."),
+}
+for c, era in CAMPS:
+    title, style, body = LEP[c]
+    fig = page()
+    y = heading(fig, f"Leading-lepton pT, {era}: before and after",
+                "Left: before. Right: after (electrons' jets out of the MET + DY Z pT weights). Same files.") + 44
+    image(fig, f"{args.before_dir}/hists_zbzc_run3/{c}/plots/lep0_pt.png", y, x=30, w=920)
+    yb = image(fig, f"hists_zbzc_run3/{c}/plots/lep0_pt.png", y, x=970, w=920)
+    text(fig, 40, y - 36, "Before", 28, MUTED, "bold")
+    text(fig, 980, y - 36, "After", 28, "#C0392B", "bold")
+    note(fig, yb + 24, title, body, style=style, h=120)
+    save(fig)
 
 pdf.close()
 print("wrote", OUT, f"({n} pages)")
