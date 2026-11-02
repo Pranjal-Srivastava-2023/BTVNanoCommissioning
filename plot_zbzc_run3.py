@@ -40,7 +40,10 @@ XS = json.load(open("metadata/Zb_Zc_ratio_xsections_run3.json"))
 
 which = sys.argv[1]
 camps = CAMPAIGNS if which == "all" else [which]
-outdir = f"hists_zbzc_run3/{which}"
+# ZBZC_RUN=<run>: read hists_<run>/<campaign>/zbzc_run3/ and plot into hists_<run>/<campaign>/
+# (e.g. zbzc_run3_1j); lumi.json is taken from there if present, else from hists_zbzc_run3/
+RUN = os.environ.get("ZBZC_RUN", "zbzc_run3")
+outdir = f"hists_{RUN}/{which}"
 # ZBZC_DIAG=<variant>: replace the datasets that have a diag_zbzc_met.py output (DY, data)
 # by hists_zbzc_diag/<campaign>/diag_<variant>_*.coffea (same files); ttbar and VV stay
 # nominal. Plots go to hists_zbzc_diag/<campaign>/stack_<variant>/.
@@ -54,12 +57,15 @@ os.makedirs(plotdir, exist_ok=True)
 OUT, LUMI = {}, {}
 for c in camps:
     OUT[c] = {}
-    for f in sorted(glob.glob(f"hists_zbzc_run3/{c}/zbzc_run3/zbzc_run3_*.coffea")):
+    for f in sorted(glob.glob(f"hists_{RUN}/{c}/zbzc_run3/zbzc_run3_*.coffea")):
         OUT[c].update(load(f))
     if DIAG:
         for f in sorted(glob.glob(f"hists_zbzc_diag/{c}/diag_{DIAG}_*.coffea")):
             OUT[c].update(load(f))
-    LUMI[c] = json.load(open(f"hists_zbzc_run3/{c}/lumi.json"))
+    lumi_file = f"hists_{RUN}/{c}/lumi.json"
+    if not os.path.exists(lumi_file):
+        lumi_file = f"hists_zbzc_run3/{c}/lumi.json"
+    LUMI[c] = json.load(open(lumi_file))
 LUMI_TOT = {ch: sum(LUMI[c][ch] for c in camps) for ch in CHANNELS}
 
 

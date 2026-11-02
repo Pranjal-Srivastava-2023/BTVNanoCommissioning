@@ -116,6 +116,7 @@ class NanoProcessor(processor.ProcessorABC):
         chunksize=75000,
         jet="AK4",
         zpt_reweight=True,
+        njet_exact=None,
     ):
         if campaign not in self.trigger_config:
             raise KeyError(
@@ -132,6 +133,8 @@ class NanoProcessor(processor.ProcessorABC):
         self.isArray = isArray
         self.noHist = noHist
         self.chunksize = chunksize
+        # njet_exact=N: jet requirement is exactly N selected jets (Zb_Zc_ratio_1jet)
+        self.njet_exact = njet_exact
         # common_shifts: only JME-recipe jets (pT > 15, tight ID, EM fraction < 0.9,
         # no PF muon within 0.2) in a vetoed region drop the event
         self.jetveto_jme = True
@@ -212,10 +215,10 @@ class NanoProcessor(processor.ProcessorABC):
         hists.update(
             {
                 "z_mass": h(Reg(40, 71, 111, name="mass", label="$m_{\\ell\\ell}$ [GeV]")),
-                "z_pt": h(Reg(50, 0, 1000, name="pt", label="$p_T^{\\ell\\ell}$ [GeV]")),
-                "lep0_pt": h(Reg(50, 0, 1000, name="pt", label="Leading lepton $p_T$ [GeV]")),
+                "z_pt": h(Reg(100, 0, 1000, name="pt", label="$p_T^{\\ell\\ell}$ [GeV]")),
+                "lep0_pt": h(Reg(100, 0, 1000, name="pt", label="Leading lepton $p_T$ [GeV]")),
                 "lep1_pt": h(Reg(50, 0, 500, name="pt", label="Subleading lepton $p_T$ [GeV]")),
-                "lhe_vpt": h(Reg(75, 0, 1500, name="pt", label="LHE $p_T^{\\ell\\ell}$ [GeV]")),
+                "lhe_vpt": h(Reg(150, 0, 1500, name="pt", label="LHE $p_T^{\\ell\\ell}$ [GeV]")),
                 "z_eta": h(Reg(50, -5, 5, name="eta", label="$\\eta^{\\ell\\ell}$")),
                 "lep0_eta": h(Reg(25, -2.5, 2.5, name="eta", label="Leading lepton $\\eta$")),
                 "lep1_eta": h(Reg(25, -2.5, 2.5, name="eta", label="Subleading lepton $\\eta$")),
@@ -225,6 +228,13 @@ class NanoProcessor(processor.ProcessorABC):
                 "lep_eta_phi": h(
                     Reg(25, -2.5, 2.5, name="eta", label="Lepton $\\eta$"),
                     Reg(32, -np.pi, np.pi, name="phi", label="Lepton $\\phi$"),
+                ),
+                # same map in 10 x 10 bins, split by jet multiplicity (1, 2, >= 3 in
+                # the overflow) to check the hot cells in the Z + 1 jet sub-sample
+                "lep_eta_phi_nj": h(
+                    hist.axis.Integer(1, 3, name="nj", label="N AK4 jets", underflow=False),
+                    Reg(10, -2.5, 2.5, name="eta", label="Lepton $\\eta$"),
+                    Reg(10, -np.pi, np.pi, name="phi", label="Lepton $\\phi$"),
                 ),
                 "dR_ll": h(Reg(30, 0, 6, name="dr", label="$\\Delta R(\\ell_1, \\ell_2)$")),
                 "dphi_ll": h(Reg(32, 0, np.pi, name="dphi", label="$\\Delta\\phi(\\ell_1, \\ell_2)$")),
@@ -500,8 +510,12 @@ class NanoProcessor(processor.ProcessorABC):
             fill("lep1_eta", eta=ak.to_numpy(l1m.eta))
             fill("lep0_phi", phi=ak.to_numpy(l0m.phi))
             fill("lep1_phi", phi=ak.to_numpy(l1m.phi))
+            nj = ak.to_numpy(ak.num(jets[mask]))
             for lm in (l0m, l1m):
                 fill("lep_eta_phi", eta=ak.to_numpy(lm.eta), phi=ak.to_numpy(lm.phi))
+                fill(
+                    "lep_eta_phi_nj", nj=nj, eta=ak.to_numpy(lm.eta), phi=ak.to_numpy(lm.phi)
+                )
             fill("dR_ll", dr=ak.to_numpy(l0m.delta_r(l1m)))
             fill("dphi_ll", dphi=ak.to_numpy(abs(l0m.delta_phi(l1m))))
             fill("dphi_zj", dphi=ak.to_numpy(abs(z.delta_phi(jet))))
@@ -528,7 +542,10 @@ class NanoProcessor(processor.ProcessorABC):
             jets = jets[ak.all(jets.metric_table(ele_jetveto) > 0.4, axis=2)]
             jets = jets[ak.all(jets.metric_table(mu_jetveto) > 0.4, axis=2)]
             lead = ak.pad_none(jets, 1, axis=1)[:, 0]
-            req_jet = ak.to_numpy(ak.num(jets) >= 1)
+            if self.njet_exact is None:
+                req_jet = ak.to_numpy(ak.num(jets) >= 1)
+            else:
+                req_jet = ak.to_numpy(ak.num(jets) == self.njet_exact)
             return jets, lead, req_jet
 
         ## AK8 jets: lepton cleaning (dR > 0.8), tight jet ID, two subjets.

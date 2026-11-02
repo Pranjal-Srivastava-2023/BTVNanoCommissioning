@@ -2,6 +2,23 @@
 
 Run 2 QCD_sf work is in `SESSION_NOTES.md`; this file is only the Run 3 ratio measurement.
 
+## 2026-11-02: Summer22 Z + exactly 1 jet vs Z + >= 1 jet (advisor's question)
+
+Two Summer22 reruns, 10 GeV bins in z_pt / lep0_pt / lhe_vpt, Z pT weights still ON (decision below still
+pending): `ZBZC_RUN=zbzc_run3_ge1j` (Zb_Zc_ratio) and `ZBZC_RUN=zbzc_run3_1j ZBZC_WF=Zb_Zc_ratio_1jet`
+(new njet_exact=1 option). ~13:20 an LPC reboot killed both during TTto2L2Nu; resumed only TT/WW/WZ/ZZ with
+resume_zbzc_njet_bkg.sh (NB: relaunch stall_watchdog_zbzc_run3.sh with the drivers on any resume).
+ge1j yields.txt is identical to b48a524 Summer22. Postprocess: postprocess_zbzc_njet.sh.
+Comparison: hists_zbzc_run3_1j/Summer22/compare_ge1j/ (compare_zbzc_njet_slope.py). The slope fit first used
+data-based errors (e ~ r), which pulls the line towards downward-fluctuating low-count bins (Zee 1j lep1_pt
+gave -42 %/100 GeV); fixed to expected errors sqrt(MC + var)/MC, empty data bins included as 0.
+Slopes (%/100 GeV, ge1j -> 1j): Zmm z_pt +4.4+-1.3 -> +0.7+-1.7, lep0 +6.2+-2.2 -> +2.5+-3.0,
+lep1 +20.5+-5.5 -> +1.3+-7.6; Zee z_pt +4.8+-2.0 -> +3.0+-2.7, lep0 +9.7+-3.5 -> +9.1+-4.8.
+=> muons: slope consistent with zero in Z + 1 jet (comes from N_jet >= 2 events); electrons: no clear change,
+1j errors larger. 1j is ~80% of ge1j, so the two are strongly correlated. Eta-phi by N_jet:
+hists_zbzc_run3_ge1j/Summer22/etaphi_nj_summary.txt, chi2/ndf ~1 in every map, no cell stays low across
+jet bins; >= 3 jets data/MC ~0.79-0.80 (MC too high).
+
 ## RESUME HERE (2026-10-29, ~03:15 CDT): pending decision on the Z pT weights
 
 State when paused:

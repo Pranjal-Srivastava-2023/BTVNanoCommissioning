@@ -1,0 +1,25 @@
+12:19:23 DYto2L-2Jets_MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 try 1
+12:27:08 DYto2L-2Jets_MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 exit 0
+12:27:08 DYto2L-2Jets_MLL-50_PTLL-100_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 try 1
+12:43:38 DYto2L-2Jets_MLL-50_PTLL-100_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 exit 0
+12:43:38 DYto2L-2Jets_MLL-50_PTLL-200_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 try 1
+12:54:36 DYto2L-2Jets_MLL-50_PTLL-200_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 exit 0
+12:54:36 DYto2L-2Jets_MLL-50_PTLL-400_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 try 1
+13:08:09 DYto2L-2Jets_MLL-50_PTLL-400_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 exit 0
+13:08:09 DYto2L-2Jets_MLL-50_PTLL-600_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 try 1
+13:11:59 DYto2L-2Jets_MLL-50_PTLL-600_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 exit 0
+13:11:59 TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8 try 1
+13:53:24 RESUME after node reboot on cmslpc348
+13:53:24 TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8 try 1
+14:53:36 TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8 exit 143
+14:53:36 TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8 try 2
+15:08:36 TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8 exit 143
+15:08:36 TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8 try 3
+15:22:23 TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8 exit 0
+15:22:23 WW_TuneCP5_13p6TeV_pythia8 try 1
+15:32:08 WW_TuneCP5_13p6TeV_pythia8 exit 0
+15:32:08 WZ_TuneCP5_13p6TeV_pythia8 try 1
+15:42:43 WZ_TuneCP5_13p6TeV_pythia8 exit 0
+15:42:43 ZZ_TuneCP5_13p6TeV_pythia8 try 1
+15:46:12 ZZ_TuneCP5_13p6TeV_pythia8 exit 0
+15:46:12 ALL DONE

@@ -108,6 +108,7 @@ workflows["QCD_sf"] = QCDValidProcessor
 workflows["QCD_smu_sf"] = QCDsmuValidProcessor
 workflows["Zb_Zc_ratio"] = ZbZcRatioProcessor  # AK4 jets
 workflows["Zb_Zc_ratio_AK8"] = partial(ZbZcRatioProcessor, jet="AK8")
+workflows["Zb_Zc_ratio_1jet"] = partial(ZbZcRatioProcessor, njet_exact=1)  # Z + exactly 1 AK4 jet
 
 # W+c
 workflows["ctag_Wc_sf"] = partial(CTAGWcTTValidSFProcessor, selectionModifier="WcM")

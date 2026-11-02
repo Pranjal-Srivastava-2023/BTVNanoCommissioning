@@ -7,6 +7,7 @@
 # (the reads are xrootd-bound, so the MC and data parts of a campaign can run as
 # two parallel jobs)
 # output: hists_zbzc_run3/<campaign>/zbzc_run3/zbzc_run3_<dataset>.coffea, logs in logs_zbzc_run3/<campaign>/
+# (ZBZC_WF=<workflow> picks another registered workflow, e.g. Zb_Zc_ratio_1jet)
 # (ZBZC_RUN=zbzc_run3_stage writes to hists_zbzc_run3_stage/, logs_zbzc_run3_stage/ instead)
 CAMP=$1
 PART=${2:-all}
@@ -29,7 +30,7 @@ print(' '.join(k for k in keys if '$PART' == 'all' or ('$PART' == 'data') == isd
 for ds in $DSETS; do
   for try in 1 2 3; do
     echo "$(date +%T) $ds try $try" >> "$LOG"/driver_$PART.log
-    timeout 14400 python runner.py --wf Zb_Zc_ratio --json $JSON \
+    timeout 14400 python runner.py --wf ${ZBZC_WF:-Zb_Zc_ratio} --json $JSON \
       --year $YEAR --campaign $CAMP --executor iterative --limit 20 --only $ds \
       --outputdir $OUT --output zbzc_run3.coffea --overwrite > "$LOG"/${ds%%_TuneCP5*}.log 2>&1
     rc=$?; echo "$(date +%T) $ds exit $rc" >> "$LOG"/driver_$PART.log

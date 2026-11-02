@@ -1,0 +1,27 @@
+Lepton eta-phi, 10 x 10 bins, Summer22, split by N AK4 jets (hists_zbzc_run3_ge1j)
+Each event enters twice (both Z leptons). data/MC per cell with MC normalised
+to data in each map; error = data + MC stat.
+
+Zee ge1: data 37716 lepton entries, MC 38777.7, data/MC 1.028; map vs flat chi2/ndf = 107.1/99
+    cell eta [+0.0,+0.5] phi [+1.26,+1.88]: ratio 0.801 +- 0.056 (-3.5 sigma), data 514
+Zmm ge1: data 130686 lepton entries, MC 132368.1, data/MC 1.013; map vs flat chi2/ndf = 106.5/99
+    cell eta [+0.5,+1.0] phi [-3.14,-2.51]: ratio 0.845 +- 0.046 (-3.4 sigma), data 1534
+
+Zee eq1: data 29442 lepton entries, MC 30741.1, data/MC 1.044; map vs flat chi2/ndf = 112.4/99
+Zmm eq1: data 102738 lepton entries, MC 105330.0, data/MC 1.025; map vs flat chi2/ndf = 118.9/99
+    cell eta [-2.0,-1.5] phi [-1.26,-0.63]: ratio 0.812 +- 0.058 (-3.2 sigma), data 832
+    cell eta [-1.0,-0.5] phi [+1.88,+2.51]: ratio 0.845 +- 0.050 (-3.1 sigma), data 1233
+
+Zee eq2: data 6542 lepton entries, MC 6651.0, data/MC 1.017; map vs flat chi2/ndf = 118.4/99
+    cell eta [+0.0,+0.5] phi [+1.26,+1.88]: ratio 0.612 +- 0.098 (-4.0 sigma), data 79
+    cell eta [+1.0,+1.5] phi [-1.88,-1.26]: ratio 0.643 +- 0.116 (-3.1 sigma), data 63
+    cell eta [+0.0,+0.5] phi [-0.63,+0.00]: ratio 0.669 +- 0.110 (-3.0 sigma), data 85
+Zmm eq2: data 22162 lepton entries, MC 22490.4, data/MC 1.015; map vs flat chi2/ndf = 97.1/99
+    cell eta [+0.5,+1.0] phi [-3.14,-2.51]: ratio 0.647 +- 0.078 (-4.5 sigma), data 243
+
+Zee ge3: data 1732 lepton entries, MC 1385.6, data/MC 0.800; map vs flat chi2/ndf = 81.6/98
+Zmm ge3: data 5786 lepton entries, MC 4547.7, data/MC 0.786; map vs flat chi2/ndf = 113.4/99
+    cell eta [-2.0,-1.5] phi [+2.51,+3.14]: ratio 0.378 +- 0.163 (-3.8 sigma), data 40
+    cell eta [-2.5,-2.0] phi [+0.63,+1.26]: ratio 0.452 +- 0.168 (-3.3 sigma), data 21
+    cell eta [-2.5,-2.0] phi [-2.51,-1.88]: ratio 0.447 +- 0.175 (-3.2 sigma), data 18
+
