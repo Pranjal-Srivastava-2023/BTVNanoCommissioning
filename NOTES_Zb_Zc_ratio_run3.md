@@ -16,8 +16,11 @@ Slopes (%/100 GeV, ge1j -> 1j): Zmm z_pt +4.4+-1.3 -> +0.7+-1.7, lep0 +6.2+-2.2 
 lep1 +20.5+-5.5 -> +1.3+-7.6; Zee z_pt +4.8+-2.0 -> +3.0+-2.7, lep0 +9.7+-3.5 -> +9.1+-4.8.
 => muons: slope consistent with zero in Z + 1 jet (comes from N_jet >= 2 events); electrons: no clear change,
 1j errors larger. 1j is ~80% of ge1j, so the two are strongly correlated. Eta-phi by N_jet:
-hists_zbzc_run3_ge1j/Summer22/etaphi_nj_summary.txt, chi2/ndf ~1 in every map, no cell stays low across
-jet bins; >= 3 jets data/MC ~0.79-0.80 (MC too high).
+hists_zbzc_run3_ge1j/Summer22/etaphi_nj_summary.txt, chi2/ndf ~1 in every map (the summary only lists cells
+beyond 3 sigma, which hid this:) two cells are low in BOTH the 1-jet and the 2-jet maps (disjoint events):
+Zee eta 0-0.5, phi 1.26-1.88: 0.82+-0.07 (1j), 0.61+-0.10 (2j); Zmm eta 0.5-1.0, phi -3.14..-2.51: 0.90+-0.06,
+0.65+-0.08. >= 3 jets data/MC ~0.79-0.80 (MC too high).
+Deck: hists_zbzc_run3_1j/Summer22/slides_zbzc_njet_Summer22.pdf (make_zbzc_njet_slides_pdf.py, 9 pages).
 
 ## RESUME HERE (2026-10-29, ~03:15 CDT): pending decision on the Z pT weights
 
