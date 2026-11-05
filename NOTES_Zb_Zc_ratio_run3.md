@@ -43,6 +43,7 @@ Yields (DY flavour fractions are of the total MC; eff = region / inclusive):
   by ~2.3% / 2.1% with the weights off (MET filters cut data and MC alike, 0.1-0.5%). Every tagged region sits at about that same level (stat. errors only, no SF uncertainties yet).
 - Loose c-tag keeps ~89% of events and is ~90% light: not useful as a c selection. Medium c-tag gives
   ~20% DY+c, Tight ~50%. b-tag purity: L ~21%, M ~55-59%, T ~82% DY+b.
+- Deck: hists_zbzc_run3_tag/Summer22/slides_zbzc_tag_Summer22.pdf (make_zbzc_tag_slides_pdf.py, 12 pages).
 - Not done yet: SF up/down bands; other campaigns.
 
 ## 2026-11-02: Summer22 Z + exactly 1 jet vs Z + >= 1 jet (advisor's question)
