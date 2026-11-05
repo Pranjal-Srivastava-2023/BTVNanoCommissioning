@@ -1,5 +1,7 @@
-"""Deck for the advisor's request: Summer22 kinematics with all POG corrections and SFs, inclusive and
-with a b-tagged or c-tagged leading AK4 jet (PNet Loose, Medium, Tight).
+"""Deck for the advisor's request: ALL Summer22 kinematic plots with all POG corrections and SFs,
+Z + >= 1 jet, inclusive and with a b-tagged or c-tagged leading AK4 jet (PNet Loose, Medium, Tight).
+Intro pages (corrections, cuts, yields, SFs), then one section per region with every plot
+(hadron-flavour stacks) full size, one per page.
 Run: ZBZC_RUN=zbzc_run3_tag (20 files per sample), plots from plot_zbzc_run3.py with ZBZC_TAG=<region>.
 Numbers below are copied from hists_zbzc_run3_tag/Summer22/yields*.txt (see NOTES, 2026-11-05).
 
@@ -81,7 +83,7 @@ def image(fig, path, y, x=128, w=1664, hmax=None):
         w2 = hmax * img.shape[1] / img.shape[0]
         x, w, h = x + (w - w2) / 2, w2, hmax
     ax = fig.add_axes([x / W, 1 - (y + h) / H, w / W, h / H])
-    ax.imshow(img)
+    ax.imshow(img, interpolation="none")  # embed the PNG pixels as they are (antialiasing bloats the PDF)
     ax.axis("off")
     return y + h
 
@@ -114,16 +116,71 @@ def save(fig):
     plt.close(fig)
 
 
-def plots_page(region, title, sub, vars4):
-    """Four plots (Zee left, Zmm right in each) in a 2 x 2 grid."""
-    fig = page()
-    y = heading(fig, title, sub) + 16
-    folder = "plots" if region == "incl" else f"plots_{region}"
-    for i, var in enumerate(vars4):
-        x = 190 + (i % 2) * 790
-        yy = y + (i // 2) * 400
-        image(fig, f"{D}/{folder}/{var}.png", yy, x=x, w=750)
-    save(fig)
+# (region, title, cut, {channel: (data/MC, DY+b, DY+c, DY+light, tt, tagged MC, tagged data)}) from yields*.txt
+REGIONS = [
+    ("incl", "No tag requirement", "Z + at least 1 jet (pT > 30 GeV, |η| < 2.5)",
+     {"Z→ee": ("0.949 ± 0.012", "3.8%", "8.0%", "87.4%", "0.4%", "–", "–"),
+      "Z→μμ": ("0.966 ± 0.009", "4.2%", "8.1%", "87.0%", "0.4%", "–", "–")}),
+    ("btag_L", "b-tag Loose", "Leading jet PNet B > 0.047",
+     {"Z→ee": ("0.947 ± 0.031", "20.7%", "23.0%", "54.1%", "1.7%", "16.9%", "16.9%"),
+      "Z→μμ": ("0.951 ± 0.021", "21.5%", "20.9%", "55.6%", "1.6%", "17.9%", "17.6%")}),
+    ("ctag_L", "c-tag Loose", "Leading jet PNet CvL > 0.054 and CvB > 0.181",
+     {"Z→ee": ("0.932 ± 0.013", "1.1%", "8.7%", "89.7%", "0.2%", "89.4%", "87.7%"),
+      "Z→μμ": ("0.951 ± 0.009", "1.3%", "8.7%", "89.6%", "0.2%", "89.5%", "88.2%")}),
+    ("btag_M", "b-tag Medium", "Leading jet PNet B > 0.245",
+     {"Z→ee": ("0.960 ± 0.053", "55.1%", "22.1%", "17.8%", "4.5%", "5.9%", "5.9%"),
+      "Z→μμ": ("0.939 ± 0.036", "59.0%", "16.9%", "19.4%", "4.3%", "6.0%", "5.8%")}),
+    ("ctag_M", "c-tag Medium", "Leading jet PNet CvL > 0.160 and CvB > 0.306",
+     {"Z→ee": ("0.938 ± 0.023", "2.9%", "20.2%", "76.2%", "0.3%", "27.9%", "27.6%"),
+      "Z→μμ": ("0.951 ± 0.017", "3.1%", "19.5%", "76.7%", "0.3%", "28.6%", "28.2%")}),
+    ("btag_T", "b-tag Tight", "Leading jet PNet B > 0.673",
+     {"Z→ee": ("1.004 ± 0.074", "82.9%", "5.4%", "4.5%", "6.8%", "3.2%", "3.4%"),
+      "Z→μμ": ("0.902 ± 0.045", "82.0%", "4.8%", "6.7%", "6.1%", "3.5%", "3.3%")}),
+    ("ctag_T", "c-tag Tight", "Leading jet PNet CvL > 0.492 and CvB > 0.259",
+     {"Z→ee": ("0.916 ± 0.043", "8.2%", "49.4%", "41.1%", "0.7%", "7.6%", "7.3%"),
+      "Z→μμ": ("0.928 ± 0.033", "9.6%", "50.2%", "38.9%", "0.7%", "7.3%", "7.0%")}),
+]
+TWOJ = "Events with at least 2 jets."
+# (file, title, caption), in the order shown in every section
+VARS = [
+    ("z_mass", "Dilepton mass", "m(ℓℓ), 71–111 GeV window, linear scale."),
+    ("z_pt", "Z pT", "pT of the lepton pair."),
+    ("z_eta", "Z η", "η of the lepton pair."),
+    ("lep0_pt", "Leading-lepton pT", "Leading lepton pT > 35 GeV (trigger plateau)."),
+    ("lep0_eta", "Leading-lepton η", ""),
+    ("lep0_phi", "Leading-lepton φ", ""),
+    ("lep1_pt", "Second-lepton pT", "Second lepton pT > 25 GeV."),
+    ("lep1_eta", "Second-lepton η", ""),
+    ("lep1_phi", "Second-lepton φ", ""),
+    ("dR_ll", "ΔR between the leptons", ""),
+    ("dphi_ll", "Δφ between the leptons", ""),
+    ("n_jet", "Number of jets", "AK4 jets with pT > 30 GeV, |η| < 2.5, away from the leptons. "
+     "Untagged plot: Z events before the jet cut, so the 0-jet bin is filled."),
+    ("jet_pt", "Leading-jet pT", "The tag (if any) is on this jet."),
+    ("jet_eta", "Leading-jet η", ""),
+    ("jet_phi", "Leading-jet φ", ""),
+    ("jet1_pt", "Second-jet pT", TWOJ),
+    ("jet1_eta", "Second-jet η", TWOJ),
+    ("dR_jj", "ΔR between the two leading jets", TWOJ),
+    ("dphi_jj", "Δφ between the two leading jets", TWOJ),
+    ("m_jj", "Dijet mass", TWOJ),
+    ("dphi_zj", "Δφ(Z, leading jet)", ""),
+    ("dR_zj", "ΔR(Z, leading jet)", ""),
+    ("dR_lj_min", "Smallest ΔR(lepton, leading jet)", ""),
+    ("pt_balance", "pT balance: leading-jet pT / Z pT", ""),
+    ("met_pt", "PUPPI MET", "Type-1 corrected; the selection cuts at 50 GeV."),
+    ("npv", "Number of good primary vertices", "After pileup weights."),
+    ("lhe_vpt", "Generator Z pT (LHE)", "MC only, no data."),
+    ("jet_PNetB", "Leading-jet PNet B score", ""),
+    ("jet_PNetCvL", "Leading-jet PNet CvL score", ""),
+    ("jet_PNetCvB", "Leading-jet PNet CvB score", ""),
+    ("jet_CvL_CvB", "PNet CvL vs CvB of the leading jet", "Each panel normalised to 1. Z→ee and Z→μμ added."),
+    ("lep_eta_phi_ratio", "Lepton η–φ, data / MC", "Both Z leptons. MC normalised to data in each map. "
+     "Colour scale stops at ±15%; in the tagged regions there are few events per cell, so read the numbers."),
+]
+N_INTRO = 5  # cover, contents, corrections, yields, SFs
+SEC_LEN = 1 + len(VARS)
+START = {r[0]: N_INTRO + 1 + i * SEC_LEN for i, r in enumerate(REGIONS)}
 
 
 # ------------------------------------------------------------------ cover
@@ -135,6 +192,17 @@ text(fig, 128, 860, DATE, 26, "#C9D3E3")
 pdf.savefig(fig)
 plt.close(fig)
 n += 1
+
+# ------------------------------------------------------------------ contents
+fig = page()
+y = heading(fig, "Contents", "Selection: Z→ee or Z→μμ + at least 1 jet. Every region has the same "
+            f"{len(VARS)} plots in the same order.") + 30
+rows = [["Corrections, tag cuts, yields, SFs", "3–5"]]
+for region, title, cut, _ in REGIONS:
+    rows.append([f"{title}  ({cut})", f"{START[region]}–{START[region] + SEC_LEN - 1}"])
+rows.append(["Summary", str(N_INTRO + len(REGIONS) * SEC_LEN + 1)])
+y = table(fig, 128, y, [("section", 1400, "left"), ("pages", 264, "right")], rows, 26)
+save(fig)
 
 # ------------------------------------------------------------------ what is applied
 fig = page()
@@ -194,35 +262,49 @@ note(fig, y, "Light jets are mistagged more in data than in MC (SF 1.06–1.29).
      style=OPEN, h=140)
 save(fig)
 
-# ------------------------------------------------------------------ plots per region
-plots_page("incl", "No tag requirement",
-           "Z + at least 1 jet. Data/MC 0.95 (Z→ee) and 0.97 (Z→μμ).",
-           ["jet_pt", "z_pt", "jet_eta", "jet_PNetB"])
-plots_page("btag_L", "b-tag Loose",
-           "Leading jet PNet B > 0.047. 21–22% DY+b, 21–23% DY+c, 54–56% light. Data/MC 0.95.",
-           ["jet_pt", "z_pt", "jet_eta", "jet_PNetB"])
-plots_page("ctag_L", "c-tag Loose",
-           "CvL > 0.054 and CvB > 0.181. 89% of the events pass; 9% DY+c, 90% light. Data/MC 0.93–0.95.",
-           ["jet_pt", "z_pt", "jet_eta", "jet_PNetCvL"])
-plots_page("btag_M", "b-tag Medium",
-           "PNet B > 0.245. 55–59% DY+b, about 4% tt. Data/MC 0.94–0.96.",
-           ["jet_pt", "z_pt", "jet_eta", "jet_PNetB"])
-plots_page("ctag_M", "c-tag Medium",
-           "CvL > 0.160 and CvB > 0.306. 20% DY+c, 77% light. Data/MC 0.94–0.95.",
-           ["jet_pt", "z_pt", "jet_eta", "jet_PNetCvL"])
-plots_page("btag_T", "b-tag Tight",
-           "PNet B > 0.673. 82% DY+b, 6–7% tt. Data/MC 1.00 ± 0.07 (Z→ee), 0.90 ± 0.05 (Z→μμ).",
-           ["jet_pt", "z_pt", "jet_eta", "jet_PNetB"])
-plots_page("ctag_T", "c-tag Tight",
-           "CvL > 0.492 and CvB > 0.259. 50% DY+c, 39% light, 10% DY+b. Data/MC 0.92–0.93.",
-           ["jet_pt", "z_pt", "jet_eta", "jet_PNetCvL"])
+# ------------------------------------------------------------------ all plots, one section per region
+def plot_page(region, title, var, vtitle, caption):
+    fig = page()
+    text(fig, 128, 40, title, 26, ACCENT, "bold")
+    y = text(fig, 128, 78, vtitle, 48, DARK, "bold", ls=1.15)
+    if caption:
+        y = text(fig, 128, y + 4, caption, 24, BODY, width=1664)
+    folder = "plots" if region == "incl" else f"plots_{region}"
+    path = f"{D}/{folder}/{var}.png"
+    top = max(y + 14, 190)
+    image(fig, path, top, x=128, w=1664, hmax=1010 - top)
+    save(fig)
+
+
+def section(region, title, cut, nums):
+    fig = page(DARK)
+    text(fig, 128, 200, title, 72, "white", "bold")
+    text(fig, 128, 330, cut, 32, "#C9D3E3", width=1600)
+    hdr = ["", "data/MC", "DY+b", "DY+c", "DY+light", "tt", "tagged MC", "tagged data"]
+    xs = [128, 420, 700, 860, 1020, 1210, 1350, 1580]
+    for x, h in zip(xs, hdr):
+        text(fig, x, 470, h, 26, "#C9D3E3", "bold")
+    for i, (ch, vals) in enumerate(nums.items()):
+        for x, v in zip(xs, (ch,) + vals):
+            text(fig, x, 530 + i * 60, v, 28, "white")
+    text(fig, 128, 720, "Flavour shares are of all MC. 'Tagged' = fraction of Z + jet events passing the tag. "
+         "Errors are statistical only.", 22, "#C9D3E3", width=1600)
+    text(fig, 128, 800, f"{len(VARS)} plots follow: Z and leptons, jets, Z–jet, MET and vertices, tagger scores, "
+         "2D maps. Left Z→ee, right Z→μμ.", 22, "#C9D3E3", width=1600)
+    save(fig)
+    for var, vtitle, caption in VARS:
+        plot_page(region, title, var, vtitle, caption)
+
+
+for region, title, cut, nums in REGIONS:
+    section(region, title, cut, nums)
 
 # ------------------------------------------------------------------ summary
 fig = page()
 y = heading(fig, "Summary") + 30
 y = note(fig, y, "All kinematic plots now have every POG correction, plus b- and c-tagging SFs.",
-         "62 plots per region, in hists_zbzc_run3_tag/Summer22/plots_<region>/. MET filters added; "
-         "DY Z pT weights off.", h=140) + 30
+         f"{len(VARS)} plots per region in this deck (hadron-flavour stacks); parton-flavour versions in "
+         "hists_zbzc_run3_tag/Summer22/plots_<region>/. MET filters added; DY Z pT weights off.", h=140) + 30
 y = note(fig, y, "Data and MC tag the same fraction of jets, within 1–2%, at every working point.",
          "Data/MC is about 0.95 in all regions, as without tagging. Errors here are statistical only.", h=140) + 30
 y = note(fig, y, "Loose c-tag is almost no selection (89% of events, 90% light).",
