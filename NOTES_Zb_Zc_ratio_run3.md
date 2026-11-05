@@ -2,6 +2,39 @@
 
 Run 2 QCD_sf work is in `SESSION_NOTES.md`; this file is only the Run 3 ratio measurement.
 
+## RESUME HERE (2026-11-05 evening): work on the slide contents of the b/c-tag deck
+
+Deck: hists_zbzc_run3_tag/Summer22/slides_zbzc_tag_Summer22.pdf (237 pages, made by
+make_zbzc_tag_slides_pdf.py; contents p. 2, intro p. 3-5, then 7 regions x (1 summary + 32 plots), summary p. 237).
+Plan for tonight: go through the contents with the user and modify (text, order, which plots, parton plots?).
+Rebuild: `python make_zbzc_tag_slides_pdf.py` (~45 s, no rerun needed; numbers on intro/section pages are typed
+in the script from yields*.txt). Open items: SF up/down bands (needs rerun), other campaigns.
+
+### How the Loose tagging is applied (what to say if asked)
+
+Short: "Official BTV ParticleNet Loose working point for Summer22 on the leading jet; MC corrected with the BTV
+fixed-working-point SFs for the jet's true flavour."
+
+Details:
+- Only the leading AK4 jet is tagged (pT > 30, |eta| < 2.5, tight ID, dR > 0.4 from the leptons).
+- b-tag Loose: PNet B > 0.047. c-tag Loose: CvL > 0.054 and CvB > 0.181. Official Summer22 values, read at run
+  time from the BTV correctionlib files (particleNet_wp_values in
+  /cvmfs/cms-griddata.cern.ch/cat/metadata/BTV/Run3-22CDSep23-Summer22-NanoAODv12/latest/{b,c}tagging.json.gz),
+  not chosen by us. Same for M and T. b-tag and c-tag are separate selections; a jet can pass both.
+- Data: no correction. MC: tagged jet weighted by the BTV SF for its hadron flavour. b-tag: particleNet_comb
+  (b, c), particleNet_light (udsg). c-tag: particleNet_wc (c), particleNet_tnp (b), particleNet_light (udsg).
+- Only tagged events are plotted, so the event weight is just that jet's SF; no MC tagging-efficiency maps needed
+  (those are only needed when jets that fail the tag are reweighted too).
+- Jets outside the SF range: pT and |eta| clipped to the edge (c-tag SFs: |eta| < 2.4; pT < 200 c, < 300 b).
+- Check that it works: tagged fraction data vs MC agrees within 1-2% (b-tag L, Zmm: 17.9% MC, 17.6% data).
+- Uncertainties: NOT yet. Central SF only, stat. errors only. SF up/down is the next step.
+- Why M and T too: Loose c-tag keeps 92% of light jets (not a charm selection); Medium ~20% c, Tight ~50% c.
+- How BTV defines the WPs: b-tag L/M/T = ~10% / 1% / 0.1% light mistag (arXiv:2412.05863, 2608.18331).
+  Our DY Z+jet (Zmm, SFs applied): light pass 11.4% / 1.3% / 0.27%, b pass 91% / 83% / 68%. c-tag WPs are points
+  in the CvL-CvB plane; exact BTV targets NOT confirmed - don't claim them. Tight CvB (0.259) is looser than
+  Medium (0.306), so c-tag Tight is not a subset of Medium. c-tag pass rates (b / c / light):
+  L 27 / 96 / 92%, M 21 / 69 / 25%, T 17 / 45 / 3.3%.
+
 ## 2026-11-05: Summer22 kinematics with b- and c-tagged leading jet (advisor's request)
 
 Advisor: all kinematic plots with the POG corrections and SFs, plus b-tagged and c-tagged versions.
