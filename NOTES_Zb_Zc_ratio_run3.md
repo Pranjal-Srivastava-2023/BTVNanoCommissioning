@@ -2,6 +2,49 @@
 
 Run 2 QCD_sf work is in `SESSION_NOTES.md`; this file is only the Run 3 ratio measurement.
 
+## 2026-11-05: Summer22 kinematics with b- and c-tagged leading jet (advisor's request)
+
+Advisor: all kinematic plots with the POG corrections and SFs, plus b-tagged and c-tagged versions.
+Changes in Zb_Zc_ratio: JME MET filters added (were missing; remove 0.1-0.5% of events); Z pT
+weights now OFF by default (not a POG correction, decision of 29 Oct); new "tag" axis on all
+final-selection histograms and n_jet: incl, btag_<WP>, ctag_<WP> for WP = L, M, T (leading AK4
+jet; PNet B > WP, or CvL > WP and CvB > WP; cuts from the BTV correctionlib files). MC tagged
+events carry the BTV fixed-WP SF of the leading jet for its hadron flavour (btag: particleNet_comb
+for b/c, particleNet_light for udsg; ctag: particleNet_wc c, particleNet_tnp b, particleNet_light
+udsg; pT/|eta| clipped to the SF range). Only tagged events are plotted, so no MC efficiency maps.
+Advisor asked for Loose; the test showed Loose c-tag ~ inclusive, so M and T are stored too (user).
+Run: ZBZC_RUN=zbzc_run3_tag run_zbzc_run3.sh Summer22 mc|data (20 files/sample, 13:49-16:02, no
+retries), postprocess_zbzc_tag.sh; plots ZBZC_TAG=<region> plot_zbzc_run3.py ->
+hists_zbzc_run3_tag/Summer22/plots_<region>/, yields_<region>.txt (+ mean SF per flavour, overlap).
+Data lumisections identical to the main run, so hists_zbzc_run3/Summer22/lumi.json is used.
+
+Yields (DY flavour fractions are of the total MC; eff = region / inclusive):
+
+| region | ch | MC | data | data/MC | DY+b | DY+c | DY+l | tt | eff MC | eff data |
+|---|---|---|---|---|---|---|---|---|---|---|
+| incl   | Zee | 19841 | 18833 | 0.949 +- 0.012 |  3.8% |  8.0% | 87.4% | 0.4% | 1     | 1     |
+| incl   | Zmm | 67588 | 65259 | 0.966 +- 0.009 |  4.2% |  8.1% | 87.0% | 0.4% | 1     | 1     |
+| btag_L | Zee |  3356 |  3179 | 0.947 +- 0.031 | 20.7% | 23.0% | 54.1% | 1.7% | 0.169 | 0.169 |
+| btag_L | Zmm | 12076 | 11485 | 0.951 +- 0.021 | 21.5% | 20.9% | 55.6% | 1.6% | 0.179 | 0.176 |
+| ctag_L | Zee | 17737 | 16523 | 0.932 +- 0.013 |  1.1% |  8.7% | 89.7% | 0.2% | 0.894 | 0.877 |
+| ctag_L | Zmm | 60521 | 57554 | 0.951 +- 0.009 |  1.3% |  8.7% | 89.6% | 0.2% | 0.895 | 0.882 |
+| btag_M | Zee |  1164 |  1117 | 0.960 +- 0.053 | 55.1% | 22.1% | 17.8% | 4.5% | 0.059 | 0.059 |
+| btag_M | Zmm |  4040 |  3794 | 0.939 +- 0.036 | 59.0% | 16.9% | 19.4% | 4.3% | 0.060 | 0.058 |
+| ctag_M | Zee |  5545 |  5203 | 0.938 +- 0.023 |  2.9% | 20.2% | 76.2% | 0.3% | 0.279 | 0.276 |
+| ctag_M | Zmm | 19346 | 18394 | 0.951 +- 0.017 |  3.1% | 19.5% | 76.7% | 0.3% | 0.286 | 0.282 |
+| btag_T | Zee |   640 |   643 | 1.004 +- 0.074 | 82.9% |  5.4% |  4.5% | 6.8% | 0.032 | 0.034 |
+| btag_T | Zmm |  2370 |  2139 | 0.902 +- 0.045 | 82.0% |  4.8% |  6.7% | 6.1% | 0.035 | 0.033 |
+| ctag_T | Zee |  1508 |  1381 | 0.916 +- 0.043 |  8.2% | 49.4% | 41.1% | 0.7% | 0.076 | 0.073 |
+| ctag_T | Zmm |  4933 |  4579 | 0.928 +- 0.033 |  9.6% | 50.2% | 38.9% | 0.7% | 0.073 | 0.070 |
+
+- Tagged fraction agrees between data and MC within ~1-2% (relative) in every region: the SFs work.
+  ctag_L is 1-1.5% lower in data (0.877-0.882 vs 0.894-0.895).
+- Inclusive data/MC dropped from 0.973 / 0.987 (b48a524, Z pT weights on) to 0.949 / 0.966: MC up
+  by ~2.3% / 2.1% with the weights off (MET filters cut data and MC alike, 0.1-0.5%). Every tagged region sits at about that same level (stat. errors only, no SF uncertainties yet).
+- Loose c-tag keeps ~89% of events and is ~90% light: not useful as a c selection. Medium c-tag gives
+  ~20% DY+c, Tight ~50%. b-tag purity: L ~21%, M ~55-59%, T ~82% DY+b.
+- Not done yet: SF up/down bands; other campaigns.
+
 ## 2026-11-02: Summer22 Z + exactly 1 jet vs Z + >= 1 jet (advisor's question)
 
 Two Summer22 reruns, 10 GeV bins in z_pt / lep0_pt / lhe_vpt, Z pT weights still ON (decision below still

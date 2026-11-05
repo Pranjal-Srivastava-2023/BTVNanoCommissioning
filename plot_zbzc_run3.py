@@ -10,6 +10,11 @@ partonFlavour), ttbar (TTto2L2Nu) and VV (WW+WZ+ZZ), smallest component at the
 bottom of the log stack; hatched band = MC stat. uncertainty; lower panel data/MC.
 N_jet >= 5 is merged into one bin. "all" sums the four campaigns.
 
+Tag regions (AK4 outputs from 2026-11-05 on, axis "tag"): ZBZC_TAG=incl (default) | btag_<WP> |
+ctag_<WP> (WP = L, M, T) selects the leading-jet region; tagged regions go to plots_<tag>/ and
+yields_<tag>.txt, with the mean BTV SF per flavour and the b-tag/c-tag overlap at the same WP
+appended to the table.
+
 Usage:
     python plot_zbzc_run3.py Summer22      # one campaign
     python plot_zbzc_run3.py all           # all four, summed
@@ -50,7 +55,10 @@ outdir = f"hists_{RUN}/{which}"
 DIAG = os.environ.get("ZBZC_DIAG")
 if DIAG:
     outdir = f"hists_zbzc_diag/{which}/stack_{DIAG}"
-plotdir = os.path.join(outdir, "plots")
+TAG = os.environ.get("ZBZC_TAG", "incl")
+WP_NAME = {"L": "Loose", "M": "Medium", "T": "Tight"}
+TAG_LABEL = "" if TAG == "incl" else f"{TAG[0]}-tagged jet (PNet {WP_NAME[TAG.split('_')[1]]})"
+plotdir = os.path.join(outdir, "plots" if TAG == "incl" else f"plots_{TAG}")
 os.makedirs(plotdir, exist_ok=True)
 
 # per campaign: {dataset: output}, {channel: lumi in /pb}
@@ -114,6 +122,8 @@ def components(var, ch, flav):
         for ds, o in OUT[c].items():
             k = kind(ds)
             h = o[var][{"channel": ch}]
+            if "tag" in h.axes.name:
+                h = h[{"tag": TAG}]
             if k == "DY":
                 h = h[{other: sum}] * scale(c, ds, ch)
                 for f in flav["dy"]:
@@ -175,6 +185,8 @@ def stack(var, flav, suffix=""):
             ax.set_yscale("log")
             ax.set_ylim(0.1, top * 80)
         ax.text(0.04, 0.94, CH_LABEL[ch], transform=ax.transAxes, fontsize=20, va="top")
+        if TAG_LABEL:
+            ax.text(0.04, 0.86, TAG_LABEL, transform=ax.transAxes, fontsize=16, va="top")
         hdl, lab = ax.get_legend_handles_labels()
         ax.legend(hdl[::-1], lab[::-1], fontsize=13, loc="upper right", ncol=2)
         cms_label(ax, ch)
@@ -319,6 +331,31 @@ def yield_table(flav, title):
 
 yield_table(HADRON, "hadronFlavour")
 yield_table(PARTON, "partonFlavour")
-open(os.path.join(outdir, "yields.txt"), "w").write("\n".join(L) + "\n")
+
+if TAG != "incl" and all("nevt_tag" in o for c in camps for o in OUT[c].values()):
+    L.append(f"== {TAG}: raw tagged events and mean BTV SF of the leading jet per hadron flavour (MC),")
+    WP = TAG.split("_")[1]
+    L.append(f"   and raw events in both the b-tag and the c-tag region at WP {WP}")
+    for c in camps:
+        for ch in CHANNELS:
+            L.append(f"-- {c} {ch}")
+            L.append(f"{'dataset':22s}" + "".join(f"{f'n_{f}':>10s}{f'SF_{f}':>8s}" for f in "bcl")
+                     + f"{'n_tag':>10s}{'n_both':>10s}")
+            for ds, o in OUT[c].items():
+                k = kind(ds)
+                if k.startswith("data") and k != f"data_{ch}":
+                    continue
+                short = ds.split("_TuneCP5")[0].replace("DYto2L-2Jets_MLL-50", "DY").replace("DY_", "DY")
+                n, ssf = o["nevt_tag"][ch], o["sumsf_tag"][ch]
+                row = ""
+                for f in "bcl":
+                    nf = n.get(f"{TAG}|{f}", 0)
+                    row += f"{nf:10d}" + (f"{ssf[f'{TAG}|{f}'] / nf:8.3f}" if nf and not k.startswith("data") else f"{'':8s}")
+                ntag = sum(v for key, v in n.items() if key.startswith(f"{TAG}|"))
+                nboth = sum(v for key, v in n.items() if key.startswith(f"btag_{WP}&ctag_{WP}|"))
+                L.append(f"{short:22s}{row}{ntag:10d}{nboth:10d}")
+            L.append("")
+
+open(os.path.join(outdir, "yields.txt" if TAG == "incl" else f"yields_{TAG}.txt"), "w").write("\n".join(L) + "\n")
 print("\n".join(L))
 print("plots in", plotdir)
