@@ -12,6 +12,9 @@ Rochester? follow POG; suggested pT > 26, |eta| < 2.4; (2) other b/c taggers (L/
 STATUS 17:20 CST: DONE. Deck: hists_zbzc_run3_v2/Summer22/slides_zbzc_v2_Summer22.pdf (25 pages,
 make_zbzc_v2_slides_pdf.py; every number parsed from the output files below). Next: show the advisor;
 decisions pending (keep pair trigger SF + pT > 26 as default? which tagger/WP?), then the full dataset.
+Also (user request, 'like the 237-page deck but only important plots, Loose b-tag, 3 taggers'):
+hists_zbzc_run3_v2/Summer22/slides_zbzc_btagL_3taggers_Summer22.pdf (65 pages, make_zbzc_btagL_slides_pdf.py,
+19 plots per tagger; numbers parsed from yields*.txt). User does NOT want the ~950-page all-regions version.
 
 Run: ZBZC_RUN=zbzc_run3_v2 run_zbzc_run3.sh Summer22 mc|data (13:08-16:28) -> hists_zbzc_run3_v2/Summer22/.
 FILE PROBLEM (exit code 0 hides it! check "Preprocessing 100% N/N" in every log): the runner's file validation
