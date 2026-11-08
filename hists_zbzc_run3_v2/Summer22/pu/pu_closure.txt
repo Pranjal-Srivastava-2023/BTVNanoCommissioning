@@ -1,0 +1,29 @@
+Summer22: N(PV) data/MC with the MC reweighted to each channel's own data pileup profile
+r(nTrueInt) = profile(channel lumisections) / profile(full era), bins of 1; MC with all weights
+
+== Zee: data 18833, MC 19841.1 (data/MC 0.9492), MC reweighted 19317.3 (data/MC 0.9749)
+   mean N(PV): data 25.61  MC 26.19  MC reweighted 24.98
+        N(PV)          data/MC       reweighted   (MC normalised to data)
+         5-15     1.272+-0.077     0.906+-0.059
+        15-20     1.044+-0.035     0.904+-0.031
+        20-25     1.020+-0.027     0.953+-0.026
+        25-30     1.009+-0.026     1.019+-0.027
+        30-35     0.942+-0.029     1.060+-0.035
+        35-40     0.875+-0.036     1.206+-0.058
+        40-45     0.815+-0.059     1.556+-0.145
+        45-55     0.692+-0.081     1.897+-0.284
+   mean-shift check: data - MC mean N(PV) = -0.57; expected (mean pileup 32.84 - 33.76 = -0.92) x dN(PV)/dnTrueInt 0.693 = -0.64
+
+== Zmm: data 62865, MC 66631.6 (data/MC 0.9435), MC reweighted 65736.1 (data/MC 0.9563)
+   mean N(PV): data 26.27  MC 26.40  MC reweighted 25.97
+        N(PV)          data/MC       reweighted   (MC normalised to data)
+         5-15     1.111+-0.053     0.970+-0.047
+        15-20     1.038+-0.027     0.962+-0.025
+        20-25     0.997+-0.019     0.984+-0.019
+        25-30     0.982+-0.018     0.990+-0.019
+        30-35     0.977+-0.021     0.998+-0.022
+        35-40     1.003+-0.028     1.085+-0.033
+        40-45     0.982+-0.044     1.230+-0.068
+        45-55     0.992+-0.075     1.626+-0.184
+   mean-shift check: data - MC mean N(PV) = -0.14; expected (mean pileup 33.56 - 33.76 = -0.20) x dN(PV)/dnTrueInt 0.687 = -0.14
+

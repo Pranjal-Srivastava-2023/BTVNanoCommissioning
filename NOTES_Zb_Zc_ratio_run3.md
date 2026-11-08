@@ -2,6 +2,63 @@
 
 Run 2 QCD_sf work is in `SESSION_NOTES.md`; this file is only the Run 3 ratio measurement.
 
+## RESUME HERE (2026-11-08): advisor's requests after the 237-page deck (Summer22 only)
+
+Advisor (meeting 2026-11-08): (1) muon-channel discrepancy: trigger turn-on, eta cut, SFs, corrections,
+Rochester? follow POG; suggested pT > 26, |eta| < 2.4; (2) other b/c taggers (L/M/T); (3) loose tau veto
+(user: DROPPED for now); (4) why ee and mumu pileup differ; (5) ee legend had DY+b / DY+c swapped;
+(6) MET plot up to ~200 GeV; (7) zoom on the high-statistics bins.
+
+STATUS 17:20 CST: DONE. Deck: hists_zbzc_run3_v2/Summer22/slides_zbzc_v2_Summer22.pdf (25 pages,
+make_zbzc_v2_slides_pdf.py; every number parsed from the output files below). Next: show the advisor;
+decisions pending (keep pair trigger SF + pT > 26 as default? which tagger/WP?), then the full dataset.
+
+Run: ZBZC_RUN=zbzc_run3_v2 run_zbzc_run3.sh Summer22 mc|data (13:08-16:28) -> hists_zbzc_run3_v2/Summer22/.
+FILE PROBLEM (exit code 0 hides it! check "Preprocessing 100% N/N" in every log): the runner's file validation
+silently drops a file on an XRootD timeout. DY MLL-50 file 0ce05172-... is NOT readable from cmsdcadisk (fails
+even with 300 s), but the same LFN reads fine via root://cmsxrootd.fnal.gov/ -> rerun with
+logs_zbzc_run3_v2/Zb_Zc_ratio_run3_Summer22_dyredir.json (only that URL changed). EGamma_Run2022D lost
+002aaeb4-... once (transient) -> plain rerun. rerun_missing_files_v2.sh, logs driver_fix.log. All 20/20 now.
+Checks: check_zbzc_v2_regression.py PASSED: Zee 237 hists x 13 samples identical to hists_zbzc_run3_tag,
+sumw identical; muvar prev == old Zmm per sample (data 65259); muvar nominal == new main Zmm.
+
+Results (stat. only, 20 files):
+- Zmm data/MC 0.966 -> 0.943 (Zee 0.949): pair trigger SF +2.75% MC, pT > 26 -0.3%. Z stage: Zee 0.995,
+  Zmm 0.986. Channels agree at every stage (compare_zbzc_v2_channels.py -> channels_summary.{txt,json}).
+- muvar_table.txt: no muon choice changes the pT(mumu) slope (final -1.0..-0.3, Z -3.8..-3.0 %/100 GeV).
+  trigMatch vs pair formula: -0.8% (final), -0.5% (Z). |eta| 2.0-2.4 leading muon 0.964 vs barrel 0.998
+  at Z stage (trigMatch 0.940): OPEN.
+- Slope: same fit on 3 runs: ge1j (DY Z pT weights ON) Zmm +4.4+-1.3; deck run (weights off) -0.7+-1.2;
+  v2 -0.8+-1.2. So the +4.4 came from the weights; no significant slope after the selection now. Before
+  jet/MET cuts both channels fall (Zee -2.1+-1.2, Zmm -3.5+-0.8) = DY generator Z pT. Dip at pT(ll)
+  30-60 GeV (0.92) in both: OPEN. Deficit after cuts: MC excess with jets (0 jet MET<50: 1.04, final 0.95)
+  and MET>50 (0.41-0.69): OPEN, common to both channels.
+- Pileup: mean PU of lumisections: EGamma 32.84, Muon 33.56, full 33.76. Mean-shift check (data-MC mean
+  N(PV) vs dPU x 0.69): Zee -0.57 vs -0.64, Zmm -0.14 vs -0.14 -> sampling explains ee vs mumu.
+  Bin-by-bin reweighting (zbzc_pu_closure.py part 2) OVERSHOOTS (Zmm gets a slope) -> not used.
+- Taggers (summarize_zbzc_taggers.py -> tagger_summary.txt): similar purity at same WP; b-tag tag ratios
+  within 1.7 sigma; c-tag mean tag ratio PNet 0.978, DeepJet 1.025, RobustParT 1.042 (max 2.4 sigma).
+Tau veto: not done (user: postponed). Coffea outputs (73 MB) not committed, as for the tag run.
+
+What was found / changed (details in the code docstrings):
+- Legend (5): stack order was per channel by yield, so b/c swapped when their sizes swap. Now one
+  stack order for both channels + fixed legend order (plot_zbzc_run3.py). Old regions replotted.
+- Muon SS (Run 3 Rochester) IS applied (muonSS loaded for Summer22, MUO_shifts). |eta| < 2.4 already.
+- MUO muon_Z.json (updated 2026-06-18) now has nominal_DATAeff / nominal_MCeff for IsoMu24 (signed
+  eta x pT >= 26). Our Zmm used the leading-muon SF only although either muon can fire -> MC ~2.75%
+  too LOW. New nominal (POG): pair formula as for Zee + both muons pT > 26 (SF range). NOTE: this
+  LOWERS Zmm data/MC by ~2.7% (towards Zee), it does not bring it to 1.
+- mu_variants: muvar_* hists, one change each (prev, trigLead, sub25, lead26, eta21, trigMatch, noSS,
+  noTrigSF, noIDIsoSF, noPU) at stage Z and final -> compare_zbzc_muvar.py.
+- Taggers: DeepJet (btagDeepFlav*) + RobustParT (btagRobustParTAK4*) L/M/T with own BTV SFs
+  (same SF ranges as PNet); regions btagDeepJet_L ... ctagRobustParT_T; PNet names unchanged.
+- met_pt_nm1 (all cuts but MET, 0-200, all regions); *_zoom.png plots (linear y, ratio 0.8-1.2).
+- Pileup (4): brilcalc --byls: the 20-file EGamma lumisections have less high pileup than the full
+  2022 C-D profile the MC is weighted to (EGamma/full 0.77 at PU 42-46, 0.41 at 46-50; Muon 1.04/0.86)
+  -> likely the Zee N(PV) slope. Closure (MC reweighted per channel via pu_ntrue_npv): zbzc_pu_closure.py.
+- 1-file regression (old 957d2d9 worktree vs new, same files): Zee 39 hists identical; muvar prev ==
+  old Zmm exactly; muvar nominal == new main; met_nm1 < 50 == met_pt; pu_ntrue_npv total == npv.
+
 ## RESUME HERE (2026-11-05 evening): work on the slide contents of the b/c-tag deck
 
 Deck: hists_zbzc_run3_tag/Summer22/slides_zbzc_tag_Summer22.pdf (237 pages, made by

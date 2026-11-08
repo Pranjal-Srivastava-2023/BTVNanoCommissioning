@@ -29,22 +29,36 @@ Summer23BPix (2023 D), MC and data. The framework's common_shifts applies the
 JEC/JER (jets and type-1 PuppiMET), muon and electron scale/smearing and the
 jet veto map (JME recipe: events with a jet of pT > 15, tight ID, EM fraction
 < 0.9 and no PF muon within 0.2 in a vetoed region are dropped). MC weights:
-pileup, lepton ID/iso/reco SFs and the single-lepton trigger SF: Zee from the
-EGM data/MC Ele30 efficiencies of both electrons, Zmm the IsoMu24 SF of the
-leading muon (pT > 35, on the plateau; MUO gives no efficiencies).
+pileup, lepton ID/iso/reco SFs and the single-lepton trigger SF. Either lepton
+can fire the trigger, so the event SF is [1 - (1 - eD0)(1 - eD1)] /
+[1 - (1 - eM0)(1 - eM1)] with the POG data/MC efficiencies of both leptons:
+Zee EGM Ele30, Zmm MUO IsoMu24 (nominal_DATAeff / nominal_MCeff, in the MUO
+file since its 2026-06 update). Muons: pT > mu_pt_min (default 26 GeV, where the
+MUO trigger SFs start), |eta| < 2.4, leading lepton pT > 35 in both channels.
+mu_trig_sf="lead" gives the earlier leading-muon-only SF (used until 2026-11-08).
 Data datasets must carry their run era (e.g. "Muon_Run2022C") so that the JEC
 era can be matched. JME MET filters (selection.MET_filters) on data and MC.
 
 AK4 tag regions (axis "tag" on all histograms of the selected events and on
-n_jet): "incl" (no tag requirement), "btag_<WP>" (leading jet PNet B > WP) and
-"ctag_<WP>" (leading jet PNet CvL > WP and CvB > WP), for each working point in
-tag_wps (default L, M, T), cuts from the BTV correctionlib files of the campaign.
+n_jet): "incl" (no tag requirement), and for each tagger in `taggers` and each
+working point in tag_wps (default L, M, T) a b-tag region (leading jet B > WP)
+and a c-tag region (leading jet CvL > WP and CvB > WP); cuts from the BTV
+correctionlib files of the campaign. Region names: PNet "btag_<WP>" /
+"ctag_<WP>", the others "btag<Tagger>_<WP>" / "ctag<Tagger>_<WP>" with Tagger =
+DeepJet (btagDeepFlav*) or RobustParT (btagRobustParTAK4*).
 All regions are filled independently, so a jet can be in several. In MC the tagged events
-are weighted by the BTV fixed-WP SF of the leading jet for its hadron flavour:
-btag particleNet_comb (b, c) / particleNet_light (udsg); ctag particleNet_wc
-(c, W+c) / particleNet_tnp (b, ttbar) / particleNet_light (udsg). Only tagged
+are weighted by the BTV fixed-WP SF of the leading jet for its hadron flavour,
+from the tagger's own corrections: btag <t>_comb (b, c) / <t>_light (udsg);
+ctag <t>_wc (c, W+c) / <t>_tnp (b, ttbar) / <t>_light (udsg), <t> = particleNet,
+deepJet, robustParticleTransformer. Only tagged
 events are plotted, so no MC tagging efficiencies are needed. Jets outside the
 SF pT / |eta| range get the SF at the edge.
+
+met_pt_nm1: PUPPI MET up to 200 GeV for events passing every cut except MET < 50.
+pu_ntrue_npv (MC): true pileup vs N good PV of the selected events, to reweight
+the MC to the pileup profile of the data lumisections actually processed.
+mu_variants=True: muvar_* histograms (Zmm only, axes variant x stage) where each
+variant changes one thing in the muon selection or weights (MU_VARIANTS).
 
 The DY pT(ll)-binned samples (PTLL-X) are inclusive above X, so each one is
 restricted to its own LHE pT(ll) slice (STITCH below) and the inclusive sample
@@ -101,19 +115,53 @@ CHANNELS = ["Zee", "Zmm"]
 # stage_* histograms: Z events (trigger, leptons, OS, Z mass) split by which of
 # the MET < 50 and >= 1 jet cuts they pass
 STAGES = ["none", "MET", "jet", "MET+jet"]
+# AK4 taggers: name -> (NanoAOD Jet branch prefix, BTV correction prefix)
+TAGGERS = {
+    "PNet": ("btagPNet", "particleNet"),
+    "DeepJet": ("btagDeepFlav", "deepJet"),
+    "RobustParT": ("btagRobustParTAK4", "robustParticleTransformer"),
+}
 # AK4 leading-jet tag regions (filled independently, may overlap)
-# BTV fixed-WP SFs: (correction set, correction, hadron flavours, max |eta|, max pT)
+# BTV fixed-WP SFs: (correction set, correction ({} = BTV tagger prefix), hadron
+# flavours, max |eta|, max pT); same ranges for all three taggers (Summer22 files)
 TAG_SFS = {
     "btag": [
-        ("btag", "particleNet_comb", (4, 5), 2.5, 1000.0),
-        ("btag", "particleNet_light", (0,), 2.5, 1000.0),
+        ("btag", "{}_comb", (4, 5), 2.5, 1000.0),
+        ("btag", "{}_light", (0,), 2.5, 1000.0),
     ],
     "ctag": [
-        ("ctag", "particleNet_wc", (4,), 2.4, 200.0),
-        ("ctag", "particleNet_tnp", (5,), 2.4, 300.0),
-        ("ctag", "particleNet_light", (0,), 2.5, 1000.0),
+        ("ctag", "{}_wc", (4,), 2.4, 200.0),
+        ("ctag", "{}_tnp", (5,), 2.4, 300.0),
+        ("ctag", "{}_light", (0,), 2.5, 1000.0),
     ],
 }
+
+
+def tag_name(kind, tagger, wp):
+    """Region name: PNet keeps the original "btag_L"; others "btagDeepJet_L"."""
+    return f"{kind}_{wp}" if tagger == "PNet" else f"{kind}{tagger}_{wp}"
+
+
+# Zmm muon-selection study (mu_variants=True): each variant changes one setting
+# w.r.t. the nominal; settings: trig (pair | lead | none: trigger SF), lead /
+# sub (leading / other muon pT threshold), eta (max |eta|), match (leading muon
+# matched to an IsoMu24 trigger object), ss (muon scale/smearing applied), idiso
+# (ID + iso SFs), pu (pileup weight)
+MU_NOMINAL = dict(trig="pair", lead=35.0, sub=26.0, eta=2.4, match=False, ss=True, idiso=True, pu=True)
+MU_VARIANTS = {
+    "nominal": {},
+    "prev": dict(trig="lead", sub=25.0),  # analysis until 2026-11-08
+    "trigLead": dict(trig="lead"),
+    "sub25": dict(sub=25.0),
+    "lead26": dict(lead=26.0),
+    "eta21": dict(eta=2.1),
+    "trigMatch": dict(trig="lead", match=True),
+    "noSS": dict(ss=False),
+    "noTrigSF": dict(trig="none"),
+    "noIDIsoSF": dict(idiso=False),
+    "noPU": dict(pu=False),
+}
+MU_STAGES = ["Z", "final"]
 ZPT_WEIGHTS = os.path.join(
     os.path.dirname(__file__), "..", "data", "ZbZc", "zpt_weights_run3.json"
 )
@@ -146,6 +194,10 @@ class NanoProcessor(processor.ProcessorABC):
         zpt_reweight=False,
         njet_exact=None,
         tag_wps=("L", "M", "T"),
+        taggers=("PNet", "DeepJet", "RobustParT"),
+        mu_trig_sf="pair",
+        mu_pt_min=26.0,
+        mu_variants=True,
     ):
         if campaign not in self.trigger_config:
             raise KeyError(
@@ -164,6 +216,11 @@ class NanoProcessor(processor.ProcessorABC):
         self.chunksize = chunksize
         # njet_exact=N: jet requirement is exactly N selected jets (Zb_Zc_ratio_1jet)
         self.njet_exact = njet_exact
+        if mu_trig_sf not in ("pair", "lead"):
+            raise ValueError(f"mu_trig_sf must be 'pair' or 'lead', not {mu_trig_sf}")
+        self.mu_trig_sf = mu_trig_sf
+        self.mu_pt_min = float(mu_pt_min)
+        self.mu_variants = bool(mu_variants)
         # common_shifts: only JME-recipe jets (pT > 15, tight ID, EM fraction < 0.9,
         # no PF muon within 0.2) in a vetoed region drop the event
         self.jetveto_jme = True
@@ -182,18 +239,27 @@ class NanoProcessor(processor.ProcessorABC):
                 k: correctionlib.CorrectionSet.from_file(f"{btv}/{k}ging.json.gz")
                 for k in ("btag", "ctag")
             }
-            # {WP: (B, CvL, CvB) cut}
-            self.tag_wps = {
-                wp: (
-                    self.btv["btag"]["particleNet_wp_values"].evaluate(wp),
-                    *(
-                        self.btv["ctag"]["particleNet_wp_values"].evaluate(wp, a)
-                        for a in ("CvL", "CvB")
-                    ),
-                )
-                for wp in tag_wps
-            }
-            self.tags = ["incl"] + [f"{t}_{wp}" for wp in tag_wps for t in ("btag", "ctag")]
+            for t in taggers:
+                if t not in TAGGERS:
+                    raise KeyError(f"Zb_Zc_ratio: tagger {t} not in {list(TAGGERS)}")
+            self.taggers = tuple(taggers)
+            self.tag_wps = tuple(tag_wps)
+            # {region: (kind, tagger, WP, cuts)}; cuts = (B,) for b-tag, (CvL, CvB) for c-tag
+            self.tag_defs = {}
+            for t in self.taggers:
+                wpv = TAGGERS[t][1] + "_wp_values"
+                for wp in self.tag_wps:
+                    self.tag_defs[tag_name("btag", t, wp)] = (
+                        "btag", t, wp, (self.btv["btag"][wpv].evaluate(wp),)
+                    )
+                    self.tag_defs[tag_name("ctag", t, wp)] = (
+                        "ctag", t, wp,
+                        tuple(self.btv["ctag"][wpv].evaluate(wp, a) for a in ("CvL", "CvB")),
+                    )
+            # PNet first, in the order of the earlier runs (btag_L, ctag_L, btag_M, ...)
+            self.tags = ["incl"] + [
+                tag_name(k, t, wp) for t in self.taggers for wp in self.tag_wps for k in ("btag", "ctag")
+            ]
 
     def zpt_weight(self, zpt):
         """Z pT shape weight of DY MC events (reco pT(ll); last bin open)."""
@@ -236,6 +302,12 @@ class NanoProcessor(processor.ProcessorABC):
                 "dphi_jj": h(Reg(32, 0, np.pi, name="dphi", label=r"$\Delta\phi(j_1, j_2)$")),
                 "m_jj": h(Reg(50, 0, 1000, name="mass", label="$m_{jj}$ [GeV]")),
             }
+            # B / CvL / CvB of the other taggers (PNet ones above keep their names)
+            for t in self.taggers:
+                if t == "PNet":
+                    continue
+                for s in ("B", "CvL", "CvB"):
+                    hists[f"jet_{t}{s}"] = h(Reg(50, 0, 1, name="score", label=f"{t} {s}"))
         else:
             hists = {
                 "fj_pt": h(Reg(50, 200, 1200, name="pt", label="AK8 jet $p_T$ [GeV]")),
@@ -297,9 +369,38 @@ class NanoProcessor(processor.ProcessorABC):
                 "dR_lj_min": h(Reg(30, 0, 6, name="dr", label="min $\\Delta R(\\ell, j_1)$")),
                 "pt_balance": h(Reg(40, 0, 4, name="ratio", label="$p_T^{j_1} / p_T^{\\ell\\ell}$")),
                 "met_pt": h(Reg(25, 0, 50, name="pt", label="PUPPI $p_T^{miss}$ [GeV]")),
+                # every cut except MET < 50
+                "met_pt_nm1": h(Reg(40, 0, 200, name="pt", label="PUPPI $p_T^{miss}$ [GeV] (no MET cut)")),
                 "npv": h(hist.axis.Integer(0, 80, name="n", label="N good primary vertices")),
+                # MC only, selected events, no tag / flavour axes
+                "pu_ntrue_npv": hist.Hist(
+                    ch,
+                    Reg(100, 0, 100, name="ntrue", label="Pileup nTrueInt"),
+                    hist.axis.Integer(0, 80, name="npv", label="N good primary vertices"),
+                    storage=hist.storage.Weight(),
+                ),
             }
         )
+        if self.mu_variants:
+            mv = [
+                hist.axis.StrCategory(list(MU_VARIANTS), name="variant"),
+                hist.axis.StrCategory(MU_STAGES, name="stage"),
+            ]
+
+            def hm(axis):
+                return hist.Hist(*mv, axis, storage=hist.storage.Weight())
+
+            hists.update(
+                {
+                    "muvar_z_pt": hm(V(ptll_bins, name="pt", label="$p_T^{\\mu\\mu}$ [GeV]")),
+                    "muvar_lep0_pt": hm(V([26, 30, 35, 40, 45, 50, 55, 60, 70, 80, 100, 125, 150, 200, 300, 500, 1000], name="pt", label="Leading muon $p_T$ [GeV]")),
+                    "muvar_lep1_pt": hm(V([25, 26, 30, 35, 40, 45, 50, 60, 70, 80, 100, 150, 200, 500], name="pt", label="Subleading muon $p_T$ [GeV]")),
+                    "muvar_lep0_eta": hm(Reg(24, -2.4, 2.4, name="eta", label="Leading muon $\\eta$")),
+                    "muvar_lep1_eta": hm(Reg(24, -2.4, 2.4, name="eta", label="Subleading muon $\\eta$")),
+                    "muvar_z_mass": hm(Reg(40, 71, 111, name="mass", label="$m_{\\mu\\mu}$ [GeV]")),
+                    "muvar_n_jet": hm(hist.axis.Integer(0, 6, name="n", label="N AK4 jets")),
+                }
+            )
         return hists
 
     @property
@@ -333,6 +434,10 @@ class NanoProcessor(processor.ProcessorABC):
         pre["lumi_slice"] = count(events)
         events = events[ak.to_numpy(MET_filters(events, self._campaign))]
         pre["met_filters"] = count(events)
+        if self.mu_variants and len(events) > 0:
+            # muon pT before the scale/smearing correction (muvar "noSS");
+            # MUO_shifts keeps the other muon fields
+            events["Muon", "pt_raw"] = events.Muon.pt
 
         ## JEC/JER + type-1 MET, lepton scale/smearing, jet veto map
         if len(events) == 0:
@@ -421,7 +526,7 @@ class NanoProcessor(processor.ProcessorABC):
         ele = ele[ele_EE_EB_removal(ele)]
         ele = ele[ele_ID(ele)]
 
-        ## Muons: pT > 25 |eta| < 2.4, tight ID, PF iso < 0.15
+        ## Muons: pT > mu_pt_min (26) |eta| < 2.4, tight ID, PF iso < 0.15
         mu_jetveto = events.Muon[
             (abs(events.Muon.eta) < 2.5)
             & (events.Muon.pt > 25)
@@ -431,6 +536,7 @@ class NanoProcessor(processor.ProcessorABC):
         mu = events.Muon[lep_kin(events.Muon)]
         mu = mu[mu.tightId]
         mu = mu[mu_iso(mu)]
+        mu = mu[mu.pt > self.mu_pt_min]
 
         # pT order can change after the scale/smearing corrections
         ele = ele[ak.argsort(ele.pt, ascending=False)]
@@ -491,6 +597,14 @@ class NanoProcessor(processor.ProcessorABC):
                 output, channel, isRealData, events[zpre], lead[zpre],
                 zcand[zpre], l0[zpre], l1[zpre], req_met[zpre], req_jet[zpre], preweight,
             )
+            # every cut except MET: met_pt_nm1 (AK4 tag regions, same weights)
+            if self.jet == "AK4":
+                nm1 = req_jet[zpre]
+                if nm1.any():
+                    self.fill_tagged(
+                        output, "met_pt_nm1", channel, isRealData, lead[zpre][nm1],
+                        preweight[nm1], pt=ak.to_numpy(events[zpre][nm1].MET.pt),
+                    )
 
             # Z events before the jet requirement: only the jet multiplicity is
             # filled here, so that its 0 bin is populated
@@ -561,10 +675,12 @@ class NanoProcessor(processor.ProcessorABC):
                         k = flav[m] == f
                         output["nevt_tag"][channel][f"{t}|{f}"] += int(np.sum(k))
                         output["sumsf_tag"][channel][f"{t}|{f}"] += float(np.sum(sf[m][k]))
-                for wp in self.tag_wps:
-                    both = regions[f"btag_{wp}"][0] & regions[f"ctag_{wp}"][0]
-                    for f, n in zip(*np.unique(flav[both], return_counts=True)):
-                        output["nevt_tag"][channel][f"btag_{wp}&ctag_{wp}|{f}"] += int(n)
+                for tg in self.taggers:
+                    for wp in self.tag_wps:
+                        bt, ct = tag_name("btag", tg, wp), tag_name("ctag", tg, wp)
+                        both = regions[bt][0] & regions[ct][0]
+                        for f, n in zip(*np.unique(flav[both], return_counts=True)):
+                            output["nevt_tag"][channel][f"{bt}&{ct}|{f}"] += int(n)
 
             def fill(name, sel=None, **values):
                 # sel: optional event mask (e.g. events with >= 2 jets); values
@@ -618,9 +734,24 @@ class NanoProcessor(processor.ProcessorABC):
             fill("pt_balance", ratio=ak.to_numpy(jet.pt / z.pt))
             fill("met_pt", pt=ak.to_numpy(ev.MET.pt))
             fill("npv", n=ak.to_numpy(ev.PV.npvsGood))
+            if not isRealData:
+                output["pu_ntrue_npv"].fill(
+                    channel=channel,
+                    ntrue=ak.to_numpy(ev.Pileup.nTrueInt),
+                    npv=ak.to_numpy(ev.PV.npvsGood),
+                    weight=weight,
+                )
             # pure pythia8 samples (WW, WZ, ZZ) have no LHE block
             if not isRealData and "LHE" in ev.fields:
                 fill("lhe_vpt", pt=ak.to_numpy(ev.LHE.Vpt))
+
+        # Zmm muon-selection study (Zmm data come from the Muon PDs only)
+        if self.mu_variants and not self.noHist and not (
+            isRealData and dataset.startswith("EGamma")
+        ):
+            self.fill_mu_variants(
+                output, events, isRealData, genw, trig["muonTrig"], req_met, req_jet, jets
+            )
 
         return {dataset: output}
 
@@ -687,6 +818,11 @@ class NanoProcessor(processor.ProcessorABC):
             fill("jet_PNetCvL", score=cvl)
             fill("jet_PNetCvB", score=cvb)
             fill("jet_CvL_CvB", cvl=cvl, cvb=cvb)
+            for t in self.taggers:
+                if t == "PNet":
+                    continue
+                for s in ("B", "CvL", "CvB"):
+                    fill(f"jet_{t}{s}", score=ak.to_numpy(jet[TAGGERS[t][0] + s]))
             fill("jet_phi", phi=ak.to_numpy(jet.phi))
             # subleading jet, events with >= 2 jets
             sub = ak.pad_none(jets, 2, axis=1)[:, 1]
@@ -733,12 +869,27 @@ class NanoProcessor(processor.ProcessorABC):
                 weight=(weight * sf)[m],
             )
 
+    def fill_tagged(self, output, name, channel, isRealData, lead, weight, **values):
+        """Fill histogram `name` for every AK4 tag region of the leading jet `lead`
+        (events with a jet); flavours from the leading jet, MC weight x tag SF."""
+        flavs = self.z_flavours(isRealData, lead)
+        for t, (m, sf) in self.tag_regions(lead, isRealData).items():
+            output[name].fill(
+                channel=channel,
+                tag=t,
+                **{k: v[m] for k, v in flavs.items()},
+                **{k: v[m] for k, v in values.items()},
+                weight=(weight * sf)[m],
+            )
+
     def tag_regions(self, jet, isRealData):
         """
         {region: (event mask, SF)} for the AK4 leading jet (None = no jet, never
-        tagged): incl, btag_<WP> (PNet B > WP), ctag_<WP> (CvL > WP and CvB > WP). SF = 1
+        tagged): incl, and per tagger and WP (self.tag_defs) a b-tag region (B > WP)
+        and a c-tag region (CvL > WP and CvB > WP). SF = 1
         in data and for untagged jets; in MC the BTV fixed-WP SF of the tagged
-        jet for its hadron flavour (TAG_SFS), pT and |eta| clipped to the SF range.
+        jet for its hadron flavour (TAG_SFS with the tagger's own corrections),
+        pT and |eta| clipped to the SF range.
         """
         n = len(jet)
         ones = np.ones(n)
@@ -746,13 +897,16 @@ class NanoProcessor(processor.ProcessorABC):
         def var(x, default):
             return ak.to_numpy(ak.fill_none(x, default))
 
-        pnb = var(jet.btagPNetB, -1.0)
-        cvl = var(jet.btagPNetCvL, -1.0)
-        cvb = var(jet.btagPNetCvB, -1.0)
+        scores = {
+            t: {s: var(jet[TAGGERS[t][0] + s], -1.0) for s in ("B", "CvL", "CvB")}
+            for t in self.taggers
+        }
         tagged = {}
-        for wp, (cut_b, cut_cvl, cut_cvb) in self.tag_wps.items():
-            tagged[f"btag_{wp}"] = pnb > cut_b
-            tagged[f"ctag_{wp}"] = (cvl > cut_cvl) & (cvb > cut_cvb)
+        for region, (kind, t, wp, cuts) in self.tag_defs.items():
+            if kind == "btag":
+                tagged[region] = scores[t]["B"] > cuts[0]
+            else:
+                tagged[region] = (scores[t]["CvL"] > cuts[0]) & (scores[t]["CvB"] > cuts[1])
         regions = {"incl": (np.ones(n, dtype=bool), ones)}
         if isRealData:
             regions.update({t: (m, ones) for t, m in tagged.items()})
@@ -762,8 +916,9 @@ class NanoProcessor(processor.ProcessorABC):
         aeta = np.abs(var(jet.eta, 0.0))
         for t, m in tagged.items():
             sf = np.ones(n)
-            kind, wp = t.split("_")
+            kind, tagger, wp, _ = self.tag_defs[t]
             for cset, name, flavours, etamax, ptmax in TAG_SFS[kind]:
+                name = name.format(TAGGERS[tagger][1])
                 k = m & np.isin(hf, flavours)
                 if k.any():
                     sf[k] = self.btv[cset][name].evaluate(
@@ -852,15 +1007,130 @@ class NanoProcessor(processor.ProcessorABC):
             e_mc = 1 - (1 - eff["McEff"][0]) * (1 - eff["McEff"][1])
             trig = np.where(e_mc > 0, e_data / np.where(e_mc > 0, e_mc, 1.0), 1.0)
         else:
-            trig = self.SF_map["MUO"][
-                "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight"
-            ].evaluate(
-                np.clip(ak.to_numpy(l0.eta), -2.4, 2.399999),
-                np.clip(ak.to_numpy(l0.pt), 26.0, None),
-                "nominal",
-            )
-            trig_lead = trig
+            trig_lead = self.mu_trig(l0, l1, "lead")
+            trig = self.mu_trig(l0, l1, self.mu_trig_sf)
         return sf * trig, sf * trig_lead
+
+    MU_HLT = "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight"
+
+    def mu_trig(self, l0, l1, mode):
+        """
+        Zmm IsoMu24 trigger SF from the MUO file (signed eta x pT >= 26 bins).
+        mode "lead": SF of the leading muon only (pT clipped to >= 26).
+        mode "pair": either muon can fire, [1 - (1 - eD0)(1 - eD1)] /
+        [1 - (1 - eM0)(1 - eM1)] with nominal_DATAeff / nominal_MCeff; a muon
+        below 26 GeV (outside the MUO range) counts as not firing (eff 0).
+        mode "none": 1.
+        """
+        corr = self.SF_map["MUO"][self.MU_HLT]
+
+        def ev(lep, valtype, clip_pt):
+            pt = ak.to_numpy(lep.pt)
+            eta = np.clip(ak.to_numpy(lep.eta), -2.4, 2.399999)
+            val = corr.evaluate(eta, np.clip(pt, 26.0, None), valtype)
+            return val if clip_pt else np.where(pt >= 26.0, val, 0.0)
+
+        if mode == "none":
+            return np.ones(len(l0))
+        if mode == "lead":
+            return ev(l0, "nominal", True)
+        if mode != "pair":
+            raise ValueError(mode)
+        e = {
+            k: [ev(lep, f"nominal_{k}", False) for lep in (l0, l1)]
+            for k in ("DATAeff", "MCeff")
+        }
+        e_data = 1 - (1 - e["DATAeff"][0]) * (1 - e["DATAeff"][1])
+        e_mc = 1 - (1 - e["MCeff"][0]) * (1 - e["MCeff"][1])
+        return np.where(e_mc > 0, e_data / np.where(e_mc > 0, e_mc, 1.0), 1.0)
+
+    def fill_mu_variants(self, output, events, isRealData, genw, trig_mu, req_met, req_jet, jets):
+        """
+        muvar_* histograms: the Zmm selection redone for each MU_VARIANTS entry
+        (one change w.r.t. MU_NOMINAL), at stage "Z" (trigger, two muons, OS, Z
+        mass) and "final" (+ MET < 50 and >= 1 jet, the nominal jets and MET).
+        Weights as in mc_sf (pileup x per-muon ID x iso SFs from puwei / muSFs x
+        mu_trig), with the parts switched off by the variant. "nominal" must
+        reproduce the Zmm channel of the main histograms; "prev" the analysis
+        before 2026-11-08 (leading-muon trigger SF, muon pT > 25).
+        """
+        cand = events.Muon[events.Muon.tightId & mu_iso(events.Muon)]
+        cand_raw = ak.with_field(cand, cand.pt_raw, "pt")
+        # IsoMu24 trigger objects: muon, filter bits 1 (Iso) and 3 (1mu)
+        to = events.TrigObj
+        to = to[(to.id == 13) & ((to.filterBits & 2) > 0) & ((to.filterBits & 8) > 0)]
+        nj = ak.to_numpy(ak.num(jets))
+        cache = {}  # (ss, sub, eta) -> selected-muon quantities
+        for vname, change in MU_VARIANTS.items():
+            s = dict(MU_NOMINAL, **change)
+            key = (s["ss"], s["sub"], s["eta"])
+            if key not in cache:
+                mu = cand if s["ss"] else cand_raw
+                mu = mu[(mu.pt > s["sub"]) & (abs(mu.eta) < s["eta"])]
+                mu = mu[ak.argsort(mu.pt, ascending=False)]
+                pad = ak.pad_none(mu, 2, axis=1)
+                l0, l1 = pad[:, 0], pad[:, 1]
+                z = l0 + l1
+                base = ak.to_numpy(
+                    ak.fill_none(
+                        (ak.num(mu) >= 2)
+                        & (l0.charge * l1.charge < 0)
+                        & (z.mass > 71)
+                        & (z.mass < 111),
+                        False,
+                    )
+                ) & trig_mu
+                lead_pt = ak.to_numpy(ak.fill_none(l0.pt, 0.0))
+                matched = ak.to_numpy(
+                    ak.fill_none(ak.any(to.delta_r(l0) < 0.1, axis=1), False)
+                )
+                parts = None
+                if not isRealData and base.any():
+                    ev = events[base]
+                    w = Weights(int(np.sum(base)))
+                    puwei(ev.Pileup.nTrueInt, self.SF_map, w, False)
+                    pu = w.weight()
+                    idiso = np.ones(len(ev))
+                    for lep in (l0[base], l1[base]):
+                        wl = Weights(len(ev))
+                        muSFs(lep, self.SF_map, wl, False, False)
+                        idiso = idiso * wl.weight()
+                    parts = dict(pu=pu, idiso=idiso,
+                                 trig={m: self.mu_trig(l0[base], l1[base], m) for m in ("pair", "lead", "none")})
+                cache[key] = (base, lead_pt, matched, l0, l1, z, parts)
+            base, lead_pt, matched, l0, l1, z, parts = cache[key]
+            sel_z = base & (lead_pt > s["lead"])
+            if s["match"]:
+                sel_z = sel_z & matched
+            if not sel_z.any():
+                continue
+            # weights of the base events, restricted to sel_z
+            if isRealData:
+                w = np.ones(int(np.sum(sel_z)))
+            else:
+                inb = sel_z[base]
+                w = genw[sel_z] * parts["trig"][s["trig"]][inb]
+                if s["pu"]:
+                    w = w * parts["pu"][inb]
+                if s["idiso"]:
+                    w = w * parts["idiso"][inb]
+            for stage in MU_STAGES:
+                if stage == "Z":
+                    m, ws = sel_z, w
+                else:
+                    keep = (req_met & req_jet)[sel_z]
+                    m, ws = sel_z & req_met & req_jet, w[keep]
+                if not m.any():
+                    continue
+                a0, a1, zz = l0[m], l1[m], z[m]
+                common = dict(variant=vname, stage=stage, weight=ws)
+                output["muvar_z_pt"].fill(pt=ak.to_numpy(zz.pt), **common)
+                output["muvar_z_mass"].fill(mass=ak.to_numpy(zz.mass), **common)
+                output["muvar_lep0_pt"].fill(pt=ak.to_numpy(a0.pt), **common)
+                output["muvar_lep1_pt"].fill(pt=ak.to_numpy(a1.pt), **common)
+                output["muvar_lep0_eta"].fill(eta=ak.to_numpy(a0.eta), **common)
+                output["muvar_lep1_eta"].fill(eta=ak.to_numpy(a1.eta), **common)
+                output["muvar_n_jet"].fill(n=nj[m], **common)
 
     def postprocess(self, accumulator):
         return accumulator

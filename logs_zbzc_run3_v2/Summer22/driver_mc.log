@@ -1,0 +1,28 @@
+13:08:49 DYto2L-2Jets_MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 try 1
+13:17:46 DYto2L-2Jets_MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 exit 0
+13:17:46 DYto2L-2Jets_MLL-50_PTLL-100_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 try 1
+13:34:15 DYto2L-2Jets_MLL-50_PTLL-100_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 exit 0
+13:34:15 DYto2L-2Jets_MLL-50_PTLL-200_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 try 1
+13:45:41 DYto2L-2Jets_MLL-50_PTLL-200_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 exit 0
+13:45:41 DYto2L-2Jets_MLL-50_PTLL-400_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 try 1
+13:57:46 DYto2L-2Jets_MLL-50_PTLL-400_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 exit 0
+13:57:46 DYto2L-2Jets_MLL-50_PTLL-600_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 try 1
+14:04:20 DYto2L-2Jets_MLL-50_PTLL-600_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 exit 0
+14:04:20 TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8 try 1
+14:41:40 TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8 exit 0
+14:41:40 WW_TuneCP5_13p6TeV_pythia8 try 1
+14:47:53 DYto2L-2Jets_MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 rerun try 1
+14:54:40 WW_TuneCP5_13p6TeV_pythia8 exit 0
+14:54:40 WZ_TuneCP5_13p6TeV_pythia8 try 1
+14:56:47 DYto2L-2Jets_MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 rerun exit 0
+14:56:47 DYto2L-2Jets_MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 rerun not 20/20 or failed
+14:56:47 DYto2L-2Jets_MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 rerun try 2
+15:03:30 DYto2L-2Jets_MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 rerun exit 0
+15:03:30 DYto2L-2Jets_MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 rerun not 20/20 or failed
+15:03:30 DYto2L-2Jets_MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 rerun try 3
+15:10:21 DYto2L-2Jets_MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 rerun exit 0
+15:10:21 DYto2L-2Jets_MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 rerun not 20/20 or failed
+15:17:52 WZ_TuneCP5_13p6TeV_pythia8 exit 0
+15:17:52 ZZ_TuneCP5_13p6TeV_pythia8 try 1
+15:22:55 ZZ_TuneCP5_13p6TeV_pythia8 exit 0
+15:22:55 ALL DONE

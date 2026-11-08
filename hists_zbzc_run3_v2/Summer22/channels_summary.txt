@@ -1,0 +1,23 @@
+== data/MC per selection stage and slope vs pT(ll) (0-400 GeV, %/100 GeV)
+all Z events             Zee  data   110212  MC   110740.6  data/MC 0.995+-0.005  slope  -2.11+-1.23
+all Z events             Zmm  data   387028  MC   392391.0  data/MC 0.986+-0.003  slope  -3.45+-0.76
+MET<50, 0 jets           Zee  data    88166  MC    84583.2  data/MC 1.042+-0.006  slope +34.25+-4.36
+MET<50, 0 jets           Zmm  data   313464  MC   304304.0  data/MC 1.030+-0.004  slope +27.13+-2.91
+MET>50, 0 jets           Zee  data     1740  MC     4186.4  data/MC 0.416+-0.013  slope +61.75+-11.34
+MET>50, 0 jets           Zmm  data     6032  MC    14583.8  data/MC 0.414+-0.008  slope +48.84+-7.04
+MET>50, >=1 jet          Zee  data     1473  MC     2129.9  data/MC 0.692+-0.027  slope +10.77+-4.48
+MET>50, >=1 jet          Zmm  data     4667  MC     6871.8  data/MC 0.679+-0.019  slope  +5.22+-2.81
+final: MET<50, >=1 jet   Zee  data    18833  MC    19841.1  data/MC 0.949+-0.012  slope  +0.17+-1.92
+final: MET<50, >=1 jet   Zmm  data    62865  MC    66631.3  data/MC 0.943+-0.009  slope  -0.90+-1.21
+
+== final selection: data/MC per leading-lepton |eta| region
+Zee  0-0.8: 0.942+-0.019  0.8-1.2: 0.909+-0.023  1.2-2.0: 0.987+-0.032  2.0-2.5: 1.040+-0.047
+Zmm  0-0.8: 0.939+-0.015  0.8-1.2: 0.915+-0.017  1.2-2.0: 0.988+-0.020  2.0-2.5: 0.908+-0.028
+
+== same slope fit (10 GeV bins, final selection, %/100 GeV) on three runs
+hists_zbzc_run3_ge1j   Zee data/MC 0.973 | z_pt  +4.8+-2.0 | lep0_pt  +9.7+-3.5 | jet_pt  +2.3+-2.6   (Oct 29-Nov 2, DY Z pT weights ON)
+hists_zbzc_run3_ge1j   Zmm data/MC 0.987 | z_pt  +4.4+-1.3 | lep0_pt  +6.2+-2.2 | jet_pt  +2.0+-1.8   (Oct 29-Nov 2, DY Z pT weights ON)
+hists_zbzc_run3_tag    Zee data/MC 0.949 | z_pt  -0.3+-1.9 | lep0_pt  +2.0+-3.3 | jet_pt  -1.8+-2.5   (237-page deck (weights off))
+hists_zbzc_run3_tag    Zmm data/MC 0.966 | z_pt  -0.7+-1.2 | lep0_pt  -1.4+-2.1 | jet_pt  -1.8+-1.8   (237-page deck (weights off))
+hists_zbzc_run3_v2     Zee data/MC 0.949 | z_pt  -0.3+-1.9 | lep0_pt  +2.0+-3.3 | jet_pt  -1.8+-2.5   (this run (new muon trigger SF, pT>26))
+hists_zbzc_run3_v2     Zmm data/MC 0.943 | z_pt  -0.8+-1.2 | lep0_pt  -1.7+-2.1 | jet_pt  -2.1+-1.8   (this run (new muon trigger SF, pT>26))

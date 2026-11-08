@@ -7,11 +7,13 @@ each channel come from its own PD only (Zmm: Muon/Muon0, Zee: EGamma/EGamma0).
 
 Stack: DY split by leading-jet flavour (hadronFlavour b/c/light; *_parton.png:
 partonFlavour), ttbar (TTto2L2Nu) and VV (WW+WZ+ZZ), smallest component at the
-bottom of the log stack; hatched band = MC stat. uncertainty; lower panel data/MC.
+bottom of the log stack (order from Zee + Zmm together, same in both panels; fixed
+legend order); hatched band = MC stat. uncertainty; lower panel data/MC.
 N_jet >= 5 is merged into one bin. "all" sums the four campaigns.
 
 Tag regions (AK4 outputs from 2026-11-05 on, axis "tag"): ZBZC_TAG=incl (default) | btag_<WP> |
-ctag_<WP> (WP = L, M, T) selects the leading-jet region; tagged regions go to plots_<tag>/ and
+ctag_<WP> (PNet; WP = L, M, T) | btag<Tagger>_<WP> | ctag<Tagger>_<WP> (Tagger = DeepJet,
+RobustParT; outputs from 2026-11-08 on) selects the leading-jet region; tagged regions go to plots_<tag>/ and
 yields_<tag>.txt, with the mean BTV SF per flavour and the b-tag/c-tag overlap at the same WP
 appended to the table.
 
@@ -57,7 +59,9 @@ if DIAG:
     outdir = f"hists_zbzc_diag/{which}/stack_{DIAG}"
 TAG = os.environ.get("ZBZC_TAG", "incl")
 WP_NAME = {"L": "Loose", "M": "Medium", "T": "Tight"}
-TAG_LABEL = "" if TAG == "incl" else f"{TAG[0]}-tagged jet (PNet {WP_NAME[TAG.split('_')[1]]})"
+# region names: btag_<WP> / ctag_<WP> (PNet), btag<Tagger>_<WP> / ctag<Tagger>_<WP> (DeepJet, RobustParT)
+TAGGER = (TAG[4:].split("_")[0] or "PNet") if TAG != "incl" else ""
+TAG_LABEL = "" if TAG == "incl" else f"{TAG[0]}-tagged jet ({TAGGER} {WP_NAME[TAG.split('_')[-1]]})"
 plotdir = os.path.join(outdir, "plots" if TAG == "incl" else f"plots_{TAG}")
 os.makedirs(plotdir, exist_ok=True)
 
@@ -139,13 +143,18 @@ def components(var, ch, flav):
     return comp
 
 
-def arrays(h, var):
-    """values, variances, edges; N_jet >= 5 merged into the last bin."""
+def arrays(h, var, zoom=None):
+    """values, variances, edges; N_jet >= 5 merged into the last bin;
+    zoom = (lo, hi): only the bins inside [lo, hi]."""
     v, w2, e = h.values(), h.variances(), h.axes[0].edges
     if var == "n_jet":
         v = np.append(v[:5], v[5:].sum())
         w2 = np.append(w2[:5], w2[5:].sum())
         e = e[:7]
+    if zoom is not None:
+        inside = (e[:-1] >= zoom[0] - 1e-9) & (e[1:] <= zoom[1] + 1e-9)
+        v, w2 = v[inside], w2[inside]
+        e = e[np.append(inside, False) | np.insert(inside, 0, False)]
     return v, w2, e
 
 
@@ -155,14 +164,24 @@ def cms_label(ax, ch=None, fontsize=18):
                   ax=ax, fontsize=fontsize)
 
 
-def stack(var, flav, suffix=""):
+def stack(var, flav, suffix="", zoom=None):
+    """zoom = (lo, hi): x range restricted to the high-statistics bins, linear y,
+    data/MC panel 0.8-1.2 (file <var>_zoom.png)."""
     fig, axes = plt.subplots(2, 2, figsize=(20, 10.5), sharex="col",
                              gridspec_kw={"height_ratios": [3, 1], "hspace": 0.05})
+    comps = {ch: components(var, ch, flav) for ch in CHANNELS}
+    # one stack order for both channels (smallest at the bottom, from Zee + Zmm
+    # together), so the two panels always stack in the same order
+    mc = [k for k in list(BKG) + flav["dy"] if all(k in comps[ch] for ch in CHANNELS)]
+    mc = sorted(mc, key=lambda k: sum(comps[ch][k].values().sum() for ch in CHANNELS))
+    # fixed legend order, independent of the yields: Data, MC stat., VV, tt,
+    # then DY from the heaviest flavour down (DY + b, DY + c, DY + light)
+    legend_order = (["Data", "MC stat. unc."]
+                    + [BKG[k][0] for k in ("VV", "tt")]
+                    + [flav["label"][k] for k in flav["dy"][::-1]])
     for ax, rax, ch in zip(axes[0], axes[1], CHANNELS):
-        comp = components(var, ch, flav)
-        mc = [k for k in list(BKG) + flav["dy"] if k in comp]
-        mc = sorted(mc, key=lambda k: comp[k].values().sum())  # smallest at the bottom
-        vals = [arrays(comp[k], var) for k in mc]
+        comp = comps[ch]
+        vals = [arrays(comp[k], var, zoom) for k in mc]
         edges = vals[0][2]
         tot = sum(v for v, _, _ in vals)
         totvar = sum(w for _, w, _ in vals)
@@ -174,12 +193,12 @@ def stack(var, flav, suffix=""):
                   facecolor="none", edgecolor="#555555", lw=0, label="MC stat. unc.")
         has_data = "data" in comp and var != "lhe_vpt"
         if has_data:
-            d, _, _ = arrays(comp["data"], var)
+            d, _, _ = arrays(comp["data"], var, zoom)
             hep.histplot(d, edges, ax=ax, histtype="errorbar", color="black",
                          yerr=np.sqrt(d), label="Data")
         ax.set_ylabel("Events / bin")
         top = max(tot.max(), d.max() if has_data else 0, 1.0)
-        if var == "z_mass":
+        if var == "z_mass" or zoom is not None:
             ax.set_ylim(0, top * 1.5)
         else:
             ax.set_yscale("log")
@@ -188,7 +207,9 @@ def stack(var, flav, suffix=""):
         if TAG_LABEL:
             ax.text(0.04, 0.86, TAG_LABEL, transform=ax.transAxes, fontsize=16, va="top")
         hdl, lab = ax.get_legend_handles_labels()
-        ax.legend(hdl[::-1], lab[::-1], fontsize=13, loc="upper right", ncol=2)
+        byname = dict(zip(lab, hdl))
+        keep = [n for n in legend_order if n in byname]
+        ax.legend([byname[n] for n in keep], keep, fontsize=13, loc="upper right", ncol=2)
         cms_label(ax, ch)
         xlabel = comp[mc[0]].axes[0].label
         ax.set_xlabel("")
@@ -202,7 +223,7 @@ def stack(var, flav, suffix=""):
                 rerr = np.where(tot > 0, np.sqrt(d) / tot, np.nan)
                 hep.histplot(ratio, edges, ax=rax, histtype="errorbar", color="black", yerr=rerr)
         rax.axhline(1, color="black", lw=1, ls="--")
-        rax.set_ylim(0.5, 1.5)
+        rax.set_ylim(*((0.8, 1.2) if zoom is not None else (0.5, 1.5)))
         rax.set_ylabel("Data / MC", fontsize=20)
         if var == "n_jet":
             rax.set_xticks(np.arange(6) + 0.5, ["0", "1", "2", "3", "4", "≥5"])
@@ -217,11 +238,21 @@ VARS = ["z_mass", "z_pt", "lep0_pt", "lep1_pt", "jet_pt", "jet_eta", "jet_PNetB"
 # kinematics added 2026-10-28 (only in outputs from that run on)
 NEW_VARS = ["z_eta", "lep0_eta", "lep1_eta", "lep0_phi", "lep1_phi", "dR_ll", "dphi_ll",
             "jet_phi", "jet1_pt", "jet1_eta", "dR_jj", "dphi_jj", "m_jj", "dphi_zj", "dR_zj",
-            "dR_lj_min", "pt_balance", "met_pt", "npv"]
+            "dR_lj_min", "pt_balance", "met_pt", "npv",
+            # 2026-11-08: MET without the MET cut; DeepJet / RobustParT scores
+            "met_pt_nm1"] + [f"jet_{t}{s}" for t in ("DeepJet", "RobustParT") for s in ("B", "CvL", "CvB")]
 VARS += [v for v in NEW_VARS if all(v in o for c in camps for o in OUT[c].values())]
 for var in VARS:
     stack(var, HADRON)
     stack(var, PARTON, "_parton")
+
+# zoom on the high-statistics low end of the distributions (linear y, ratio 0.8-1.2)
+ZOOM = {"z_pt": (0, 200), "lep0_pt": (30, 200), "lep1_pt": (20, 150), "jet_pt": (30, 200),
+        "lhe_vpt": (0, 200), "jet1_pt": (30, 150), "met_pt_nm1": (0, 100), "npv": (10, 50),
+        "m_jj": (0, 400), "pt_balance": (0, 2)}
+for var, rng in ZOOM.items():
+    if var in VARS:
+        stack(var, HADRON, "_zoom", zoom=rng)
 
 # PNet CvL vs CvB per DY flavour and data, both channels summed, unit-normalized
 fig, axes = plt.subplots(1, 4, figsize=(34, 8))
@@ -334,7 +365,7 @@ yield_table(PARTON, "partonFlavour")
 
 if TAG != "incl" and all("nevt_tag" in o for c in camps for o in OUT[c].values()):
     L.append(f"== {TAG}: raw tagged events and mean BTV SF of the leading jet per hadron flavour (MC),")
-    WP = TAG.split("_")[1]
+    WP = TAG.split("_")[-1]
     L.append(f"   and raw events in both the b-tag and the c-tag region at WP {WP}")
     for c in camps:
         for ch in CHANNELS:
@@ -352,7 +383,8 @@ if TAG != "incl" and all("nevt_tag" in o for c in camps for o in OUT[c].values()
                     nf = n.get(f"{TAG}|{f}", 0)
                     row += f"{nf:10d}" + (f"{ssf[f'{TAG}|{f}'] / nf:8.3f}" if nf and not k.startswith("data") else f"{'':8s}")
                 ntag = sum(v for key, v in n.items() if key.startswith(f"{TAG}|"))
-                nboth = sum(v for key, v in n.items() if key.startswith(f"btag_{WP}&ctag_{WP}|"))
+                tg = "" if TAGGER == "PNet" else TAGGER
+                nboth = sum(v for key, v in n.items() if key.startswith(f"btag{tg}_{WP}&ctag{tg}_{WP}|"))
                 L.append(f"{short:22s}{row}{ntag:10d}{nboth:10d}")
             L.append("")
 
