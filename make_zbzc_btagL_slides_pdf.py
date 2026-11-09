@@ -1,10 +1,10 @@
-"""Deck: Summer22 Z + b-tagged leading jet at the Loose working point, for three taggers (PNet, DeepJet,
-RobustParT), each with its own BTV SFs, with all of the 2026-11-08 changes (muon trigger SF from both muons,
-muon pT > 26, MET without the MET cut up to 200 GeV, zoomed plots, one legend order). Like the 237-page deck,
-but only the Loose b-tag regions and the most important plots (user, 2026-11-08).
+"""Deck: Summer22 Z + b-tagged leading jet at the Loose working point for three taggers (ParticleNet, DeepJet,
+RobustParT), each with its own BTV SFs, with all of the 2026-11-08 changes. Like the 237-page deck but only the
+Loose b-tag regions; all kinematic plots of each tagger with an explanation on every page, plus the analysis
+setup slides (user, 2026-11-08: self-explanatory slides, more kinematic plots).
 
 Numbers are parsed from hists_zbzc_run3_v2/Summer22/yields.txt and yields_<region>.txt; working points from
-the BTV Summer22 correctionlib files.
+the BTV Summer22 correctionlib files. Layout and setup slides: zbzc_slides_common.py.
 
 Usage:  python make_zbzc_btagL_slides_pdf.py [--date "8 November 2026"]
 Output: hists_zbzc_run3_v2/Summer22/slides_zbzc_btagL_3taggers_Summer22.pdf
@@ -12,84 +12,42 @@ Output: hists_zbzc_run3_v2/Summer22/slides_zbzc_btagL_3taggers_Summer22.pdf
 import argparse
 import datetime
 import os
-import re
-import textwrap
 
-import correctionlib
-import matplotlib
-
-matplotlib.use("Agg")
-import matplotlib.image as mpimg
-import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.backends.backend_pdf import PdfPages
-from matplotlib.patches import FancyBboxPatch
+
+from zbzc_slides_common import (ACCENT, BODY, CHS, D, DARK, GOOD, INFO, OPEN, TAGGER_CL, Deck, bullets, heading, image,
+                                note, note_height, page, read_yields, reading_slide, setup_slides, table, text, working_points)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--date", default=None)
 args = parser.parse_args()
 DATE = args.date or datetime.date.today().strftime("%-d %B %Y")
-D = "hists_zbzc_run3_v2/Summer22"
 OUT = f"{D}/slides_zbzc_btagL_3taggers_Summer22.pdf"
-TAGGERS = {"PNet": ("btag_L", "particleNet", "PNet B"), "DeepJet": ("btagDeepJet_L", "deepJet", "DeepJet B"),
-           "RobustParT": ("btagRobustParT_L", "robustParticleTransformer", "RobustParT B")}
-CHS = {"Zee": "Z→ee", "Zmm": "Z→μμ"}
-
-# ------------------------------------------------------------------ inputs
-def read_yields(fn):
-    """{channel: dict(l, c, b, tt, VV, mc, mce, data)} from the hadronFlavour section,
-    and {channel: {dataset: (n_b, SF_b, n_c, SF_c, n_l, SF_l, n_tag, n_both) or (n_tag, n_both) for data}}."""
-    lines = open(fn).read().splitlines()
-    i = next(k for k, l in enumerate(lines) if l.startswith("== hadronFlavour"))
-    fl = {}
-    for k in range(i + 2, len(lines)):
-        if lines[k].startswith("=="):
-            break
-        p = lines[k].split()
-        if p and p[0] in CHS:
-            e = lines[k + 1].split()
-            fl[p[0]] = dict(l=float(p[1]), c=float(p[2]), b=float(p[3]), tt=float(p[4]), VV=float(p[5]),
-                            mc=float(p[6]), mce=float(e[6]), data=float(p[7]))
-    sf, ch = {}, None
-    for l in lines:
-        m = re.match(r"-- Summer22 (Zee|Zmm)$", l.strip())
-        if m:
-            ch = m.group(1)
-            sf[ch] = {}
-            continue
-        p = l.split()
-        if ch and len(p) == 9 and not p[0].startswith("dataset"):
-            sf[ch][p[0]] = tuple(map(float, p[1:]))
-        elif ch and len(p) == 6 and p[0].startswith(("Muon", "EGamma")):
-            sf[ch][p[0]] = (float(p[4]), float(p[5]))
-    return fl, sf
-
+REG = {"PNet": "btag_L", "DeepJet": "btagDeepJet_L", "RobustParT": "btagRobustParT_L"}
+LONG = {"PNet": "ParticleNet", "DeepJet": "DeepJet", "RobustParT": "RobustParT (Robust Particle Transformer)"}
+WPV = working_points()
+WP = {t: WPV[(t, "L")][0] for t in TAGGER_CL}
 
 INCL, _ = read_yields(f"{D}/yields.txt")
 Y, SF = {}, {}
-for t, (reg, _, _) in TAGGERS.items():
+for t, reg in REG.items():
     Y[t], SF[t] = read_yields(f"{D}/yields_{reg}.txt")
-    assert set(Y[t]) == set(CHS) and all(len(SF[t][c]) == 11 for c in CHS), (t, Y[t].keys(), {c: len(SF[t][c]) for c in SF[t]})
-BTV = "/cvmfs/cms-griddata.cern.ch/cat/metadata/BTV/Run3-22CDSep23-Summer22-NanoAODv12/latest"
-CB = correctionlib.CorrectionSet.from_file(f"{BTV}/btagging.json.gz")
-WP = {t: CB[f"{c}_wp_values"].evaluate(wp) for t, (_, c, _) in TAGGERS.items() for wp in ["L"]}
-WPALL = {(t, wp): CB[f"{c}_wp_values"].evaluate(wp) for t, (_, c, _) in TAGGERS.items() for wp in "LMT"}
+    assert set(Y[t]) == set(CHS) and all(len(SF[t][c]) == 11 for c in CHS), t
 
 
 def nums(t, ch):
     y, i = Y[t][ch], INCL[ch]
     r = y["data"] / y["mc"]
-    re_ = r * np.hypot(y["data"] ** -0.5, y["mce"] / y["mc"])
     effd, effm = y["data"] / i["data"], y["mc"] / i["mc"]
     er = effd / effm
-    ere = er * np.hypot(np.sqrt(effd * (1 - effd) / i["data"]) / effd, y["mce"] / y["mc"])
-    sh = {k: y[k] / y["mc"] for k in ("b", "c", "l", "tt", "VV")}
-    return dict(r=r, re=re_, effd=effd, effm=effm, er=er, ere=ere, **sh)
+    return dict(r=r, re=r * np.hypot(y["data"] ** -0.5, y["mce"] / y["mc"]), effd=effd, effm=effm, er=er,
+                ere=er * np.hypot(np.sqrt(effd * (1 - effd) / i["data"]) / effd, y["mce"] / y["mc"]),
+                **{k: y[k] / y["mc"] for k in ("b", "c", "l", "tt", "VV")})
 
 
 def mean_sf(t):
-    """Mean SF of the tagged leading jet per hadron flavour, DY MC of both channels, weighted by raw counts;
-    overlap = fraction of b-tagged jets that also pass the c-tag at the same WP (DY MC raw, data Zmm)."""
+    """Mean SF of the tagged jet per true flavour (DY MC of both channels, weighted by the number of tagged jets);
+    fraction of b-tagged jets that also pass the same tagger's Loose c-tag (DY MC, and Z->mumu data)."""
     nb = sb = nc = sc = nl = sl = ntag = nboth = 0.0
     for ch in CHS:
         for ds, v in SF[t][ch].items():
@@ -101,244 +59,212 @@ def mean_sf(t):
     return sb / nb, sc / nc, sl / nl, nboth / ntag, db / dt
 
 
-# ------------------------------------------------------------------ layout (as make_zbzc_tag_slides_pdf.py)
-W, H = 1920, 1080
-DARK, LIGHT, ACCENT, BODY, MUTED = "#14213D", "#FBFBF8", "#1F5FA8", "#4A5568", "#6A7179"
-GOOD = ("#E8F3EA", "#2E7D32", "#1B5E20")
-OPEN = ("#FDF1E4", "#E07B24", DARK)
-PX = 72 / 100
-plt.rcParams["font.family"] = "DejaVu Sans"
-FOOT = "Summer22 (2022 C–D), 13.6 TeV · Z→ℓℓ + ≥1 jet, leading jet b-tagged (Loose) · 20 files per sample · stat. errors only"
-
-
-def page(bg=LIGHT):
-    fig = plt.figure(figsize=(W / 100, H / 100), dpi=100)
-    fig.patch.set_facecolor(bg)
-    return fig
-
-
-def text(fig, x, y, s, size, color=DARK, weight="normal", ha="left", width=None, ls=1.4):
-    if width:
-        s = "\n".join(textwrap.fill(p, max(1, int(width / (0.55 * size)))) for p in s.split("\n"))
-    fig.text(x / W, 1 - y / H, s, fontsize=size * PX, color=color, weight=weight, ha=ha, va="top", linespacing=ls)
-    return y + size * ls * (s.count("\n") + 1)
-
-
-def box(fig, x, y, w, h, color):
-    fig.add_artist(FancyBboxPatch((x / W, 1 - (y + h) / H), w / W, h / H, boxstyle="round,pad=0,rounding_size=0.008",
-                                  transform=fig.transFigure, facecolor=color, edgecolor=color, lw=0))
-
-
-def heading(fig, s, sub=None):
-    y = text(fig, 128, 60, s, 52, DARK, "bold", ls=1.15)
-    if sub:
-        y = text(fig, 128, y + 6, sub, 25, BODY, width=1664)
-    return y
-
-
-def note(fig, y, title, body, style=GOOD, h=130, x=128, w=1664):
-    color, bar, tcolor = style
-    box(fig, x, y, w, h, color)
-    box(fig, x, y, 6, h, bar)
-    yy = text(fig, x + 40, y + 18, title, 27, tcolor, "bold", ls=1.2, width=w - 80) + 6
-    if body:
-        text(fig, x + 40, yy, body, 22, DARK, width=w - 80, ls=1.3)
-    return y + h
-
-
-def image(fig, path, y, x=128, w=1664, hmax=None):
-    img = mpimg.imread(path)
-    h = w * img.shape[0] / img.shape[1]
-    if hmax and h > hmax:
-        w2 = hmax * img.shape[1] / img.shape[0]
-        x, w, h = x + (w - w2) / 2, w2, hmax
-    ax = fig.add_axes([x / W, 1 - (y + h) / H, w / W, h / H])
-    ax.imshow(img, interpolation="none")
-    ax.axis("off")
-    return y + h
-
-
-def table(fig, x, y, cols, rows, size=24):
-    rh = size * 1.9
-    for i, r in enumerate([[c[0] for c in cols]] + rows):
-        cx = x
-        for (hdr, w, al), val in zip(cols, r):
-            tx = cx + (w - 12 if al == "right" else 12)
-            text(fig, tx, y + i * rh + size * 0.45, str(val), size, DARK, "bold" if i == 0 else "normal", ha=al)
-            cx += w
-        fig.add_artist(plt.Line2D([x / W, (x + sum(c[1] for c in cols)) / W], [1 - (y + (i + 1) * rh) / H] * 2,
-                                  color="#C9D3E3" if i else DARK, lw=1 if i else 2, transform=fig.transFigure))
-    return y + (len(rows) + 1) * rh
-
-
 def pct(x):
     return f"{100 * x:.0f}%"
 
 
-# (file, title, caption); the tagger's own B score is added per section
-TWOJ = "Events with at least 2 jets."
-ZOOM = "Zoom: linear scale, ratio 0.8–1.2."
+TWOJ = "Only events with at least two jets."
+Z = lambda a, b: f"Zoom: {a}–{b}, linear scale, data/MC from 0.8 to 1.2."  # noqa: E731
+# (file, title, explanation). The tagger's own scores are added per section.
 VARS = [
-    ("z_mass", "Dilepton mass", "71 < m(ℓℓ) < 111 GeV, linear scale."),
-    ("z_pt", "Z pT", "pT of the lepton pair."),
-    ("z_pt_zoom", "Z pT, 0–200 GeV", ZOOM),
-    ("z_eta", "Z η", ""),
-    ("lep0_pt", "Leading-lepton pT", "Leading lepton pT > 35 GeV."),
-    ("lep0_eta", "Leading-lepton η", ""),
-    ("lep1_pt", "Second-lepton pT", "Second lepton pT > 25 GeV (electrons), > 26 GeV (muons, new: trigger SF range)."),
+    ("z_mass", "Mass of the lepton pair, m(ℓℓ)", "The Z peak, linear scale. Selection: 71–111 GeV. Tests the lepton energy scale "
+     "and resolution."),
+    ("z_pt", "Transverse momentum of the lepton pair, pT(ℓℓ) = Z pT", "Log scale up to 1 TeV. This is the distribution with the "
+     "pT trend discussed in the follow-up slides (low at 30–60 GeV, high at 100–150 GeV)."),
+    ("z_pt_zoom", "Z pT, zoom on 0–200 GeV", Z(0, 200)),
+    ("z_eta", "Pseudorapidity of the lepton pair, η(ℓℓ)", ""),
+    ("lep0_pt", "Leading-lepton pT", "The selection requires pT > 35 GeV for the leading lepton (on the trigger plateau)."),
+    ("lep0_pt_zoom", "Leading-lepton pT, zoom on 30–200 GeV", Z(30, 200)),
+    ("lep0_eta", "Leading-lepton η", "|η| < 2.4. For electrons the barrel–endcap gap (1.44 < |η| < 1.57) is removed, so that bin is low."),
+    ("lep0_phi", "Leading-lepton φ", "Expected to be flat; dips would point to detector problems."),
+    ("lep1_pt", "Second-lepton pT", "The selection requires pT > 25 GeV for electrons and > 26 GeV for muons."),
+    ("lep1_pt_zoom", "Second-lepton pT, zoom on 20–150 GeV", Z(20, 150)),
     ("lep1_eta", "Second-lepton η", ""),
-    ("n_jet", "Number of jets", "AK4 jets with pT > 30 GeV, |η| < 2.5, away from the leptons."),
-    ("jet_pt", "Leading-jet pT", "The b-tagged jet."),
-    ("jet_pt_zoom", "Leading-jet pT, 30–200 GeV", ZOOM),
-    ("jet_eta", "Leading-jet η", ""),
-    ("jet1_pt", "Second-jet pT", TWOJ),
-    ("m_jj", "Dijet mass", TWOJ),
-    ("dphi_zj", "Δφ(Z, leading jet)", ""),
-    ("pt_balance", "pT balance: leading-jet pT / Z pT", ""),
-    ("met_pt_nm1", "PUPPI MET without the MET cut, up to 200 GeV", "All other cuts applied; the selection cuts at 50 GeV."),
-    ("npv", "Number of good primary vertices", "After pileup weights."),
+    ("lep1_phi", "Second-lepton φ", ""),
+    ("dR_ll", "Angular distance between the two leptons, ΔR(ℓℓ)", "ΔR = √(Δη² + Δφ²). Small ΔR = boosted Z."),
+    ("dphi_ll", "Azimuthal angle between the two leptons, Δφ(ℓℓ)", "Close to π (back to back) when the Z has low pT."),
+    ("n_jet", "Number of selected jets", "AK4 jets with pT > 30 GeV, |η| < 2.5, away from the leptons. The leading jet is "
+     "b-tagged here, so every event has at least one jet."),
+    ("jet_pt", "Leading-jet pT (this is the b-tagged jet)", "pT > 30 GeV."),
+    ("jet_pt_zoom", "Leading-jet pT, zoom on 30–200 GeV", Z(30, 200)),
+    ("jet_eta", "Leading-jet η", "|η| < 2.5 (tracker coverage, needed for b-tagging)."),
+    ("jet_phi", "Leading-jet φ", "Expected to be flat."),
+    ("jet1_pt", "Second-jet pT", TWOJ + " The second jet is not tagged."),
+    ("jet1_pt_zoom", "Second-jet pT, zoom on 30–150 GeV", Z(30, 150) + " " + TWOJ),
+    ("jet1_eta", "Second-jet η", TWOJ),
+    ("dR_jj", "Angular distance between the two leading jets, ΔR(jj)", TWOJ),
+    ("dphi_jj", "Azimuthal angle between the two leading jets, Δφ(jj)", TWOJ),
+    ("m_jj", "Mass of the two leading jets, m(jj)", TWOJ),
+    ("m_jj_zoom", "m(jj), zoom on 0–400 GeV", Z(0, 400) + " " + TWOJ),
+    ("dphi_zj", "Azimuthal angle between the Z and the leading jet, Δφ(Z, j)", "Close to π when the jet recoils against the Z."),
+    ("dR_zj", "Angular distance between the Z and the leading jet, ΔR(Z, j)", ""),
+    ("dR_lj_min", "Smallest ΔR between a lepton and the leading jet", "Must be > 0.4 by selection (jets overlapping a lepton are removed)."),
+    ("pt_balance", "pT balance: leading-jet pT / Z pT", "Close to 1 when the jet alone balances the Z. Sensitive to the jet "
+     "energy scale and to extra jets."),
+    ("pt_balance_zoom", "pT balance, zoom on 0–2", Z(0, 2)),
+    ("met_pt", "Missing transverse momentum (type-1 PUPPI MET), after the MET cut", "The selection requires MET < 50 GeV, so the "
+     "plot stops there."),
+    ("met_pt_nm1", "MET without the MET cut, up to 200 GeV", "All other cuts applied, so the region removed by MET < 50 GeV is "
+     "visible. tt̄ dominates at high MET. MC is above data at 40–120 GeV, as without tagging (known 2022 jet/MET issue)."),
+    ("met_pt_nm1_zoom", "MET without the MET cut, zoom on 0–100 GeV", Z(0, 100)),
+    ("npv", "Number of good primary vertices", "After the pileup weights. Data and MC differ slightly because our 20 test data "
+     "files cover runs with less (ee) or about the same (μμ) pileup as all of 2022 C–D, which the MC is weighted to."),
+    ("npv_zoom", "Number of good primary vertices, zoom on 10–50", Z(10, 50)),
+    ("lhe_vpt", "Generator-level Z pT (simulation only)", "Z pT from the event generator, before any detector effect; no data. "
+     "Shows which pT(ℓℓ)-binned DY sample contributes where."),
+    ("lhe_vpt_zoom", "Generator-level Z pT, zoom on 0–200 GeV", Z(0, 200)),
 ]
-SEC_LEN = 1 + len(VARS) + 1  # section page, plots, own B score
-N_INTRO = 4
-START = {t: N_INTRO + 1 + i * SEC_LEN for i, t in enumerate(TAGGERS)}
-for t, (reg, _, _) in TAGGERS.items():
-    for v, _, _ in VARS + [(f"jet_{t}B", "", "")]:
+SCORES = [("B", "B score (b vs everything)", "The score used for the selection: only jets above {wp} enter this region."),
+          ("CvL", "CvL score (c vs light)", "Not used in this b-tag selection; shown for comparison."),
+          ("CvB", "CvB score (c vs b)", "Not used in this b-tag selection. Low values = b-like.")]
+MAP = ("lep_eta_phi_ratio", "Lepton η–φ map: data / MC", "Both Z leptons, MC normalised to data in each map, cells of 1.0 in η × "
+       "π/4 in φ. Colour scale from 0.85 to 1.15; the number in each cell is data/MC. Few events per cell in a tagged region.")
+N_PLOTS = len(VARS) + len(SCORES) + 1
+for t, reg in REG.items():
+    for v in [x[0] for x in VARS] + [f"jet_{t}{s}" for s, _, _ in SCORES] + [MAP[0]]:
         assert os.path.exists(f"{D}/plots_{reg}/{v}.png"), (reg, v)
 
-pdf = PdfPages(OUT)
-n = 0
-
-
-def save(fig, foot=True):
-    global n
-    n += 1
-    if foot:
-        text(fig, 128, 1035, f"{FOOT} · {n}", 19, MUTED)
-    pdf.savefig(fig)
-    plt.close(fig)
-
+deck = Deck(OUT, "Summer22 (2022 C–D), 13.6 TeV · Z→ℓℓ + jet, leading jet b-tagged (Loose) · 20 files per sample · "
+                 "statistical errors only")
+N_INTRO = 7
+SEC = 1 + N_PLOTS
+START = {t: N_INTRO + 1 + i * SEC for i, t in enumerate(REG)}
 
 # ------------------------------------------------------------------ cover
 fig = page(DARK)
-text(fig, 128, 300, "Z + b-tagged jet in Summer22: three taggers at the Loose working point", 62, "white", "bold", width=1650, ls=1.15)
-text(fig, 128, 520, "ParticleNet, DeepJet and RobustParT, each with its own BTV SFs. All POG corrections, "
-     "including the muon changes of 8 November.", 32, "#C9D3E3", width=1600)
-text(fig, 128, 860, DATE, 26, "#C9D3E3")
-save(fig, foot=False)
+text(fig, 110, 280, "Z + b-tagged jet in Summer22: three taggers at the Loose working point", 60, "white", "bold", width=1700, ls=1.15)
+text(fig, 110, 500, "All kinematic distributions for ParticleNet, DeepJet and RobustParT, each with its own BTV scale factors. "
+     "All corrections, including the muon changes of 8 November.", 30, "#C9D3E3", width=1650)
+text(fig, 110, 860, DATE, 26, "#C9D3E3")
+deck.save(fig, foot=False)
 
 # ------------------------------------------------------------------ contents
 fig = page()
-y = heading(fig, "Contents", f"Selection: Z→ee or Z→μμ + at least 1 jet, leading jet b-tagged at Loose. "
-            f"Every tagger has the same {len(VARS) + 1} plots in the same order.") + 30
-rows = [["What is applied, working points", "3"], ["Yields and tagging SFs for the three taggers", "4"]]
-for t in TAGGERS:
-    rows.append([f"{t} Loose b-tag (B > {WP[t]:.4g})", f"{START[t]}–{START[t] + SEC_LEN - 1}"])
-rows.append(["Summary", str(N_INTRO + len(TAGGERS) * SEC_LEN + 1)])
-table(fig, 128, y, [("section", 1400, "left"), ("pages", 264, "right")], rows, 26)
-save(fig)
+y = heading(fig, "Contents") + 10
+rows = [["Analysis setup: data, simulation, selection, corrections, scale factors", "3–4"],
+        ["How to read the numbers", "5"], ["What this deck shows, and the three taggers", "6"],
+        ["The three taggers side by side: yields, purity, scale factors", "7"]]
+for t in REG:
+    rows.append([f"{LONG[t]}, Loose b-tag (B > {WP[t]:.4g}): {N_PLOTS} plots", f"{START[t]}–{START[t] + SEC - 1}"])
+rows.append(["Summary", str(N_INTRO + len(REG) * SEC + 1)])
+table(fig, 110, y, [("section", 1460, "left"), ("pages", 240, "right")], rows, 24)
+deck.save(fig)
 
-# ------------------------------------------------------------------ what is applied
-fig = page()
-y = heading(fig, "What goes into these plots") + 26
-y = note(fig, y, "Corrections and SFs (POG recipes)",
-         "Jets: JEC, JER, jet veto map, type-1 PUPPI MET. Leptons: scale and smearing (muons: the Run 3 replacement of "
-         "Rochester), ID, isolation and reco SFs, trigger SFs. Events: golden JSON, pileup weights, MET filters. "
-         "DY Z pT weights off.", h=170) + 22
-y = note(fig, y, "New since the 237-page deck (8 November)",
-         "Muon trigger SF from both muons (IsoMu24 fires if either muon fires) and both muons pT > 26 GeV: Z→μμ "
-         f"data/MC {INCL['Zmm']['data'] / INCL['Zmm']['mc']:.3f}, Z→ee {INCL['Zee']['data'] / INCL['Zee']['mc']:.3f}. "
-         "MET shown without the MET cut up to 200 GeV, zoomed plots, same legend order in both channels.", h=170) + 22
-rows = [[t, f"{WPALL[(t, 'L')]:.4g}", f"{WPALL[(t, 'M')]:.4g}", f"{WPALL[(t, 'T')]:.4g}",
-         f"{TAGGERS[t][1]}_comb (b, c), {TAGGERS[t][1]}_light"] for t in TAGGERS]
-y = table(fig, 128, y, [("tagger", 260, "left"), ("Loose", 170, "right"), ("Medium", 170, "right"), ("Tight", 170, "right"),
-                        ("SFs (BTV, fixed WP)", 894, "left")], rows, 23) + 8
-text(fig, 128, y, "B-score cut on the leading jet. Only Loose is shown in this deck. In MC the tagged jet gets the SF "
-     "for its true flavour.", 21, MUTED, width=1664)
-save(fig)
+setup_slides(deck)
+reading_slide(deck, extra=[
+    ("Loose b-tag", "The leading jet's b score is above the BTV Loose working point (about 10% of light jets pass)."),
+    ("Tagged", "Fraction of Z + jet events whose leading jet is tagged."),
+    ("Tag ratio", "Tagged fraction in data divided by tagged fraction in MC. Tests the tagging and its SFs, independent of the "
+                  "overall normalisation."),
+    ("Flavour share", "Share of all MC events whose leading jet is a true b, c or light jet (DY), or tt̄."),
+])
 
-# ------------------------------------------------------------------ yields + SFs
+# ------------------------------------------------------------------ what this deck shows
 fig = page()
-y = heading(fig, "Yields and tagging SFs for the three taggers",
-            "Flavour shares are of all MC (DY + tt + VV). Tagged = fraction of Z + jet events with a tagged leading jet. "
-            "Tag ratio = tagged in data / tagged in MC (the overall normalisation cancels).") + 20
+y = heading(fig, "What this deck shows",
+            "The same Z + jet selection as before, with one extra requirement: the leading jet passes the Loose b-tag of one "
+            "of three taggers. Each tagger is a separate set of plots.") + 10
+rows = [[LONG[t], f"{WPV[(t, 'L')][0]:.4g}", f"{WPV[(t, 'M')][0]:.4g}", f"{WPV[(t, 'T')][0]:.4g}",
+         f"{TAGGER_CL[t]}_comb / _light"] for t in REG]
+y = table(fig, 110, y, [("tagger (b score cut)", 600, "left"), ("Loose", 160, "right"), ("Medium", 160, "right"),
+                        ("Tight", 160, "right"), ("BTV SFs used in MC", 620, "left")], rows, 22) + 8
+y = text(fig, 110, y, "Only Loose is used here; Medium and Tight are listed for reference. The SF is applied to the tagged jet "
+         "according to its true flavour (_comb for b and c jets, _light for light jets).", 21, BODY, width=1700) + 18
+y = bullets(fig, 110, y, 1700, "How to read the plots", [
+    "Left panel Z→ee, right panel Z→μμ. Black points: data. Coloured stack: MC, split by the true flavour of the leading jet "
+    "(DY+b, DY+c, DY+light) plus tt̄ and dibosons (VV).",
+    "Lower panel: data/MC. The hatched band is the MC statistical uncertainty. No systematic uncertainties yet.",
+    "The overall data/MC is about 0.93–0.96 in every region, so points sit slightly below 1 everywhere; look at the shape.",
+    "The order of the plots is the same for each tagger, so the same page of each section can be compared directly.",
+], size=22)
+deck.save(fig)
+
+# ------------------------------------------------------------------ side by side
+fig = page()
+y = heading(fig, "The three taggers side by side",
+            "Flavour shares are of all MC. Tagged = fraction of Z + jet events whose leading jet passes the Loose b-tag. "
+            "Tag ratio = tagged fraction in data / in MC (1 = data and MC agree).") + 6
 rows = []
 for ch, lab in CHS.items():
     i = INCL[ch]
     rows.append([f"no tag, {lab}", f"{i['data'] / i['mc']:.3f}", pct(i["b"] / i["mc"]), pct(i["c"] / i["mc"]),
-                 pct(i["l"] / i["mc"]), "–", "–", "–"])
-for t in TAGGERS:
+                 pct(i["l"] / i["mc"]), "100%", "–"])
+for t in REG:
     for ch, lab in CHS.items():
         x = nums(t, ch)
         rows.append([f"{t}, {lab}", f"{x['r']:.3f} ± {x['re']:.3f}", pct(x["b"]), pct(x["c"]), pct(x["l"]),
-                     f"{100 * x['effm']:.1f}%", f"{100 * x['effd']:.1f}%", f"{x['er']:.3f} ± {x['ere']:.3f}"])
-y = table(fig, 128, y, [("", 330, "left"), ("data/MC", 230, "right"), ("DY+b", 130, "right"), ("DY+c", 130, "right"),
-                        ("DY+light", 160, "right"), ("tagged MC", 200, "right"), ("tagged data", 210, "right"),
-                        ("tag ratio", 274, "right")], rows, 22) + 22
+                     f"{100 * x['effd']:.1f}%", f"{x['er']:.3f} ± {x['ere']:.3f}"])
+y = table(fig, 110, y, [("", 360, "left"), ("data/MC", 250, "right"), ("DY+b", 140, "right"), ("DY+c", 140, "right"),
+                        ("DY+light", 170, "right"), ("tagged (data)", 250, "right"), ("tag ratio", 390, "right")],
+          rows, 21, shade_rows=(0, 1)) + 12
 rows = []
-for t in TAGGERS:
+for t in REG:
     b, c, l, ov, ovd = mean_sf(t)
     rows.append([t, f"{b:.2f}", f"{c:.2f}", f"{l:.2f}", pct(ov), pct(ovd)])
-y = table(fig, 128, y, [("mean SF of the tagged jet (DY MC)", 560, "left"), ("b jets", 180, "right"), ("c jets", 180, "right"),
-                        ("light jets", 200, "right"), ("also c-tag L, MC", 270, "right"), ("also c-tag L, data μμ", 274, "right")],
-          rows, 22) + 10
-text(fig, 128, y, "Mean SF weighted by the number of tagged DY MC jets of each flavour, both channels.", 20, MUTED)
-save(fig)
+y = table(fig, 110, y, [("mean BTV SF of the tagged jet (DY MC)", 640, "left"), ("b jets", 170, "right"), ("c jets", 170, "right"),
+                        ("light jets", 200, "right"), ("also c-tagged, MC", 260, "right"), ("data μμ", 260, "right")],
+          rows, 21) + 12
+note(fig, y, "All three select a similar sample at Loose: about 1 in 6 Z + jet events, of which only ~20% are real b jets.",
+     "Light jets are mistagged more often in data than in MC (light SF ≈ 1.2); the SFs correct for it. Most Loose b-tagged jets "
+     "also pass the Loose c-tag of the same tagger (last two columns).", INFO, size=21)
+deck.save(fig)
 
 
 # ------------------------------------------------------------------ one section per tagger
-def plot_page(t, title, var, vtitle, caption):
+def plot_page(t, var, title, expl):
     fig = page()
-    text(fig, 128, 40, title, 26, ACCENT, "bold")
-    y = text(fig, 128, 78, vtitle, 46, DARK, "bold", ls=1.15)
-    if caption:
-        y = text(fig, 128, y + 4, caption, 23, BODY, width=1664)
-    top = max(y + 12, 185)
-    image(fig, f"{D}/plots_{TAGGERS[t][0]}/{var}.png", top, hmax=1010 - top)
-    save(fig)
+    text(fig, 110, 34, f"{LONG[t]} · Loose b-tag (B > {WP[t]:.4g})", 24, ACCENT, "bold")
+    y = text(fig, 110, 70, title, 42, DARK, "bold", width=1700, ls=1.15)
+    if expl:
+        y = text(fig, 110, y + 6, expl, 23, BODY, width=1700)
+    image(fig, f"{D}/plots_{REG[t]}/{var}.png", y + 12, hmax=1025 - y - 12)
+    deck.save(fig)
 
 
-for t in TAGGERS:
-    title = f"{t} Loose b-tag ({TAGGERS[t][2]} > {WP[t]:.4g})"
+for t in REG:
     fig = page(DARK)
-    text(fig, 128, 200, f"{t}, Loose b-tag", 72, "white", "bold")
-    text(fig, 128, 330, f"Leading jet {TAGGERS[t][2]} > {WP[t]:.4g}, with the {TAGGERS[t][1]} BTV SFs", 32, "#C9D3E3", width=1600)
-    hdr = ["", "data/MC", "DY+b", "DY+c", "DY+light", "tt", "tagged MC", "tagged data"]
-    xs = [128, 420, 720, 880, 1040, 1230, 1370, 1600]
+    yy = text(fig, 110, 120, f"{LONG[t]}, Loose b-tag", 62, "white", "bold", width=1700, ls=1.15)
+    text(fig, 110, yy + 20, f"Leading jet {t} B score > {WP[t]:.4g}; MC weighted with the {TAGGER_CL[t]} BTV scale factors.",
+         30, "#C9D3E3", width=1650)
+    hdr = ["", "data/MC", "DY+b", "DY+c", "DY+light", "tt̄", "tagged MC", "tagged data"]
+    xs = [110, 400, 700, 860, 1020, 1210, 1350, 1580]
     for x, h in zip(xs, hdr):
-        text(fig, x, 470, h, 26, "#C9D3E3", "bold")
+        text(fig, x, 430, h, 26, "#C9D3E3", "bold")
     for k, (ch, lab) in enumerate(CHS.items()):
         v = nums(t, ch)
-        vals = (lab, f"{v['r']:.3f} ± {v['re']:.3f}", pct(v["b"]), pct(v["c"]), pct(v["l"]), pct(v["tt"]),
-                f"{100 * v['effm']:.1f}%", f"{100 * v['effd']:.1f}%")
-        for x, val in zip(xs, vals):
-            text(fig, x, 530 + k * 60, val, 28, "white")
-    text(fig, 128, 720, "Flavour shares are of all MC. Tagged = fraction of Z + jet events with a tagged leading jet. "
-         "Errors are statistical only.", 22, "#C9D3E3", width=1600)
-    text(fig, 128, 800, f"{len(VARS) + 1} plots follow. Left Z→ee, right Z→μμ.", 22, "#C9D3E3", width=1600)
-    save(fig)
-    for var, vtitle, caption in VARS:
-        plot_page(t, title, var, vtitle, caption)
-    plot_page(t, title, f"jet_{t}B", f"Leading-jet {TAGGERS[t][2]} score", f"Only jets above {WP[t]:.4g} enter this region.")
+        for x, val in zip(xs, (lab, f"{v['r']:.3f} ± {v['re']:.3f}", pct(v["b"]), pct(v["c"]), pct(v["l"]), pct(v["tt"]),
+                               f"{100 * v['effm']:.1f}%", f"{100 * v['effd']:.1f}%")):
+            text(fig, x, 490 + k * 60, val, 28, "white")
+    text(fig, 110, 680, "Flavour shares are of all MC. Tagged = fraction of Z + jet events whose leading jet passes the tag. "
+         "Statistical errors only.", 23, "#C9D3E3", width=1700)
+    text(fig, 110, 760, f"{N_PLOTS} plots follow, in this order: Z and leptons, jets, Z–jet, MET and vertices, generator Z pT, "
+         f"the {t} scores, the lepton η–φ map. Left Z→ee, right Z→μμ.", 23, "#C9D3E3", width=1700)
+    deck.save(fig)
+    for var, title, expl in VARS:
+        plot_page(t, var, title, expl)
+    for s, title, expl in SCORES:
+        plot_page(t, f"jet_{t}{s}", f"Leading-jet {t} {title}", expl.format(wp=f"{WP[t]:.4g}"))
+    plot_page(t, *MAP)
 
 # ------------------------------------------------------------------ summary
 fig = page()
-y = heading(fig, "Summary") + 30
-pur = {t: (nums(t, "Zee")["b"], nums(t, "Zmm")["b"]) for t in TAGGERS}
-y = note(fig, y, "All three taggers select a similar sample at Loose.",
-         "DY+b share of all MC: " + ", ".join(f"{t} {pct(a)} / {pct(b)}" for t, (a, b) in pur.items()) + " (Z→ee / Z→μμ). "
-         "About 1 in 6 Z + jet events has a Loose b-tagged leading jet; most of them are still c or light jets.", h=150) + 26
-er = {t: (nums(t, "Zee"), nums(t, "Zmm")) for t in TAGGERS}
+y = heading(fig, "Summary") + 14
+pur = {t: (nums(t, "Zee")["b"], nums(t, "Zmm")["b"]) for t in REG}
+er = {t: (nums(t, "Zee"), nums(t, "Zmm")) for t in REG}
 pulls = [abs(x["er"] - 1) / x["ere"] for a, b in er.values() for x in (a, b)]
-y = note(fig, y, "Data and MC tag the same fraction of jets " + ("within the stat. errors." if max(pulls) < 2 else "within a few percent."),
-         "Tag ratio (data / MC): " + "; ".join(f"{t} {a['er']:.3f} ± {a['ere']:.3f} / {b['er']:.3f} ± {b['ere']:.3f}"
-                                             for t, (a, b) in er.items()) + " (Z→ee / Z→μμ).",
-         style=GOOD if max(pulls) < 2 else OPEN, h=150) + 26
-ls = [mean_sf(t)[2] for t in TAGGERS]
-y = note(fig, y, f"Light jets are mistagged more in data than in MC (mean light SF {min(ls):.2f}–{max(ls):.2f}).",
-         "The SFs take care of it; the SF uncertainties are not in these plots yet.", style=OPEN, h=120) + 26
+y = note(fig, y, "The three taggers select a similar sample at the Loose working point.",
+         "Share of real b jets (DY+b) in all MC, Z→ee / Z→μμ: " + ", ".join(f"{t} {pct(a)} / {pct(b)}" for t, (a, b) in pur.items())
+         + ". Loose is a loose selection: most tagged jets are c or light jets. Medium (~60% b) and Tight (~88% b) are much purer.") + 16
+y = note(fig, y, "Data and MC tag the same fraction of jets " + ("within the statistical errors, for all three taggers."
+                                                                 if max(pulls) < 2 else "within a few percent."),
+         "Tag ratio (data/MC), Z→ee / Z→μμ: " + "; ".join(f"{t} {a['er']:.3f} / {b['er']:.3f}" for t, (a, b) in er.items())
+         + f" (largest deviation from 1: {max(pulls):.1f} standard deviations).", GOOD if max(pulls) < 2 else OPEN) + 16
+ls = [mean_sf(t)[2] for t in REG]
+y = note(fig, y, "The MC excess at MET 40–120 GeV seen without tagging is also present for all three taggers.",
+         "So it is not caused by the tagging (2022 jet/MET issue, see the follow-up slides). Compare the same page number in "
+         "each section to compare the taggers plot by plot.", INFO) + 16
 note(fig, y, "Not included yet",
-     "SF up/down uncertainties, the loose tau veto, the full dataset (these are 20 files per sample).", style=OPEN, h=110)
-save(fig)
-
-pdf.close()
-print("wrote", OUT, f"({n} pages)")
+     f"BTV SF uncertainties (light-jet SFs are {min(ls):.2f}–{max(ls):.2f}, so they matter here), other systematic uncertainties, "
+     "the loose tau veto, and the full dataset (these plots use 20 files per sample).", OPEN)
+deck.save(fig)
+deck.close()

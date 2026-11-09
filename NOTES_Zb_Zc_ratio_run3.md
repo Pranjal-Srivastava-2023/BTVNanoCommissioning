@@ -9,12 +9,17 @@ Rochester? follow POG; suggested pT > 26, |eta| < 2.4; (2) other b/c taggers (L/
 (user: DROPPED for now); (4) why ee and mumu pileup differ; (5) ee legend had DY+b / DY+c swapped;
 (6) MET plot up to ~200 GeV; (7) zoom on the high-statistics bins.
 
-STATUS 17:20 CST: DONE. Deck: hists_zbzc_run3_v2/Summer22/slides_zbzc_v2_Summer22.pdf (25 pages,
-make_zbzc_v2_slides_pdf.py; every number parsed from the output files below). Next: show the advisor;
-decisions pending (keep pair trigger SF + pT > 26 as default? which tagger/WP?), then the full dataset.
-Also (user request, 'like the 237-page deck but only important plots, Loose b-tag, 3 taggers'):
-hists_zbzc_run3_v2/Summer22/slides_zbzc_btagL_3taggers_Summer22.pdf (65 pages, make_zbzc_btagL_slides_pdf.py,
-19 plots per tagger; numbers parsed from yields*.txt). User does NOT want the ~950-page all-regions version.
+STATUS (evening): DONE. Two decks (user: slides must be self-explanatory; full setup slides; numbers parsed
+from the output files; shared layout + setup/"how to read" slides in zbzc_slides_common.py):
+- hists_zbzc_run3_v2/Summer22/slides_followup_2026-11-08_Summer22.pdf (25 p., make_zbzc_followup_pdf.py):
+  every request as question / what was done / result / meaning; tests clearly marked "not applied".
+  Replaces slides_zbzc_v2_Summer22.pdf and advisor_recommendations_2026-11-08.pdf (removed; in git history).
+- hists_zbzc_run3_v2/Summer22/slides_zbzc_btagL_3taggers_Summer22.pdf (137 p., make_zbzc_btagL_slides_pdf.py):
+  Loose b-tag, PNet / DeepJet / RobustParT, 42 explained plots per tagger. User does NOT want ~950-page all-regions.
+User was confused by the muon test table ("you turned off pileup / Tight ID?"): tests are diagnostics only; the
+default keeps everything. Say so explicitly on any slide with variants.
+Next: show the advisor; decisions pending (keep pair trigger SF + pT > 26 as default? which tagger/WP?), then
+the full dataset.
 
 Run: ZBZC_RUN=zbzc_run3_v2 run_zbzc_run3.sh Summer22 mc|data (13:08-16:28) -> hists_zbzc_run3_v2/Summer22/.
 FILE PROBLEM (exit code 0 hides it! check "Preprocessing 100% N/N" in every log): the runner's file validation

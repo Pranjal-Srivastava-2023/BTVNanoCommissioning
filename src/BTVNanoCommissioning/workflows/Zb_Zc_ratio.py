@@ -971,8 +971,9 @@ class NanoProcessor(processor.ProcessorABC):
         Zee: either electron can fire Ele30, so the event SF is
         [1 - (1 - eD0)(1 - eD1)] / [1 - (1 - eM0)(1 - eM1)] with the EGM data/MC
         HLT efficiencies (binned from pT 25, i.e. including the turn-on).
-        Zmm: the MUO IsoMu24 files give SFs only (no data/MC efficiencies), so
-        the SF of the leading muon (pT > 35, on the plateau) is used.
+        Zmm: same formula with the MUO IsoMu24 data/MC efficiencies (nominal_DATAeff /
+        nominal_MCeff, in muon_Z.json since its 2026-06 update), see mu_trig;
+        mu_trig_sf="lead" gives the leading-muon-only SF used until 2026-11-08.
         """
         w = Weights(len(ev))
         puwei(ev.Pileup.nTrueInt, self.SF_map, w, False)
