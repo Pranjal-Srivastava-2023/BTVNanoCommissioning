@@ -2,6 +2,22 @@
 
 Run 2 QCD_sf work is in `SESSION_NOTES.md`; this file is only the Run 3 ratio measurement.
 
+## RESUME HERE (2026-11-09): continue editing the two decks of 2026-11-08 (Summer22 only)
+
+Decks (last pushed dc402c9 on myfork/coffea_machine), rebuild in ~1-3 min, NO rerun needed:
+- hists_zbzc_run3_v2/Summer22/slides_followup_2026-11-08_Summer22.pdf (25 p.)  <- python make_zbzc_followup_pdf.py
+- hists_zbzc_run3_v2/Summer22/slides_zbzc_btagL_3taggers_Summer22.pdf (137 p.) <- python make_zbzc_btagL_slides_pdf.py
+- shared layout, analysis-setup slides (2) and "how to read" slide: zbzc_slides_common.py (edit there for both decks)
+- every number is parsed from the run outputs (muvar/, pu/, tagger_summary.txt, channels_summary.json, yields*.txt);
+  never type numbers into the scripts. Check pages with pdftoppm -r 50 + montage before pushing.
+User's slide rules (2026-11-08): self-explanatory, full sentences (question / what was done / found / meaning), define
+every quantity, tests labelled "not applied" with the default row highlighted, setup slides in every deck, no
+over-claiming (check plots before writing a claim), always give the full PDF path, push plots + PDFs.
+Open items the user may ask for: SF up/down uncertainty band (needs a rerun with the variations), decisions on the
+muon default and tagger/WP, full Summer22 dataset. Housekeeping: old-code worktree
+/tmp/claude-10024/-uscms-homes-p-psrivast/18f64ed0-5088-442c-8ffc-6ac8d1cb40bd/scratchpad/oldcode (957d2d9) can be
+removed with `git worktree remove --force <path>` (scratch dir may already be gone; then `git worktree prune`).
+
 ## RESUME HERE (2026-11-08): advisor's requests after the 237-page deck (Summer22 only)
 
 Advisor (meeting 2026-11-08): (1) muon-channel discrepancy: trigger turn-on, eta cut, SFs, corrections,
