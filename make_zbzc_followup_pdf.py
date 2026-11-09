@@ -298,12 +298,12 @@ def tag_page(kind):
     if worst[0] < 2:
         note(fig, y, "Similar purity at the same working point, and data and MC tag the same fraction of jets for all three.",
              f"Largest difference from 1: {worst[2]} {worst[3]} {worst[1]}, {worst[4]['er']:.3f} ± {worst[4]['ere']:.3f} "
-             f"({worst[0]:.1f} standard deviations). SF uncertainties are not included yet.")
+             f"({worst[0]:.1f} standard deviations). The SFs are applied; their uncertainties (a few %) are not included yet.")
     else:
         note(fig, y, "Similar purity at the same working point, but the tag ratios differ by a few percent between taggers.",
              "Average tag ratio: " + ", ".join(f"{t} {v:.3f}" for t, v in avg.items()) +
              f". Largest: {worst[2]} {worst[3]} {worst[1]}, {worst[4]['er']:.3f} ± {worst[4]['ere']:.3f} ({worst[0]:.1f} standard "
-             "deviations, statistical only). SF uncertainties (a few % for c-tagging) are not included yet.", OPEN)
+             "deviations, statistical only). The SFs are applied; their uncertainties (a few %) are not included yet.", OPEN)
     deck.save(fig)
 
 

@@ -314,7 +314,8 @@ def setup_slides(deck):
         "c-tag: _wc for c, _tnp for b, _light for light). Outside the SF range the SF at the edge is used.",
     ])
     y = bullets(fig, xr, y + 14, cw, "Uncertainties and software", [
-        "Statistical only (data and MC). No systematic or SF uncertainties yet.",
+        "Statistical only (data and MC). All SFs are applied with their central values; their uncertainties and the other "
+        "systematic uncertainties are not included yet.",
         "coffea 0.7, BTVNanoCommissioning (Zb_Zc_ratio workflow), correctionlib.",
     ])
     deck.save(fig)

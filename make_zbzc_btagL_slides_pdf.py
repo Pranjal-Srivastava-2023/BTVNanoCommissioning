@@ -173,7 +173,8 @@ y = text(fig, 110, y, "Only Loose is used here; Medium and Tight are listed for 
 y = bullets(fig, 110, y, 1700, "How to read the plots", [
     "Left panel Z→ee, right panel Z→μμ. Black points: data. Coloured stack: MC, split by the true flavour of the leading jet "
     "(DY+b, DY+c, DY+light) plus tt̄ and dibosons (VV).",
-    "Lower panel: data/MC. The hatched band is the MC statistical uncertainty. No systematic uncertainties yet.",
+    "Lower panel: data/MC. The hatched band is the MC statistical uncertainty only; the BTV SFs are applied, but their "
+    "uncertainties and other systematic uncertainties are not in the band yet.",
     "The overall data/MC is about 0.93–0.96 in every region, so points sit slightly below 1 everywhere; look at the shape.",
     "The order of the plots is the same for each tagger, so the same page of each section can be compared directly.",
 ], size=22)
@@ -263,8 +264,11 @@ ls = [mean_sf(t)[2] for t in REG]
 y = note(fig, y, "The MC excess at MET 40–120 GeV seen without tagging is also present for all three taggers.",
          "So it is not caused by the tagging (2022 jet/MET issue, see the follow-up slides). Compare the same page number in "
          "each section to compare the taggers plot by plot.", INFO) + 16
-note(fig, y, "Not included yet",
-     f"BTV SF uncertainties (light-jet SFs are {min(ls):.2f}–{max(ls):.2f}, so they matter here), other systematic uncertainties, "
-     "the loose tau veto, and the full dataset (these plots use 20 files per sample).", OPEN)
+note(fig, y, "The BTV SFs are applied; their uncertainties are not included yet",
+     "Applied: the BTV SF (central value) of every tagged jet in MC, for its true flavour (mean light-jet SF "
+     f"{min(ls):.2f}–{max(ls):.2f}). Not yet included: the uncertainty on these SFs, typically ±4–10% for light, ±2–8% for c "
+     "and ±1–3% for b jets at Loose. Light jets are about half of the tagged sample, so this would add a band of a few percent "
+     "(roughly 3–6%), similar to the statistical errors. Also not yet included: other systematic uncertainties, the loose tau "
+     "veto, the full dataset (20 files per sample).", OPEN)
 deck.save(fig)
 deck.close()
