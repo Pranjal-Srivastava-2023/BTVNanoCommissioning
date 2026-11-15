@@ -58,7 +58,11 @@ met_pt_nm1: PUPPI MET up to 200 GeV for events passing every cut except MET < 50
 pu_ntrue_npv (MC): true pileup vs N good PV of the selected events, to reweight
 the MC to the pileup profile of the data lumisections actually processed.
 mu_variants=True: muvar_* histograms (Zmm only, axes variant x stage) where each
-variant changes one thing in the muon selection or weights (MU_VARIANTS).
+variant changes one thing in the muon selection or weights (MU_VARIANTS); since
+2026-11-15 also one cut at a time (muon pT / |eta|, Z mass window, MET, jet pT /
+|eta| / ID, loose tau veto) for the data/MC pT-slope study.
+dphi_met / stage_dphi_met: Delta phi between MET and the jets, Z and leptons per
+MET bin (MET > 50 data/MC deficit study).
 
 The DY pT(ll)-binned samples (PTLL-X) are inclusive above X, so each one is
 restricted to its own LHE pT(ll) slice (STITCH below) and the inclusive sample
@@ -146,8 +150,13 @@ def tag_name(kind, tagger, wp):
 # w.r.t. the nominal; settings: trig (pair | lead | none: trigger SF), lead /
 # sub (leading / other muon pT threshold), eta (max |eta|), match (leading muon
 # matched to an IsoMu24 trigger object), ss (muon scale/smearing applied), idiso
-# (ID + iso SFs), pu (pileup weight)
-MU_NOMINAL = dict(trig="pair", lead=35.0, sub=26.0, eta=2.4, match=False, ss=True, idiso=True, pu=True)
+# (ID + iso SFs), pu (pileup weight); cut study (2026-11-15, one cut changed at
+# a time, values within the POG SF ranges): zlo / zhi (m(mumu) window), met (MET
+# upper cut, None = no cut), jpt / jeta (AK4 jet pT / |eta|), jid ("lepveto" =
+# tight lepton veto, "tight" = tight ID without the muEF / chEmEF < 0.8 cuts),
+# tau (loose hadronic tau veto, tau_veto_mask)
+MU_NOMINAL = dict(trig="pair", lead=35.0, sub=26.0, eta=2.4, match=False, ss=True, idiso=True, pu=True,
+                  zlo=71.0, zhi=111.0, met=50.0, jpt=30.0, jeta=2.5, jid="lepveto", tau=False)
 MU_VARIANTS = {
     "nominal": {},
     "prev": dict(trig="lead", sub=25.0),  # analysis until 2026-11-08
@@ -160,7 +169,57 @@ MU_VARIANTS = {
     "noTrigSF": dict(trig="none"),
     "noIDIsoSF": dict(idiso=False),
     "noPU": dict(pu=False),
+    # cut study 2026-11-15 (muons only; electrons untouched)
+    "sub30": dict(sub=30.0),
+    "lead30": dict(lead=30.0),
+    "mass76": dict(zlo=76.0, zhi=106.0),
+    "mass81": dict(zlo=81.0, zhi=101.0),
+    "met40": dict(met=40.0),
+    "met60": dict(met=60.0),
+    "noMET": dict(met=None),
+    "jpt25": dict(jpt=25.0),
+    "jpt40": dict(jpt=40.0),
+    "jeta24": dict(jeta=2.4),
+    "jidTight": dict(jid="tight"),
+    "tauVeto": dict(tau=True),
 }
+# loose hadronic tau veto (advisor 2026-11-08, item 3): DeepTau2018v2p5, TAU POG
+# Run 3 style loose selection; NanoAOD id codes VSjet/VSe 1..8 = VVVLoose..VVTight,
+# VSmu 1..4 = VLoose..Tight
+TAU_VETO = dict(pt=20.0, eta=2.5, dz=0.2, dms=(0, 1, 10, 11), vsjet=4, vse=2, vsmu=1, dr=0.4)
+# MET study (2026-11-15): Delta phi between MET and other objects, per MET bin
+DPHI_OBJS = ["j1", "jmin", "z", "lep0", "lep1"]
+METBINS = ["0-50", "50-100", "100+"]
+STAGE_DPHI_OBJS = ["z", "jany"]
+
+
+def met_bin(met):
+    return np.select([met < 50, met < 100], METBINS[:2], default=METBINS[2])
+
+
+def dphi(a_phi, b_phi):
+    d = np.abs(np.asarray(a_phi) - np.asarray(b_phi))
+    return np.where(d > np.pi, 2 * np.pi - d, d)
+
+
+def tau_veto_mask(events, *cleaning):
+    """True for events with a loose hadronic tau (TAU_VETO) that is dR > 0.4
+    away from every object in `cleaning` (the leptons used for jet cleaning)."""
+    c = TAU_VETO
+    tau = events.Tau
+    good = (
+        (tau.pt > c["pt"]) & (abs(tau.eta) < c["eta"]) & (abs(tau.dz) < c["dz"])
+        & (tau.idDeepTau2018v2p5VSjet >= c["vsjet"])
+        & (tau.idDeepTau2018v2p5VSe >= c["vse"])
+        & (tau.idDeepTau2018v2p5VSmu >= c["vsmu"])
+    )
+    dm = ak.zeros_like(tau.pt, dtype=bool)
+    for m in c["dms"]:
+        dm = dm | (tau.decayMode == m)
+    tau = tau[good & dm]
+    for objs in cleaning:
+        tau = tau[ak.all(tau.metric_table(objs) > c["dr"], axis=2)]
+    return ak.to_numpy(ak.num(tau) > 0)
 MU_STAGES = ["Z", "final"]
 ZPT_WEIGHTS = os.path.join(
     os.path.dirname(__file__), "..", "data", "ZbZc", "zpt_weights_run3.json"
@@ -399,6 +458,22 @@ class NanoProcessor(processor.ProcessorABC):
                     "muvar_lep1_eta": hm(Reg(24, -2.4, 2.4, name="eta", label="Subleading muon $\\eta$")),
                     "muvar_z_mass": hm(Reg(40, 71, 111, name="mass", label="$m_{\\mu\\mu}$ [GeV]")),
                     "muvar_n_jet": hm(hist.axis.Integer(0, 6, name="n", label="N AK4 jets")),
+                    "muvar_jet_pt": hm(V([25, 30, 40, 50, 60, 70, 80, 100, 125, 150, 200, 300, 500, 1000], name="pt", label="Leading AK4 jet $p_T$ [GeV]")),
+                    "muvar_jet_eta": hm(Reg(25, -2.5, 2.5, name="eta", label="Leading AK4 jet $\\eta$")),
+                    "muvar_met_pt": hm(Reg(40, 0, 200, name="pt", label="PUPPI $p_T^{miss}$ [GeV]")),
+                }
+            )
+        if self.jet == "AK4":
+            # MET study: Delta phi(MET, object) per MET bin. dphi_met: events with
+            # every cut except MET < 50 (inclusive, no tag axis); stage_dphi_met: Z
+            # events before the MET and jet cuts (stage axis), objects Z and the
+            # leading lepton-cleaned jet with pT > 15 at any |eta| ("jany")
+            mb = hist.axis.StrCategory(METBINS, name="metbin")
+            dp = Reg(16, 0, np.pi, name="dphi", label="$\\Delta\\phi(p_T^{miss}, X)$")
+            hists.update(
+                {
+                    "dphi_met": h(hist.axis.StrCategory(DPHI_OBJS, name="obj"), mb, dp, tagged=False),
+                    "stage_dphi_met": h(st, hist.axis.StrCategory(STAGE_DPHI_OBJS, name="obj"), mb, dp, tagged=False),
                 }
             )
         return hists
@@ -545,6 +620,13 @@ class NanoProcessor(processor.ProcessorABC):
         jets, lead, req_jet = self.select_jets(events, ele_jetveto, mu_jetveto)
         # events.MET = type-1 corrected PuppiMET from common_shifts
         req_met = ak.to_numpy(events.MET.pt < 50)
+        # MET study: leading lepton-cleaned jet with pT > 15 at any |eta| (the jets
+        # that enter type-1 MET; no ID), phi = nan if none
+        jany = events.Jet[events.Jet.pt > 15]
+        jany = jany[ak.all(jany.metric_table(ele_jetveto) > 0.4, axis=2)]
+        jany = jany[ak.all(jany.metric_table(mu_jetveto) > 0.4, axis=2)]
+        jany = jany[ak.argsort(jany.pt, ascending=False)]
+        jany_phi = ak.to_numpy(ak.fill_none(ak.pad_none(jany, 1, axis=1)[:, 0].phi, np.nan))
 
         ## Per-channel selection
         genw = (
@@ -605,6 +687,16 @@ class NanoProcessor(processor.ProcessorABC):
                         output, "met_pt_nm1", channel, isRealData, lead[zpre][nm1],
                         preweight[nm1], pt=ak.to_numpy(events[zpre][nm1].MET.pt),
                     )
+                    self.fill_dphi_nm1(
+                        output, channel, isRealData, events[zpre][nm1], lead[zpre][nm1],
+                        jets[zpre][nm1], zcand[zpre][nm1], l0[zpre][nm1], l1[zpre][nm1],
+                        preweight[nm1],
+                    )
+                # Delta phi(MET, Z / any-eta jet) for all Z events (stage axis)
+                self.fill_stage_dphi(
+                    output, channel, isRealData, events[zpre], lead[zpre], zcand[zpre],
+                    jany_phi[zpre], req_met[zpre], req_jet[zpre], preweight,
+                )
 
             # Z events before the jet requirement: only the jet multiplicity is
             # filled here, so that its 0 bin is populated
@@ -750,7 +842,8 @@ class NanoProcessor(processor.ProcessorABC):
             isRealData and dataset.startswith("EGamma")
         ):
             self.fill_mu_variants(
-                output, events, isRealData, genw, trig["muonTrig"], req_met, req_jet, jets
+                output, events, isRealData, genw, trig["muonTrig"], req_met, req_jet, jets,
+                ele_jetveto, mu_jetveto,
             )
 
         return {dataset: output}
@@ -1045,11 +1138,68 @@ class NanoProcessor(processor.ProcessorABC):
         e_mc = 1 - (1 - e["MCeff"][0]) * (1 - e["MCeff"][1])
         return np.where(e_mc > 0, e_data / np.where(e_mc > 0, e_mc, 1.0), 1.0)
 
-    def fill_mu_variants(self, output, events, isRealData, genw, trig_mu, req_met, req_jet, jets):
+    def fill_dphi_nm1(self, output, channel, isRealData, ev, lead, jets, z, l0, l1, weight):
+        """dphi_met: Delta phi between MET and the leading jet (j1), the closest
+        selected jet (jmin), the Z and each lepton, for events passing every cut
+        except MET < 50, split by MET bin (inclusive region)."""
+        met_phi = ak.to_numpy(ev.MET.phi)
+        common = dict(channel=channel, metbin=met_bin(ak.to_numpy(ev.MET.pt)),
+                      **self.z_flavours(isRealData, lead), weight=weight)
+        jmin = ak.to_numpy(ak.min(abs(jets.delta_phi(ev.MET)), axis=1))
+        vals = {
+            "j1": dphi(met_phi, ak.to_numpy(lead.phi)),
+            "jmin": jmin,
+            "z": dphi(met_phi, ak.to_numpy(z.phi)),
+            "lep0": dphi(met_phi, ak.to_numpy(l0.phi)),
+            "lep1": dphi(met_phi, ak.to_numpy(l1.phi)),
+        }
+        for obj, v in vals.items():
+            output["dphi_met"].fill(obj=obj, dphi=v, **common)
+
+    def fill_stage_dphi(self, output, channel, isRealData, ev, lead, z, jany_phi, met, jet, weight):
+        """stage_dphi_met: Delta phi(MET, Z) and Delta phi(MET, leading any-eta
+        jet with pT > 15) for Z events before the MET and jet cuts (stage axis
+        as in fill_stage), split by MET bin; "jany" only for events with such a jet."""
+        met_phi = ak.to_numpy(ev.MET.phi)
+        stage = np.select([met & jet, met, jet], ["MET+jet", "MET", "jet"], default="none")
+        flavs = self.z_flavours(isRealData, lead)
+        mb = met_bin(ak.to_numpy(ev.MET.pt))
+        output["stage_dphi_met"].fill(
+            channel=channel, stage=stage, obj="z", metbin=mb, **flavs,
+            dphi=dphi(met_phi, ak.to_numpy(z.phi)), weight=weight,
+        )
+        has = ~np.isnan(jany_phi)
+        if has.any():
+            output["stage_dphi_met"].fill(
+                channel=channel, stage=stage[has], obj="jany", metbin=mb[has],
+                **{k: v[has] for k, v in flavs.items()},
+                dphi=dphi(met_phi[has], jany_phi[has]), weight=weight[has],
+            )
+
+    def variant_jets(self, events, jpt, jeta, jid, ele_clean, mu_clean):
+        """AK4 jets for a cut-study variant: select_jets with pT / |eta| / ID changed
+        (lepton cleaning dR > 0.4). jid "tight": the NanoAODv12-fixed tight ID
+        without the lepton-veto cuts (muEF, chEmEF < 0.8), i.e. jetId >= 2 for
+        |eta| <= 2.7 (the only range used here)."""
+        if jid == "lepveto":
+            mask = jet_id(events, self._campaign, max_eta=jeta, min_pt=jpt)
+        else:
+            j = events.Jet
+            mask = (j.pt > jpt) & (abs(j.eta) <= jeta) & (j.jetId >= 2)
+        jets = events.Jet[mask]
+        jets = jets[ak.all(jets.metric_table(ele_clean) > 0.4, axis=2)]
+        jets = jets[ak.all(jets.metric_table(mu_clean) > 0.4, axis=2)]
+        return jets
+
+    def fill_mu_variants(self, output, events, isRealData, genw, trig_mu, req_met, req_jet, jets,
+                         ele_clean, mu_clean):
         """
         muvar_* histograms: the Zmm selection redone for each MU_VARIANTS entry
         (one change w.r.t. MU_NOMINAL), at stage "Z" (trigger, two muons, OS, Z
-        mass) and "final" (+ MET < 50 and >= 1 jet, the nominal jets and MET).
+        mass) and "final" (+ MET < met and >= 1 jet). Cut study (2026-11-15): the
+        Z mass window (zlo, zhi), MET cut (met, None = none), jets (jpt, jeta,
+        jid; variant_jets) and the loose tau veto (tau, both stages) can also be
+        changed; n_jet / jet_pt / jet_eta use the variant's jets.
         Weights as in mc_sf (pileup x per-muon ID x iso SFs from puwei / muSFs x
         mu_trig), with the parts switched off by the variant. "nominal" must
         reproduce the Zmm channel of the main histograms; "prev" the analysis
@@ -1060,11 +1210,22 @@ class NanoProcessor(processor.ProcessorABC):
         # IsoMu24 trigger objects: muon, filter bits 1 (Iso) and 3 (1mu)
         to = events.TrigObj
         to = to[(to.id == 13) & ((to.filterBits & 2) > 0) & ((to.filterBits & 8) > 0)]
-        nj = ak.to_numpy(ak.num(jets))
-        cache = {}  # (ss, sub, eta) -> selected-muon quantities
+        met = ak.to_numpy(events.MET.pt)
+        tau_veto = tau_veto_mask(events, ele_clean, mu_clean)
+        nom_jets = (MU_NOMINAL["jpt"], MU_NOMINAL["jeta"], MU_NOMINAL["jid"])
+        jet_cache = {nom_jets: jets}  # (jpt, jeta, jid) -> jets
+        cache = {}  # (ss, sub, eta, zlo, zhi) -> selected-muon quantities
         for vname, change in MU_VARIANTS.items():
             s = dict(MU_NOMINAL, **change)
-            key = (s["ss"], s["sub"], s["eta"])
+            jkey = (s["jpt"], s["jeta"], s["jid"])
+            if jkey not in jet_cache:
+                jet_cache[jkey] = self.variant_jets(events, *jkey, ele_clean, mu_clean)
+            vjets = jet_cache[jkey]
+            nj = ak.to_numpy(ak.num(vjets))
+            vlead = ak.pad_none(vjets, 1, axis=1)[:, 0]
+            v_met = np.ones(len(events), dtype=bool) if s["met"] is None else met < s["met"]
+            v_final = v_met & (nj >= 1)
+            key = (s["ss"], s["sub"], s["eta"], s["zlo"], s["zhi"])
             if key not in cache:
                 mu = cand if s["ss"] else cand_raw
                 mu = mu[(mu.pt > s["sub"]) & (abs(mu.eta) < s["eta"])]
@@ -1076,8 +1237,8 @@ class NanoProcessor(processor.ProcessorABC):
                     ak.fill_none(
                         (ak.num(mu) >= 2)
                         & (l0.charge * l1.charge < 0)
-                        & (z.mass > 71)
-                        & (z.mass < 111),
+                        & (z.mass > s["zlo"])
+                        & (z.mass < s["zhi"]),
                         False,
                     )
                 ) & trig_mu
@@ -1103,6 +1264,8 @@ class NanoProcessor(processor.ProcessorABC):
             sel_z = base & (lead_pt > s["lead"])
             if s["match"]:
                 sel_z = sel_z & matched
+            if s["tau"]:
+                sel_z = sel_z & ~tau_veto
             if not sel_z.any():
                 continue
             # weights of the base events, restricted to sel_z
@@ -1119,8 +1282,8 @@ class NanoProcessor(processor.ProcessorABC):
                 if stage == "Z":
                     m, ws = sel_z, w
                 else:
-                    keep = (req_met & req_jet)[sel_z]
-                    m, ws = sel_z & req_met & req_jet, w[keep]
+                    keep = v_final[sel_z]
+                    m, ws = sel_z & v_final, w[keep]
                 if not m.any():
                     continue
                 a0, a1, zz = l0[m], l1[m], z[m]
@@ -1132,6 +1295,12 @@ class NanoProcessor(processor.ProcessorABC):
                 output["muvar_lep0_eta"].fill(eta=ak.to_numpy(a0.eta), **common)
                 output["muvar_lep1_eta"].fill(eta=ak.to_numpy(a1.eta), **common)
                 output["muvar_n_jet"].fill(n=nj[m], **common)
+                output["muvar_met_pt"].fill(pt=met[m], **common)
+                hj = m & (nj >= 1)
+                if hj.any():
+                    cj = dict(variant=vname, stage=stage, weight=ws[hj[m]])
+                    output["muvar_jet_pt"].fill(pt=ak.to_numpy(vlead[hj].pt), **cj)
+                    output["muvar_jet_eta"].fill(eta=ak.to_numpy(vlead[hj].eta), **cj)
 
     def postprocess(self, accumulator):
         return accumulator

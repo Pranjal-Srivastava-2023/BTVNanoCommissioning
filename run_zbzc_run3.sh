@@ -8,6 +8,7 @@
 # two parallel jobs)
 # output: hists_zbzc_run3/<campaign>/zbzc_run3/zbzc_run3_<dataset>.coffea, logs in logs_zbzc_run3/<campaign>/
 # (ZBZC_WF=<workflow> picks another registered workflow, e.g. Zb_Zc_ratio_1jet)
+# (ZBZC_JSON=<file> overrides the sample json, e.g. one with a redirector fix)
 # (ZBZC_RUN=zbzc_run3_stage writes to hists_zbzc_run3_stage/, logs_zbzc_run3_stage/ instead)
 CAMP=$1
 PART=${2:-all}
@@ -18,7 +19,7 @@ case $CAMP in
 esac
 cd "$(dirname "$0")"
 source /uscms_data/d3/psrivast/micromamba/bin/activate zbb-btv
-JSON=metadata/Zb_Zc_ratio_run3_$CAMP.json
+JSON=${ZBZC_JSON:-metadata/Zb_Zc_ratio_run3_$CAMP.json}
 RUN=${ZBZC_RUN:-zbzc_run3}
 OUT=hists_$RUN/$CAMP
 LOG=logs_$RUN/$CAMP; mkdir -p "$LOG"
