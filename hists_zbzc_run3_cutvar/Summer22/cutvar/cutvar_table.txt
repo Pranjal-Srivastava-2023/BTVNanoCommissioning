@@ -1,0 +1,34 @@
+Summer22 Z->mumu cut study: one cut changed at a time (20 files per sample, lumi 741.8/pb, stat. errors only). Stage Z = trigger, 2 muons, OS, m window; final = + MET + >= 1 jet.
+slope = data/MC straight-line fit in %/100 GeV (pT(mumu) 0-400, lead mu 35-300 (lead30: 30-300), jet 30-300 (jpt25/40: from the cut)).
+
+variant    stage      data         MC        data/MC  d(ratio)   slope pT(mumu)   slope lead mu    slope jet pT  description
+nominal    Z        387029   392391.6   0.986+-0.003    +0.000       -3.5+- 0.8      -6.2+- 1.4               -  nominal: μ pT > 26, lead > 35, |η| < 2.4, 71 < m < 111, MET < 50, jet pT > 30, |η| < 2.5, TightLepVeto
+sub30      Z        351421   356398.6   0.986+-0.003    -0.000       -3.1+- 0.8      -5.8+- 1.5               -  both muons pT > 30 GeV (nominal 26)
+lead30     Z        412657   419896.5   0.983+-0.003    -0.004       -3.1+- 0.8      -4.7+- 1.4               -  leading muon pT > 30 GeV (nominal 35)
+eta21      Z        335447   339261.7   0.989+-0.004    +0.002       -3.4+- 0.8      -6.5+- 1.5               -  muon |η| < 2.1 (nominal 2.4)
+mass76     Z        379522   384853.2   0.986+-0.003    -0.000       -3.3+- 0.8      -5.8+- 1.4               -  76 < m(μμ) < 106 GeV (nominal 71-111)
+mass81     Z        364617   369347.6   0.987+-0.003    +0.001       -3.1+- 0.8      -5.6+- 1.5               -  81 < m(μμ) < 101 GeV (nominal 71-111)
+met40      Z        387029   392391.6   0.986+-0.003    +0.000       -3.5+- 0.8      -6.2+- 1.4               -  MET < 40 GeV (nominal 50)
+met60      Z        387029   392391.6   0.986+-0.003    +0.000       -3.5+- 0.8      -6.2+- 1.4               -  MET < 60 GeV (nominal 50)
+noMET      Z        387029   392391.6   0.986+-0.003    +0.000       -3.5+- 0.8      -6.2+- 1.4               -  no MET cut (nominal MET < 50)
+jpt25      Z        387029   392391.6   0.986+-0.003    +0.000       -3.5+- 0.8      -6.2+- 1.4               -  jet pT > 25 GeV (nominal 30)
+jpt40      Z        387029   392391.6   0.986+-0.003    +0.000       -3.5+- 0.8      -6.2+- 1.4               -  jet pT > 40 GeV (nominal 30)
+jeta24     Z        387029   392391.6   0.986+-0.003    +0.000       -3.5+- 0.8      -6.2+- 1.4               -  jet |η| < 2.4 (nominal 2.5)
+jidTight   Z        387029   392391.6   0.986+-0.003    +0.000       -3.5+- 0.8      -6.2+- 1.4               -  jet ID Tight (nominal TightLepVeto)
+tauVeto    Z        386175   391312.0   0.987+-0.003    +0.001       -3.5+- 0.8      -6.2+- 1.4               -  loose τh veto (nominal: none)
+
+nominal    final     62865    66631.6   0.943+-0.009    +0.000       -0.9+- 1.2      -1.4+- 2.0      -2.0+- 1.7  nominal: μ pT > 26, lead > 35, |η| < 2.4, 71 < m < 111, MET < 50, jet pT > 30, |η| < 2.5, TightLepVeto
+sub30      final     51744    54950.2   0.942+-0.010    -0.002       -0.8+- 1.3      -1.7+- 2.1      -2.2+- 1.8  both muons pT > 30 GeV (nominal 26)
+lead30     final     63976    67861.4   0.943+-0.009    -0.001       -0.8+- 1.2      -1.3+- 2.0      -2.2+- 1.7  leading muon pT > 30 GeV (nominal 35)
+eta21      final     55087    58383.3   0.944+-0.009    +0.000       -0.8+- 1.3      -1.8+- 2.1      -1.9+- 1.8  muon |η| < 2.1 (nominal 2.4)
+mass76     final     61565    65253.5   0.943+-0.009    +0.000       -0.7+- 1.2      -1.1+- 2.0      -1.8+- 1.8  76 < m(μμ) < 106 GeV (nominal 71-111)
+mass81     final     59135    62588.7   0.945+-0.009    +0.001       -0.6+- 1.2      -0.8+- 2.1      -1.8+- 1.8  81 < m(μμ) < 101 GeV (nominal 71-111)
+met40      final     57780    60198.7   0.960+-0.010    +0.016       -1.4+- 1.3      -1.6+- 2.1      -2.8+- 1.9  MET < 40 GeV (nominal 50)
+met60      final     65252    70001.8   0.932+-0.009    -0.011       -1.2+- 1.2      -1.8+- 1.9      -2.2+- 1.7  MET < 60 GeV (nominal 50)
+noMET      final     67533    73503.7   0.919+-0.008    -0.025       -1.1+- 1.1      -2.1+- 1.8      -1.9+- 1.6  no MET cut (nominal MET < 50)
+jpt25      final     79108    83717.1   0.945+-0.008    +0.001       -0.6+- 1.1      -1.1+- 1.9      -2.1+- 1.6  jet pT > 25 GeV (nominal 30)
+jpt40      final     42331    44777.1   0.945+-0.011    +0.002       -1.6+- 1.4      -2.5+- 2.2      -2.8+- 2.0  jet pT > 40 GeV (nominal 30)
+jeta24     final     61720    65578.1   0.941+-0.009    -0.002       -0.7+- 1.2      -1.5+- 2.0      -1.9+- 1.7  jet |η| < 2.4 (nominal 2.5)
+jidTight   final     63001    66742.4   0.944+-0.009    +0.000       -0.9+- 1.2      -1.5+- 2.0      -2.1+- 1.7  jet ID Tight (nominal TightLepVeto)
+tauVeto    final     62229    65817.6   0.945+-0.009    +0.002       -0.9+- 1.2      -1.4+- 2.0      -2.1+- 1.7  loose τh veto (nominal: none)
+

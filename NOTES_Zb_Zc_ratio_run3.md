@@ -4,6 +4,21 @@ Run 2 QCD_sf work is in `SESSION_NOTES.md`; this file is only the Run 3 ratio me
 
 ## RESUME HERE (2026-11-15): Zmm cut study + tau veto + Delta phi(MET) (Summer22, run zbzc_run3_cutvar)
 
+STATUS 2026-11-15 evening: DONE. Run 14:30-17:28, all samples N/N (DY 20/20 x5, tt/WW/WZ/ZZ 20/20, Muon 12+8,
+EGamma 15+5), no ERROR lines. Regression vs v2: all 54 common hists x 13 samples identical, sumw identical.
+Deck: hists_zbzc_run3_cutvar/Summer22/slides_zbzc_cutvar_Summer22.pdf (176 p., make_zbzc_cutvar_pdf.py);
+plots/table: hists_zbzc_run3_cutvar/Summer22/cutvar/ (plot_zbzc_cutvar.py; cutvar_table.txt).
+Results (Zmm, stat only): no cut changes the slope: final pT(mumu) slope -1.6..-0.6 %/100 GeV (nominal -0.9+-1.2),
+jet pT -2.8..-1.8 (nom -2.0+-1.7); overlays identical point by point (dip at pT(mumu) 25-50 everywhere).
+Only MET cut moves data/MC: 0.960 (<40) 0.943 (<50) 0.932 (<60) 0.919 (none); others <= 0.002.
+Tau veto: data -1.0 %, MC -1.2 %, data/MC 0.943 -> 0.945. Z stage slope -3.5+-0.8, muon variants -3.5..-3.1.
+Delta phi: 0-jet Z events with a lepton-cleaned jet pT > 15 any eta: MC 49 % vs data 38 % (Zee 48 vs 37);
+MET 50-100 0-jet: 70 % of MC has MET opposite that jet (dphi > 2.5), data/MC there 0.39 (Zee 0.40);
+N-1 MET 50-100 Zmm: data/MC 0.52/0.63/0.78 vs dphi(MET,j1) <0.6/0.6-2.5/>2.5, 0.60/0.67/0.78 vs dphi(MET,Z):
+deficit in every direction, smallest back-to-back. Reading (NOT proven): soft/forward MC jets too energetic
+(JER smearing of unmatched jets?), fits 2026-10-28 nojer test. Next proposed: Delta phi + jany pT/eta with
+nojer (diag_zbzc_met.py), then recoil u_par/u_perp. Await user/advisor.
+
 User/advisor asks (2026-11-15): (a) MET > 50 deficit "thoroughly" -> START WITH Delta phi only; (b) does
 RobustParT reduce it -> NO (answered from v2 outputs, see below); (c) change the CURRENT cuts one at a time,
 staying at POG-like values, plots for all (many slides OK); MUONS ONLY, electron cuts untouched; (d) loose

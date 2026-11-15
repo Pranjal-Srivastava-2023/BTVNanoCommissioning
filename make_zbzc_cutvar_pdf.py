@@ -55,15 +55,112 @@ VLABEL = {"muvar_z_pt": "pT(μμ)", "muvar_lep0_pt": "leading muon pT", "muvar_l
           "muvar_jet_eta": "leading jet η", "muvar_z_mass": "m(μμ)", "muvar_met_pt": "MET", "muvar_n_jet": "number of jets"}
 CUTVARS = [v for g in GROUPS.values() for v in g[1] if f"{v}|final" in T]
 
-# ---- hand-written after looking at the plots (None = page not written yet)
-FINDINGS = None      # list of (title, body) for the summary page
-DPHI_FINDINGS = None  # (title, body) for the Delta phi conclusion
-
-deck = Deck(OUTPDF, "Summer22 (2022 C–D), 13.6 TeV · Z→μμ + jets · 20 files per sample · statistical errors only")
-
-
 def row(v, stage, var):
     return T[f"{v}|{stage}"].get(var)
+
+
+XS = json.load(open("metadata/Zb_Zc_ratio_xsections_run3.json"))
+LUMI = json.load(open(f"{RD}/lumi.json"))
+OUT = {}
+for f in sorted(glob.glob(f"{RD}/zbzc_run3/zbzc_run3_*.coffea")):
+    OUT.update(load(f))
+DR = [(0, 0.6, "Δφ < 0.6"), (0.6, 2.5, "0.6–2.5"), (2.5, np.pi + 1e-6, "Δφ > 2.5")]
+
+
+def dphi_ratios(ch, obj, metbin, name="dphi_met", stages=None):
+    nb = len(OUT[next(iter(OUT))][name].axes["dphi"].edges) - 1
+    d, m = np.zeros(nb), np.zeros(nb)
+    for ds, o in OUT.items():
+        h = o[name][{"channel": ch, "flav": sum, "pflav": sum, "obj": obj, "metbin": metbin}]
+        if stages is not None:
+            h = sum(h[{"stage": s}] for s in stages)
+        if ds.startswith(("Muon", "EGamma")):
+            if ds.startswith("Muon" if ch == "Zmm" else "EGamma"):
+                d = d + h.values()
+        else:
+            m = m + h.values() * XS[ds] * LUMI[ch] / o["sumw"]
+    e = OUT[next(iter(OUT))][name].axes["dphi"].edges
+    c = 0.5 * (e[1:] + e[:-1])
+    out = []
+    for lo, hi, _ in DR:
+        s = (c >= lo) & (c < hi)
+        out.append((d[s].sum() / m[s].sum() if m[s].sum() > 0 else np.nan, d[s].sum(), m[s].sum() / m.sum()))
+    return out
+
+
+def nzero_frac(ch):
+    """Share of Z events without a selected jet that have a lepton-cleaned jet with pT > 15 at any |eta|:
+    (data, MC)."""
+    out = []
+    for obj in ("jany", "z"):
+        d = m = 0.0
+        for ds, o in OUT.items():
+            h = o["stage_dphi_met"][{"channel": ch, "flav": sum, "pflav": sum, "obj": obj, "metbin": sum}]
+            v = sum(h[{"stage": s}].sum().value for s in ("none", "MET"))
+            if ds.startswith(("Muon", "EGamma")):
+                if ds.startswith("Muon" if ch == "Zmm" else "EGamma"):
+                    d += v
+            else:
+                m += v * XS[ds] * LUMI[ch] / o["sumw"]
+        out.append((d, m))
+    return out[0][0] / out[1][0], out[0][1] / out[1][1]
+
+
+# ---- findings: written after looking at every plot (2026-11-15); all numbers filled in from the outputs
+_fin = {v: row(v, "final", "muvar_z_pt") for v in ["nominal"] + CUTVARS}
+_jet = {v: row(v, "final", "muvar_jet_pt") for v in ["nominal"] + CUTVARS}
+_zst = {v: row(v, "Z", "muvar_z_pt") for v in ["nominal"] + CUTVARS}
+_s = [r["slope"] for r in _fin.values()]
+_sj = [r["slope"] for r in _jet.values()]
+_szm = [_zst[v]["slope"] for v in ["nominal"] + [v for v in CUTVARS if v in GROUPS["mupt"][1] + GROUPS["mueta"][1]]]
+_nonmet = [v for v in CUTVARS if v not in GROUPS["met"][1]]
+_dmax = max(abs(_fin[v]["ratio"] - _fin["nominal"]["ratio"]) for v in _nonmet)
+_n, _t = _fin["nominal"], _fin["tauVeto"]
+FINDINGS = [
+    ("No single cut changes the data/MC slope versus pT.",
+     f"We changed {len(CUTVARS)} cuts one at a time (muon pT and |η|, Z mass window, MET, jet pT / |η| / ID, τ veto). "
+     f"After the full selection the slope of data/MC versus pT(μμ) stays between {min(_s):+.1f} and {max(_s):+.1f} %/100 GeV "
+     f"(nominal {_n['slope']:+.1f} ± {_n['slope_err']:.1f}), and versus the leading-jet pT between {min(_sj):+.1f} and "
+     f"{max(_sj):+.1f} (nominal {_jet['nominal']['slope']:+.1f} ± {_jet['nominal']['slope_err']:.1f}). The overlay plots show "
+     "the same point-by-point pattern for every variant, including the low data/MC at pT(μμ) ≈ 25–50 GeV."),
+    ("Only the MET cut moves the normalisation.",
+     f"data/MC = {_fin['met40']['ratio']:.3f} (MET < 40), {_n['ratio']:.3f} (< 50, nominal), {_fin['met60']['ratio']:.3f} (< 60), "
+     f"{_fin['noMET']['ratio']:.3f} (no cut): the looser the MET cut, the lower data/MC, because MC has too many events with "
+     f"MET > 40 GeV. All other variants change data/MC by at most {_dmax:.3f}."),
+    ("The loose τ veto removes about 1% of the events, the same in data and MC.",
+     f"Full selection: data {100 * (_t['data'] / _n['data'] - 1):+.1f}%, MC {100 * (_t['mc'] / _n['mc'] - 1):+.1f}%; "
+     f"data/MC {_n['ratio']:.3f} → {_t['ratio']:.3f}; the fitted slopes are unchanged (result table). τ ID scale factors "
+     "are not applied."),
+    ("Before the jet and MET cuts the pT(μμ) slope is larger, and muon cuts do not change it.",
+     f"Z selection only: slope {_zst['nominal']['slope']:+.1f} ± {_zst['nominal']['slope_err']:.1f} %/100 GeV; with the muon "
+     f"pT or |η| variants {min(_szm):+.1f} to {max(_szm):+.1f}. This is the known DY Z pT modelling (8 November deck), "
+     "not a muon effect."),
+    ("Open: the MET > 50 GeV deficit. First Δφ result on the last pages.", ""),
+]
+_fd, _fm = nzero_frac("Zmm")
+_fde, _fme = nzero_frac("Zee")
+_a = dphi_ratios("Zmm", "jany", "50-100", "stage_dphi_met", ["none", "MET"])
+_ae = dphi_ratios("Zee", "jany", "50-100", "stage_dphi_met", ["none", "MET"])
+_j = dphi_ratios("Zmm", "j1", "50-100")
+_z = dphi_ratios("Zmm", "z", "50-100")
+DPHI_FINDINGS = [
+    ("MC has more soft or forward jets than data, and its extra MET points away from them.",
+     f"In Z events without a selected jet, {100 * _fm:.0f}% of the MC events have a jet with pT > 15 GeV at any |η| "
+     f"(after lepton cleaning) against {100 * _fd:.0f}% of the data (Z→μμ; Z→ee {100 * _fme:.0f}% vs {100 * _fde:.0f}%). "
+     f"With MET 50–100 GeV, {100 * _a[2][2]:.0f}% of these MC events have the MET opposite to that jet (Δφ > 2.5), and "
+     f"there data/MC is {_a[2][0]:.2f} (Z→ee {_ae[2][0]:.2f}). MET opposite to a jet means the jet carries too much pT "
+     "compared with the rest of the event."),
+    ("With a selected jet, the deficit is in every direction.",
+     f"All cuts except MET, MET 50–100 GeV, Z→μμ: data/MC {_j[0][0]:.2f} / {_j[1][0]:.2f} / {_j[2][0]:.2f} for Δφ(MET, leading "
+     f"jet) < 0.6 / 0.6–2.5 / > 2.5, and {_z[0][0]:.2f} / {_z[1][0]:.2f} / {_z[2][0]:.2f} for Δφ(MET, Z). It is smallest when "
+     "the MET is opposite to the jet or the Z. So the extra MC MET does not come from one badly measured hard jet."),
+    ("Our reading, not proven yet: soft or forward MC jets come out too energetic.",
+     "This fits the 28 October test, where switching off the MC jet energy smearing removed most of the 2022 MET tail. "
+     "Next: the same Δφ plots and the pT / |η| of these jets with the MC smearing switched off (diag_zbzc_met.py nojer), "
+     "then the recoil components along and across the Z."),
+]
+
+deck = Deck(OUTPDF, "Summer22 (2022 C–D), 13.6 TeV · Z→μμ + jets · 20 files per sample · statistical errors only")
 
 
 def fmt_slope(r):
@@ -86,7 +183,7 @@ if FINDINGS is None:
     note(fig, y, "Summary not written yet", "Placeholder: filled in after looking at every plot.", OPEN)
 else:
     for title, body in FINDINGS:
-        y = note(fig, y, title, body, GOOD if not title.startswith("Open") else OPEN) + 14
+        y = note(fig, y, title, body, GOOD if not title.startswith("Open") else OPEN, size=19) + 10
 deck.save(fig)
 
 setup_slides(deck)
@@ -219,33 +316,6 @@ for g, (gname, members) in GROUPS.items():
             deck.save(fig)
 
 # ------------------------------------------------------------------ MET: Delta phi
-XS = json.load(open("metadata/Zb_Zc_ratio_xsections_run3.json"))
-LUMI = json.load(open(f"{RD}/lumi.json"))
-OUT = {}
-for f in sorted(glob.glob(f"{RD}/zbzc_run3/zbzc_run3_*.coffea")):
-    OUT.update(load(f))
-DR = [(0, 0.6, "Δφ < 0.6"), (0.6, 2.5, "0.6–2.5"), (2.5, np.pi + 1e-6, "Δφ > 2.5")]
-
-
-def dphi_ratios(ch, obj, metbin, name="dphi_met", stages=None):
-    nb = len(OUT[next(iter(OUT))][name].axes["dphi"].edges) - 1
-    d, m = np.zeros(nb), np.zeros(nb)
-    for ds, o in OUT.items():
-        h = o[name][{"channel": ch, "flav": sum, "pflav": sum, "obj": obj, "metbin": metbin}]
-        if stages is not None:
-            h = sum(h[{"stage": s}] for s in stages)
-        if ds.startswith(("Muon", "EGamma")):
-            if ds.startswith("Muon" if ch == "Zmm" else "EGamma"):
-                d = d + h.values()
-        else:
-            m = m + h.values() * XS[ds] * LUMI[ch] / o["sumw"]
-    e = OUT[next(iter(OUT))][name].axes["dphi"].edges
-    c = 0.5 * (e[1:] + e[:-1])
-    out = []
-    for lo, hi, _ in DR:
-        s = (c >= lo) & (c < hi)
-        out.append((d[s].sum() / m[s].sum() if m[s].sum() > 0 else np.nan, d[s].sum(), m[s].sum() / m.sum()))
-    return out
 
 
 fig = page(DARK)
@@ -275,18 +345,21 @@ bullets(fig, 110, y, 1700, "How to read Δφ", [
 deck.save(fig)
 
 fig = page()
-y = heading(fig, "Δφ: where is the deficit? (all cuts except MET)",
-            "data/MC in three Δφ ranges per MET bin; in brackets the share of the MC in that range.") + 6
-cols = [("Channel", 150, "left"), ("Object", 290, "left"), ("MET bin", 170, "left")] + \
-       [(lab, 380, "right") for _, _, lab in DR]
+y = heading(fig, "Δφ: where is the deficit?",
+            "data/MC in three Δφ ranges per MET bin; in brackets the share of the MC in that range. 'leading jet' and 'Z': "
+            "all cuts except MET. '(0 jets)': Z events without a selected jet, no MET cut.") + 6
+cols = [("Channel", 140, "left"), ("Object", 330, "left"), ("MET bin", 150, "left")] + \
+       [(lab, 360, "right") for _, _, lab in DR]
 rows = []
 for ch in ("Zmm", "Zee"):
-    for obj in ("j1", "z"):
+    for obj, name, st, lab in (("j1", "dphi_met", None, "leading jet"), ("z", "dphi_met", None, "Z"),
+                               ("z", "stage_dphi_met", ["none", "MET"], "Z (0 jets)"),
+                               ("jany", "stage_dphi_met", ["none", "MET"], "any jet>15 (0 jets)")):
         for mb in ("0-50", "50-100"):
-            r = dphi_ratios(ch, obj, mb)
-            rows.append([{"Zmm": "Z→μμ", "Zee": "Z→ee"}[ch], {"j1": "leading jet", "z": "Z"}[obj], mb] +
+            r = dphi_ratios(ch, obj, mb, name, st)
+            rows.append([{"Zmm": "Z→μμ", "Zee": "Z→ee"}[ch], lab, mb] +
                         [f"{a:.2f} ({100 * s:.0f}% MC)" for a, n, s in r])
-table(fig, 110, y, cols, rows, size=19)
+table(fig, 110, y, cols, rows, size=16)
 deck.save(fig)
 
 for obj, lab in (("j1", "leading jet"), ("jmin", "closest selected jet"), ("z", "Z"), ("lep0", "leading lepton"),
@@ -313,8 +386,7 @@ y = heading(fig, "Δφ: what it tells us, and next steps") + 10
 if DPHI_FINDINGS is None:
     note(fig, y, "Not written yet", "Placeholder: filled in after looking at the Δφ plots.", OPEN)
 else:
-    y = note(fig, y, *DPHI_FINDINGS[0], GOOD) + 14
-    for t, b in DPHI_FINDINGS[1:]:
-        y = note(fig, y, t, b, OPEN) + 14
+    for t, b in DPHI_FINDINGS:
+        y = note(fig, y, t, b, OPEN if t.startswith("Our reading") else GOOD, size=21) + 14
 deck.save(fig)
 deck.close()
