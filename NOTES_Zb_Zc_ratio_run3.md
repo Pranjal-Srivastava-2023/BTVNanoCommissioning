@@ -2,6 +2,33 @@
 
 Run 2 QCD_sf work is in `SESSION_NOTES.md`; this file is only the Run 3 ratio measurement.
 
+## RESUME HERE (2026-11-15): Zmm cut study + tau veto + Delta phi(MET) (Summer22, run zbzc_run3_cutvar)
+
+User/advisor asks (2026-11-15): (a) MET > 50 deficit "thoroughly" -> START WITH Delta phi only; (b) does
+RobustParT reduce it -> NO (answered from v2 outputs, see below); (c) change the CURRENT cuts one at a time,
+staying at POG-like values, plots for all (many slides OK); MUONS ONLY, electron cuts untouched; (d) loose
+tau veto (advisor 2026-11-08 item 3) as a variant; (e) statistics box on plots. N_jet 0-bin: dropped by user.
+Code 0f3c281 (local commit, fork not pushed yet): MU_VARIANTS + sub30 lead30 mass76 mass81 met40 met60 noMET
+jpt25 jpt40 jeta24 jidTight tauVeto (eta21 already there); muvar_jet_pt/jet_eta/met_pt; dphi_met (all cuts but
+MET, obj j1 jmin z lep0 lep1 x metbin 0-50/50-100/100+) and stage_dphi_met (Z events, stage axis, obj z / jany =
+leading lepton-cleaned jet pT > 15 any eta). Tau veto: DeepTau2018v2p5 VSjet>=Loose(4), VSe>=VVLoose(2),
+VSmu>=VLoose(1), pT > 20, |eta| < 2.5, |dz| < 0.2, DM 0/1/10/11, dR > 0.4 from jet-cleaning leptons.
+1-file test OK: muvar nominal == main Zmm exactly (MC + data); dphi totals == met_pt_nm1 / stage_z_pt;
+tauVeto removes 0.3-0.9 %.
+Run started 2026-11-15 14:30 on cmslpc352: ZBZC_RUN=zbzc_run3_cutvar ZBZC_JSON=logs_zbzc_run3_v2/
+Zb_Zc_ratio_run3_Summer22_dyredir.json run_zbzc_run3.sh Summer22 mc|data -> hists_zbzc_run3_cutvar/Summer22/.
+CHECK "Preprocessing 100% N/N" in every log (exit 0 can hide dropped files). 14:32 DY MLL-50 0ce05172 timed out
+AGAIN even via cmsxrootd (19/19); file read fine 2 min later -> mc half killed + restarted 14:36, DY 20/20
+(killed logs kept as *_killed_19of20.log). Muon_Run2022C 12/12 as in v2.
+Deck: make_zbzc_cutvar_pdf.py (shared defs zbzc_cutvar_defs.py); FINDINGS / DPHI_FINDINGS are None placeholders
+-> write them by hand after looking at the plots. Test deck on 1-file outputs: 176 pages, layout OK. Then: cp lumi.json from v2,
+python plot_zbzc_cutvar.py hists_zbzc_run3_cutvar/Summer22 -> cutvar/ (table, var_*, ovl_*, dphi_*, stage_dphi_*),
+deck (to write: make_zbzc_cutvar_pdf.py with zbzc_slides_common), push plots + PDF, give full PDF path.
+Already known from v2 (met_pt_nm1 per tag region, MET 50-100 data/MC, Zmm): PNet/DeepJet/RobustParT agree at
+the same WP (bL 0.70/0.70/0.74, bT 0.89/0.92/0.86, cL 0.65/0.66/0.66); deficit follows the DY+light share, not
+the tagger. Z events with 0 selected jets: data/MC 1.13 (MET<25), 0.77, 0.42, 0.35 (75-100) -> MC MET too wide
+even without jets (fits 2026-10-28 "nojer removes most of the 2022 MET tail").
+
 ## RESUME HERE (2026-11-09): continue editing the two decks of 2026-11-08 (Summer22 only)
 
 Decks (last pushed dc402c9 on myfork/coffea_machine), rebuild in ~1-3 min, NO rerun needed:
