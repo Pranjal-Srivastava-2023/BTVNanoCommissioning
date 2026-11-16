@@ -296,7 +296,10 @@ def setup_slides(deck):
     y = bullets(fig, xl, top, cw, "Jets and MET", [
         "Jet energy corrections Summer22_22Sep2023_V4 (data per run era and MC); jet energy resolution smearing "
         "Summer22_22Sep2023_JRV2 (MC)" + (" in the nominal run; switched off in the second run of this deck (the test)."
-                                          if SETUP.get("jer") == "both" else "."),
+                                          if SETUP.get("jer") == "both" else
+                                          ". Run A: all jets smeared (nominal). Run B: no smearing, neither the jets nor the "
+                                          "MET. Run C: jets smeared as in A, but in the type-1 MET only gen-matched jets are "
+                                          "smeared." if SETUP.get("jer") == "abc" else "."),
         "Type-1 PUPPI MET recomputed with the corrected jets.",
     ] + ([
         "PUPPI MET XY correction (JME met_xyCorrections_2022, epoch 2022, data and MC versions): removes the "

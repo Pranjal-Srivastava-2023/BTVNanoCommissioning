@@ -1,6 +1,7 @@
 MET > 50 study, Summer22, 20 files per sample, statistical errors only
 zpt = 8 Nov setup + DY Z pT weights (no MET XY); JER / noJER = zpt + PuppiMET XY, MC with / without JER smearing
-Data: zpt run for zpt, metxy run for JER and noJER (data are the same events; only the XY correction differs).
+matched (if present) = JER smearing in the type-1 MET only for gen-matched jets, analysis jets nominal
+Data: zpt run for zpt, metxy run for JER, noJER and matched (data are the same events; only the XY correction differs).
 
 == data/MC, all cuts except MET, per MET bin
             run                   0-50            50-100           100-200

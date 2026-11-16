@@ -2,7 +2,25 @@
 
 Run 2 QCD_sf work is in `SESSION_NOTES.md`; this file is only the Run 3 ratio measurement.
 
-## RESUME HERE (2026-11-16, MET study): MET > 50 deficit, Delta phi + recoil + JER on/off, MET XY correction
+## RESUME HERE (2026-11-16 evening, RUN C done): JER in type-1 MET only for gen-matched jets
+
+STATUS 2026-11-16 ~17:00: run C finished 15:37, postprocess 15:44; every log N/N (DY 20/20 x5, tt/WW/WZ/ZZ 20/20), 2x
+"ALL DONE", no tracebacks. Deck (19 p.): PYTHONPATH=$PWD python make_zbzc_metc_slides_pdf.py ->
+hists_zbzc_run3_metxy_jermatched/Summer22/slides_zbzc_metC_Summer22.pdf (setup slides via SETUP jer="abc").
+RESULTS (data/MC all cuts except MET, MET 50-100, stat only): Zee A 0.697 / C 0.836 / B 0.964;
+  Zmm A 0.687 / C 0.844 / B 0.961. C better in every Delta phi(MET, j1) bin, still below B.
+  Z stage (no jet cut) Delta phi(MET, any-eta jet>15) at MET 50-100: A 0.50/0.49, C 0.66/0.67, B 0.72/0.72 (Zee/Zmm).
+  Recoil RMS(u_perp) Z events qT<10: data 13.9, A 17.1, B 15.7, C 15.9 -> ~2 GeV extra MC width NOT from JER.
+  Response u_par+qT identical in A/B/C (data 1-2.5 GeV higher).
+  MC cutflow of C == A up to Zmass (jets identical); final data/MC (all weights) A 0.971/0.964, B 0.959/0.952,
+  C 0.954/0.945; pT balance chi2/ndf A 40,110  B 58,144  C 45,125 (C's change = only MET-cut event selection).
+  -> random smearing of jets without gen jet (incl. all CorrT1METJet) in T1 MET ~ half of the deficit; the other half
+     from smearing of gen-matched jets in the MET (untested causes: JER SFs of soft/forward jets, genJetIdx matching
+     vs JME dR<R/2 & 3 sigma, our T1 propagation vs JME recipe).
+Proposed next (need user OK, nothing running): split the MET change from smearing by jet pT/|eta| (extra histo,
+short run); check JER SF / matching; compare T1 propagation with JME recipe; unclustered/pileup part for the recoil.
+
+## (earlier) RESUME HERE (2026-11-16, MET study): MET > 50 deficit, Delta phi + recoil + JER on/off, MET XY correction
 
 STATUS 2026-11-16 ~14:30: DONE, pushed 325fb66 (+ this notes commit). Runs finished 13:49, every log N/N (DY 20/20
 x5, tt/WW/WZ/ZZ 20/20 in both runs, Muon 12+8, EGamma 15+5), no non-zero exits. Deck 158 p.
