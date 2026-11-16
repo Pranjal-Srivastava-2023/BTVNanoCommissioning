@@ -6,23 +6,57 @@ setup slides (user, 2026-11-08: self-explanatory slides, more kinematic plots).
 Numbers are parsed from hists_zbzc_run3_v2/Summer22/yields.txt and yields_<region>.txt; working points from
 the BTV Summer22 correctionlib files. Layout and setup slides: zbzc_slides_common.py.
 
-Usage:  python make_zbzc_btagL_slides_pdf.py [--date "8 November 2026"]
-Output: hists_zbzc_run3_v2/Summer22/slides_zbzc_btagL_3taggers_Summer22.pdf
+--setup (2026-11-16): the same deck for another run that differs in ONE thing from its reference run (SETUPS);
+an extra page after the cover says what changed and compares yields and data/MC with the reference deck.
+The plots carry a statistics box (plot_zbzc_run3.py, from 2026-11-16 on).
+
+Usage:  python make_zbzc_btagL_slides_pdf.py [--setup v2|zpt|zpt_mupt30|zpt_mueta21|zpt_tauveto] [--date "8 November 2026"]
+Output: <run dir>/slides_zbzc_btagL_3taggers_Summer22[_<setup>].pdf
+(plots first: ZBZC_RUN=<run> ZBZC_TAG=<incl|btag_L|btagDeepJet_L|btagRobustParT_L> python plot_zbzc_run3.py Summer22)
 """
 import argparse
 import datetime
+import glob
 import os
 
 import numpy as np
 
-from zbzc_slides_common import (ACCENT, BODY, CHS, D, DARK, GOOD, INFO, OPEN, TAGGER_CL, Deck, bullets, heading, image,
-                                note, note_height, page, read_yields, reading_slide, setup_slides, table, text, working_points)
-
+# selection of each deck; "ref" = the deck it differs from in exactly one thing ("change")
+SETUPS = {
+    "v2": dict(run="zbzc_run3_v2", ref=None, mu_pt=26, mu_eta=2.4, zpt=False, tau=False, change=None),
+    "zpt": dict(run="zbzc_run3_zpt", ref="v2", mu_pt=26, mu_eta=2.4, zpt=True, tau=False,
+                change="DY Z pT weights switched on",
+                short="Z pT weights on", detail="DY MC is reweighted in bins of reconstructed pT(ℓℓ) (weights from Z→μμ "
+                "data/MC before the MET and jet cuts, total DY yield unchanged). Nothing else changed."),
+    "zpt_mupt30": dict(run="zbzc_run3_zpt_mupt30", ref="zpt", mu_pt=30, mu_eta=2.4, zpt=True, tau=False,
+                       change="Muon pT > 30 GeV instead of > 26 GeV",
+                       short="muon pT > 30", detail="Both muons need pT > 30 GeV (was 26). The leading muon already needs "
+                       "pT > 35 GeV, so in practice this is a cut on the second muon. Electrons unchanged."),
+    "zpt_mueta21": dict(run="zbzc_run3_zpt_mueta21", ref="zpt", mu_pt=26, mu_eta=2.1, zpt=True, tau=False,
+                        change="Muon |η| < 2.1 instead of < 2.4",
+                        short="muon |η| < 2.1", detail="Both muons need |η| < 2.1 (was 2.4; muons cannot go beyond 2.4, the "
+                        "end of the muon system and of the MUO scale factors). Muon pT back at > 26 GeV. Electrons unchanged."),
+    "zpt_tauveto": dict(run="zbzc_run3_zpt_tauveto", ref="zpt", mu_pt=26, mu_eta=2.4, zpt=True, tau=True,
+                        change="Loose hadronic τ veto added",
+                        short="loose τ veto", detail="Events with a loose hadronic τ (pT > 20 GeV, |η| < 2.5, DeepTau 2018v2p5 "
+                        "VSjet ≥ Loose, VSe ≥ VVLoose, VSμ ≥ VLoose, ΔR > 0.4 from the leptons) are removed, in both "
+                        "channels. No τ scale factors. Everything else as in the base deck."),
+}
 parser = argparse.ArgumentParser()
 parser.add_argument("--date", default=None)
+parser.add_argument("--setup", default="v2", choices=list(SETUPS))
 args = parser.parse_args()
+S = SETUPS[args.setup]
+os.environ["ZBZC_DECK_DIR"] = f"hists_{S['run']}/Summer22"
+
+import zbzc_slides_common as common  # noqa: E402
+from zbzc_slides_common import (ACCENT, BODY, CHS, D, DARK, GOOD, INFO, OPEN, TAGGER_CL, Deck, bullets, heading,  # noqa: E402
+                                image, note, note_height, page, read_yields, reading_slide, setup_slides, table, text,
+                                working_points)
+
+common.SETUP = {k: S[k] for k in ("mu_pt", "mu_eta", "zpt", "tau")}
 DATE = args.date or datetime.date.today().strftime("%-d %B %Y")
-OUT = f"{D}/slides_zbzc_btagL_3taggers_Summer22.pdf"
+OUT = f"{D}/slides_zbzc_btagL_3taggers_Summer22{'' if args.setup == 'v2' else '_' + args.setup}.pdf"
 REG = {"PNet": "btag_L", "DeepJet": "btagDeepJet_L", "RobustParT": "btagRobustParT_L"}
 LONG = {"PNet": "ParticleNet", "DeepJet": "DeepJet", "RobustParT": "RobustParT (Robust Particle Transformer)"}
 WPV = working_points()
@@ -63,21 +97,48 @@ def pct(x):
     return f"{100 * x:.0f}%"
 
 
+def met_tail():
+    """data/MC of met_pt_nm1 (all cuts except MET) for 40 < MET < 120 GeV, {(tagger, ch): ratio}."""
+    import json
+    from coffea.util import load
+    xs = json.load(open("metadata/Zb_Zc_ratio_xsections_run3.json"))
+    lumis = json.load(open(f"{D}/lumi.json"))
+    out = {}
+    for f in sorted(glob.glob(f"{D}/zbzc_run3/zbzc_run3_*.coffea")):
+        out.update(load(f))
+    res = {}
+    for t, reg in REG.items():
+        for ch in CHS:
+            d = m = 0.0
+            for ds, o in out.items():
+                h = o["met_pt_nm1"][{"channel": ch, "tag": reg, "flav": sum, "pflav": sum}]
+                e = h.axes[0].edges
+                v = h.values()[(e[:-1] >= 40) & (e[1:] <= 120)].sum()
+                if ds.startswith(("Muon", "EGamma")):
+                    d += v if ds.startswith("Muon" if ch == "Zmm" else "EGamma") else 0
+                else:
+                    m += v * xs[ds] * lumis[ch] / o["sumw"]
+            res[(t, ch)] = d / m
+    return res
+
+
 TWOJ = "Only events with at least two jets."
 Z = lambda a, b: f"Zoom: {a}–{b}, linear scale, data/MC from 0.8 to 1.2."  # noqa: E731
 # (file, title, explanation). The tagger's own scores are added per section.
 VARS = [
     ("z_mass", "Mass of the lepton pair, m(ℓℓ)", "The Z peak, linear scale. Selection: 71–111 GeV. Tests the lepton energy scale "
      "and resolution."),
-    ("z_pt", "Transverse momentum of the lepton pair, pT(ℓℓ) = Z pT", "Log scale up to 1 TeV. This is the distribution with the "
-     "pT trend discussed in the follow-up slides (low at 30–60 GeV, high at 100–150 GeV)."),
+    ("z_pt", "Transverse momentum of the lepton pair, pT(ℓℓ) = Z pT", ("Log scale up to 1 TeV. The DY MC is reweighted in this "
+     "variable (Z pT weights, derived before the MET and jet cuts); compare with the same page of the 8 November deck."
+     if S["zpt"] else "Log scale up to 1 TeV. This is the distribution with the "
+     "pT trend discussed in the follow-up slides (low at 30–60 GeV, high at 100–150 GeV).")),
     ("z_pt_zoom", "Z pT, zoom on 0–200 GeV", Z(0, 200)),
     ("z_eta", "Pseudorapidity of the lepton pair, η(ℓℓ)", ""),
     ("lep0_pt", "Leading-lepton pT", "The selection requires pT > 35 GeV for the leading lepton (on the trigger plateau)."),
     ("lep0_pt_zoom", "Leading-lepton pT, zoom on 30–200 GeV", Z(30, 200)),
-    ("lep0_eta", "Leading-lepton η", "|η| < 2.4. For electrons the barrel–endcap gap (1.44 < |η| < 1.57) is removed, so that bin is low."),
+    ("lep0_eta", "Leading-lepton η", f"|η| < 2.4 (muons: |η| < {S['mu_eta']:g}). For electrons the barrel–endcap gap (1.44 < |η| < 1.57) is removed, so that bin is low."),
     ("lep0_phi", "Leading-lepton φ", "Expected to be flat; dips would point to detector problems."),
-    ("lep1_pt", "Second-lepton pT", "The selection requires pT > 25 GeV for electrons and > 26 GeV for muons."),
+    ("lep1_pt", "Second-lepton pT", f"The selection requires pT > 25 GeV for electrons and > {S['mu_pt']:g} GeV for muons."),
     ("lep1_pt_zoom", "Second-lepton pT, zoom on 20–150 GeV", Z(20, 150)),
     ("lep1_eta", "Second-lepton η", ""),
     ("lep1_phi", "Second-lepton φ", ""),
@@ -124,9 +185,10 @@ for t, reg in REG.items():
     for v in [x[0] for x in VARS] + [f"jet_{t}{s}" for s, _, _ in SCORES] + [MAP[0]]:
         assert os.path.exists(f"{D}/plots_{reg}/{v}.png"), (reg, v)
 
+X = 0 if S["change"] is None else 1  # extra "what changed" page after the cover
 deck = Deck(OUT, "Summer22 (2022 C–D), 13.6 TeV · Z→ℓℓ + jet, leading jet b-tagged (Loose) · 20 files per sample · "
                  "statistical errors only")
-N_INTRO = 7
+N_INTRO = 7 + X
 SEC = 1 + N_PLOTS
 START = {t: N_INTRO + 1 + i * SEC for i, t in enumerate(REG)}
 
@@ -135,15 +197,46 @@ fig = page(DARK)
 text(fig, 110, 280, "Z + b-tagged jet in Summer22: three taggers at the Loose working point", 60, "white", "bold", width=1700, ls=1.15)
 text(fig, 110, 500, "All kinematic distributions for ParticleNet, DeepJet and RobustParT, each with its own BTV scale factors. "
      "All corrections, including the muon changes of 8 November.", 30, "#C9D3E3", width=1650)
+if S["change"]:
+    text(fig, 110, 700, f"This version: {S['change']}" + ("" if args.setup == "zpt" else " (on top of the DY Z pT weights)")
+         + ". Everything else as in the reference deck.", 30, "white", "bold", width=1650)
 text(fig, 110, 860, DATE, 26, "#C9D3E3")
 deck.save(fig, foot=False)
+
+# ------------------------------------------------------------------ what changed (decks with a reference)
+if S["change"]:
+    R = SETUPS[S["ref"]]
+    RD = f"hists_{R['run']}/Summer22"
+    ref_pdf = f"{RD}/slides_zbzc_btagL_3taggers_Summer22{'' if S['ref'] == 'v2' else '_' + S['ref']}.pdf"
+    RINCL, _ = read_yields(f"{RD}/yields.txt")
+    RY = {t: read_yields(f"{RD}/yields_{reg}.txt")[0] for t, reg in REG.items()}
+    ref_name = "the 8 November deck" if S["ref"] == "v2" else "the base deck (8 November setup + DY Z pT weights)"
+    fig = page()
+    y = heading(fig, f"What changed: {S['change']}",
+                f"Compared with {ref_name}, exactly one thing is different. Same events (20 files per sample), same plots in "
+                "the same order, so every page can be compared with the same page of the reference deck.") + 8
+    y = note(fig, y, S["change"], S["detail"], INFO, size=21) + 14
+    rows = []
+    for name, cur, ref in [("no tag", INCL, RINCL)] + [(f"{t} Loose b-tag", Y[t], RY[t]) for t in REG]:
+        for ch, lab in CHS.items():
+            c, r = cur[ch], ref[ch]
+            rows.append([f"{name}, {lab}", f"{r['data'] / r['mc']:.3f}", f"{c['data'] / c['mc']:.3f} ± "
+                         f"{c['data'] / c['mc'] * np.hypot(c['data'] ** -0.5, c['mce'] / c['mc']):.3f}",
+                         f"{100 * (c['mc'] / r['mc'] - 1):+.1f}%", f"{100 * (c['data'] / r['data'] - 1):+.1f}%"])
+    y = table(fig, 110, y, [("full selection, region", 560, "left"), ("data/MC before", 270, "right"),
+                            ("data/MC now", 330, "right"), ("MC events", 250, "right"), ("data events", 250, "right")],
+              rows, 21, shade_rows=(0, 1)) + 10
+    text(fig, 110, y, f"\"MC events\" and \"data events\": change of the selected yield with respect to {ref_name}. "
+         f"Statistical errors only. Reference deck: {ref_pdf}", 19, BODY, width=1700)
+    deck.save(fig)
 
 # ------------------------------------------------------------------ contents
 fig = page()
 y = heading(fig, "Contents") + 10
-rows = [["Analysis setup: data, simulation, selection, corrections, scale factors", "3–4"],
-        ["How to read the numbers", "5"], ["What this deck shows, and the three taggers", "6"],
-        ["The three taggers side by side: yields, purity, scale factors", "7"]]
+rows = ([["What changed with respect to the reference deck", "2"]] if X else []) + [
+        ["Analysis setup: data, simulation, selection, corrections, scale factors", f"{3 + X}–{4 + X}"],
+        ["How to read the numbers", str(5 + X)], ["What this deck shows, and the three taggers", str(6 + X)],
+        ["The three taggers side by side: yields, purity, scale factors", str(7 + X)]]
 for t in REG:
     rows.append([f"{LONG[t]}, Loose b-tag (B > {WP[t]:.4g}): {N_PLOTS} plots", f"{START[t]}–{START[t] + SEC - 1}"])
 rows.append(["Summary", str(N_INTRO + len(REG) * SEC + 1)])
@@ -175,7 +268,10 @@ y = bullets(fig, 110, y, 1700, "How to read the plots", [
     "(DY+b, DY+c, DY+light) plus tt̄ and dibosons (VV).",
     "Lower panel: data/MC. The hatched band is the MC statistical uncertainty only; the BTV SFs are applied, but their "
     "uncertainties and other systematic uncertainties are not in the band yet.",
-    "The overall data/MC is about 0.93–0.96 in every region, so points sit slightly below 1 everywhere; look at the shape.",
+    "The overall data/MC is {:.2f}–{:.2f} in these regions, so points sit slightly below 1 everywhere; look at the shape.".format(
+        *(lambda r: (min(r), max(r)))([nums(t, ch)["r"] for t in REG for ch in CHS])),
+    "Statistics box on every plot: data and MC yields, data/MC, mean and RMS, χ²/ndf of data vs MC (statistical errors) "
+    "and, for pT distributions, the slope of a straight-line fit to data/MC in % per 100 GeV.",
     "The order of the plots is the same for each tagger, so the same page of each section can be compared directly.",
 ], size=22)
 deck.save(fig)
@@ -255,20 +351,29 @@ er = {t: (nums(t, "Zee"), nums(t, "Zmm")) for t in REG}
 pulls = [abs(x["er"] - 1) / x["ere"] for a, b in er.values() for x in (a, b)]
 y = note(fig, y, "The three taggers select a similar sample at the Loose working point.",
          "Share of real b jets (DY+b) in all MC, Z→ee / Z→μμ: " + ", ".join(f"{t} {pct(a)} / {pct(b)}" for t, (a, b) in pur.items())
-         + ". Loose is a loose selection: most tagged jets are c or light jets. Medium (~60% b) and Tight (~88% b) are much purer.") + 16
+         + ". Loose is a loose selection: most tagged jets are c or light jets. Medium (~60% b) and Tight (~88% b) are much purer" + ("" if args.setup == "v2" else " (8 November run)") + ".") + 16
 y = note(fig, y, "Data and MC tag the same fraction of jets " + ("within the statistical errors, for all three taggers."
                                                                  if max(pulls) < 2 else "within a few percent."),
          "Tag ratio (data/MC), Z→ee / Z→μμ: " + "; ".join(f"{t} {a['er']:.3f} / {b['er']:.3f}" for t, (a, b) in er.items())
          + f" (largest deviation from 1: {max(pulls):.1f} standard deviations).", GOOD if max(pulls) < 2 else OPEN) + 16
 ls = [mean_sf(t)[2] for t in REG]
-y = note(fig, y, "The MC excess at MET 40–120 GeV seen without tagging is also present for all three taggers.",
-         "So it is not caused by the tagging (2022 jet/MET issue, see the follow-up slides). Compare the same page number in "
-         "each section to compare the taggers plot by plot.", INFO) + 16
+if args.setup == "v2":
+    y = note(fig, y, "The MC excess at MET 40–120 GeV seen without tagging is also present for all three taggers.",
+             "So it is not caused by the tagging (2022 jet/MET issue, see the follow-up slides). Compare the same page number in "
+             "each section to compare the taggers plot by plot.", INFO) + 16
+else:
+    mt = met_tail()
+    allbelow = max(mt.values()) < 0.9
+    y = note(fig, y, ("MC is above data at MET 40–120 GeV (all cuts except MET) for all three taggers."
+                      if allbelow else "Data/MC at MET 40–120 GeV (all cuts except MET), per tagger:"),
+             "data/MC, Z→ee / Z→μμ: " + "; ".join(f"{t} {mt[(t, 'Zee')]:.2f} / {mt[(t, 'Zmm')]:.2f}" for t in REG)
+             + ". Same picture without tagging (2022 jet/MET issue, under study). Compare the same page number in each "
+             "section to compare the taggers plot by plot.", INFO) + 16
 note(fig, y, "The BTV SFs are applied; their uncertainties are not included yet",
      "Applied: the BTV SF (central value) of every tagged jet in MC, for its true flavour (mean light-jet SF "
      f"{min(ls):.2f}–{max(ls):.2f}). Not yet included: the uncertainty on these SFs, typically ±4–10% for light, ±2–8% for c "
      "and ±1–3% for b jets at Loose. Light jets are about half of the tagged sample, so this would add a band of a few percent "
-     "(roughly 3–6%), similar to the statistical errors. Also not yet included: other systematic uncertainties, the loose tau "
-     "veto, the full dataset (20 files per sample).", OPEN)
+     "(roughly 3–6%), similar to the statistical errors. Also not yet included: other systematic uncertainties, "
+     + ("" if S["tau"] else "the loose tau veto, ") + "the full dataset (20 files per sample).", OPEN)
 deck.save(fig)
 deck.close()

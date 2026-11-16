@@ -110,6 +110,12 @@ workflows["Zb_Zc_ratio"] = ZbZcRatioProcessor  # AK4 jets
 workflows["Zb_Zc_ratio_AK8"] = partial(ZbZcRatioProcessor, jet="AK8")
 workflows["Zb_Zc_ratio_1jet"] = partial(ZbZcRatioProcessor, njet_exact=1)  # Z + exactly 1 AK4 jet
 workflows["Zb_Zc_ratio_nojer"] = partial(ZbZcRatioProcessor, jer_smear=False)  # MC without JER smearing (MET study)
+# cut-study decks 2026-11-16 (base = 2026-11-08 3-tagger setup + DY Z pT weights; one change each)
+_zpt = dict(zpt_reweight=True, mu_variants=False)
+workflows["Zb_Zc_ratio_zpt"] = partial(ZbZcRatioProcessor, **_zpt)
+workflows["Zb_Zc_ratio_zpt_mupt30"] = partial(ZbZcRatioProcessor, mu_pt_min=30.0, **_zpt)
+workflows["Zb_Zc_ratio_zpt_mueta21"] = partial(ZbZcRatioProcessor, mu_eta_max=2.1, **_zpt)
+workflows["Zb_Zc_ratio_zpt_tauveto"] = partial(ZbZcRatioProcessor, tau_veto=True, **_zpt)
 
 # W+c
 workflows["ctag_Wc_sf"] = partial(CTAGWcTTValidSFProcessor, selectionModifier="WcM")

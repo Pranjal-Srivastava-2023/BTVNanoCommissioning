@@ -164,6 +164,51 @@ def cms_label(ax, ch=None, fontsize=18):
                   ax=ax, fontsize=fontsize)
 
 
+# statistics box (2026-11-16): straight-line fit of data/MC for these pT variables, range in GeV
+FIT = {"z_pt": (0, 400), "lep0_pt": (35, 300), "lep1_pt": (None, 200), "jet_pt": (30, 300),
+       "jet1_pt": (30, 300)}
+STATBOX = os.environ.get("ZBZC_STATBOX", "1") == "1"
+
+
+def stat_lines(var, edges, d, m, mv):
+    """Data and MC yields, data/MC (stat.), mean and RMS, chi2/ndf of data vs MC (expected error MC + MC stat.)
+    and, for the pT variables in FIT, the slope of a straight-line fit to data/MC in % per 100 GeV
+    (weighted by the expected error sqrt(MC + MC var) / MC)."""
+    cen = edges[:-1] if var == "n_jet" else 0.5 * (edges[1:] + edges[:-1])
+
+    def mom(v):
+        n = v.sum()
+        if n <= 0:
+            return np.nan, np.nan
+        mu = (v * cen).sum() / n
+        return mu, np.sqrt(max((v * (cen - mu) ** 2).sum() / n, 0))
+
+    D, M = d.sum(), m.sum()
+    r = D / M if M > 0 else np.nan
+    re = r * np.sqrt(1 / D + mv.sum() / M ** 2) if D > 0 and M > 0 else np.nan
+    # Pearson chi2 with the expected error (MC + MC stat.), bins with MC > 0; robust for empty data bins
+    ok = m > 0
+    chi2 = float(((d - m) ** 2 / np.where(ok, m + mv, 1))[ok].sum())
+    unit = "" if var == "n_jet" or "eta" in var or "phi" in var or "dR" in var or "PNet" in var \
+        or "DeepJet" in var or "RobustParT" in var or var in ("pt_balance", "npv") else " GeV"
+    (md, rd), (mm, rm) = mom(d), mom(m)
+    lines = [f"Data {D:.0f}   MC {M:.0f}", f"data/MC {r:.3f} ± {re:.3f}",
+             f"mean  data {md:.2f}  MC {mm:.2f}{unit}", f"RMS   data {rd:.2f}  MC {rm:.2f}{unit}",
+             f"χ²/ndf {chi2:.1f}/{int(ok.sum())}"]
+    if var in FIT:
+        lo, hi = FIT[var]
+        lo = edges[0] if lo is None else max(lo, edges[0])
+        hi = min(hi, edges[-1])
+        with np.errstate(divide="ignore", invalid="ignore"):
+            rr = np.where(m > 0, d / m, np.nan)
+            ee = np.sqrt(m + mv) / m
+        sel = (cen > lo) & (cen < hi) & np.isfinite(rr) & np.isfinite(ee) & (ee > 0)
+        if sel.sum() >= 3:
+            p, cov = np.polyfit(cen[sel], rr[sel], 1, w=1 / ee[sel], cov="unscaled")
+            lines.append(f"slope {1e4 * p[0]:+.1f} ± {1e4 * np.sqrt(cov[0, 0]):.1f} %/100 GeV ({lo:.0f}-{hi:.0f})")
+    return lines
+
+
 def stack(var, flav, suffix="", zoom=None):
     """zoom = (lo, hi): x range restricted to the high-statistics bins, linear y,
     data/MC panel 0.8-1.2 (file <var>_zoom.png)."""
@@ -198,14 +243,20 @@ def stack(var, flav, suffix="", zoom=None):
                          yerr=np.sqrt(d), label="Data")
         ax.set_ylabel("Events / bin")
         top = max(tot.max(), d.max() if has_data else 0, 1.0)
+        # with the statistics box the highest point must stay below ~55% of the frame (box bottom at ~60%)
+        peak = 0.55 if STATBOX and has_data else None
         if var == "z_mass" or zoom is not None:
-            ax.set_ylim(0, top * 1.5)
+            ax.set_ylim(0, top * (1 / peak if peak and var != "z_mass" else 1.5))
         else:
             ax.set_yscale("log")
-            ax.set_ylim(0.1, top * 80)
+            ax.set_ylim(0.1, max(top * 80, 0.1 * (top / 0.1) ** (1 / peak)) if peak else top * 80)
         ax.text(0.04, 0.94, CH_LABEL[ch], transform=ax.transAxes, fontsize=20, va="top")
         if TAG_LABEL:
             ax.text(0.04, 0.86, TAG_LABEL, transform=ax.transAxes, fontsize=16, va="top")
+        if STATBOX and has_data:
+            ax.text(0.04, 0.80 if TAG_LABEL else 0.86, "\n".join(stat_lines(var, edges, d, tot, totvar)),
+                    transform=ax.transAxes, va="top", ha="left", fontsize=12, family="DejaVu Sans Mono",
+                    bbox=dict(boxstyle="round", facecolor="white", edgecolor="#888888", alpha=0.9), zorder=5)
         hdl, lab = ax.get_legend_handles_labels()
         byname = dict(zip(lab, hdl))
         keep = [n for n in legend_order if n in byname]

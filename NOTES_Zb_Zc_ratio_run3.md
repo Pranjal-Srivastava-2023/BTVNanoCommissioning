@@ -2,24 +2,23 @@
 
 Run 2 QCD_sf work is in `SESSION_NOTES.md`; this file is only the Run 3 ratio measurement.
 
-## RESUME HERE (2026-11-16): MET > 50 test without JER smearing (Summer22) + cutflow/yields
+## RESUME HERE (2026-11-16): one-change-per-deck b-tag decks (pT 26->30, |eta| 2.4->2.1, tau veto), Z pT weights ON
 
-User 2026-11-15 evening: "do the next steps", keep the PDFs SEPARATE, cutflows + yields for both runs
-(to be compared). User thought "another cut" was needed: it is not a cut, the test switches the MC JER
-smearing off (jets + type-1 MET); a cut (e.g. soft/forward-jet veto) only if the test confirms the picture.
-Code 39a0344 (local): workflow Zb_Zc_ratio_nojer (jer_smear=False: correction.get_JER -> 1 during
-common_shifts, MC only); new hist stage_jany (stage x metbin x dphireg <0.6/0.6-2.5/>2.5 x pT x |eta| of
-the leading lepton-cleaned pT > 15 any-eta jet); make_zbzc_yields.py <run> [<ref run>] -> <run>/yields/
-yields.{txt,json} (cutflow no SFs, stage yields + PNet tag-region yields with all weights) and
-compare_<ref>.{txt,json}. Done for cutvar: hists_zbzc_run3_cutvar/Summer22/yields/yields.txt.
-1-chunk test (DY MLL-50, Zmm): MET > 50 fraction of Z events MC 5.2 % -> 3.4 % without smearing, data 3.2 %.
-Runs started 2026-11-15 18:45 on cmslpc352 (3 jobs, json logs_zbzc_run3_v2/..._dyredir.json):
-  ZBZC_RUN=zbzc_run3_metjer  mc + data  (nominal, = cutvar + stage_jany; regression check vs cutvar)
-  ZBZC_RUN=zbzc_run3_metnojer ZBZC_WF=Zb_Zc_ratio_nojer  mc only (data = copy of metjer data, identical
-  by construction: the switch acts on MC only). Watch: scratchpad progress2.sh; check N/N in every log.
-Then: cp lumi.json; regression metjer vs cutvar; make_zbzc_yields.py for both + compare; plots (MET,
-dphi, stage_jany, jet pT/eta, N_jet, Z pT slope, muvar table) nominal vs nojer; three SEPARATE PDFs:
-cut study (exists, untouched), nojer test deck, cutflow+yields deck (both runs side by side). Push + paths.
+User 2026-11-15 evening: the cut-study deck (cutvar) was rejected (no DY+b/c/light split, VV not named) and the
+nojer MET test was STOPPED by the user ("Stop everything now"); the metjer/metnojer runs were killed and are NOT to
+be resumed unless asked. New request: decks EXACTLY in the format of
+hists_zbzc_run3_v2/Summer22/slides_zbzc_btagL_3taggers_Summer22.pdf (8 Nov, Loose b-tag, PNet/DeepJet/RobustParT)
+plus the statistics box, with Z pT weights ON, one change per deck:
+  zpt          = v2 setup + Z pT weights (base / reference of the three below)
+  zpt_mupt30   = muon pT > 30 (was 26; leading muon already > 35, so effectively the subleading muon)
+  zpt_mueta21  = muon |eta| < 2.1 (was 2.4; user said 2.5 but muons stop at 2.4, so 2.1 is the tighter POG value)
+  zpt_tauveto  = loose DeepTau veto (separate deck)
+Workflows Zb_Zc_ratio_zpt / _zpt_mupt30 / _zpt_mueta21 / _zpt_tauveto (__init__.py; kwargs mu_eta_max, tau_veto;
+mu_variants off). Data reuse: zpt data = v2 data (Z pT weights act on MC only); mupt30/mueta21 EGamma = v2 EGamma.
+Runs 2026-11-15 19:22-21:26 (launch_zbzc_job.sh), all logs N/N, 0 ERROR lines.
+Plots: ZBZC_RUN=zbzc_run3_<setup> ZBZC_TAG=<incl|btag_L|btagDeepJet_L|btagRobustParT_L> python plot_zbzc_run3.py Summer22
+Deck:  PYTHONPATH=$PWD python make_zbzc_btagL_slides_pdf.py --setup <zpt|zpt_mupt30|zpt_mueta21|zpt_tauveto>
+  -> hists_zbzc_run3_<setup>/Summer22/slides_zbzc_btagL_3taggers_Summer22_<setup>.pdf ("What changed" page 2 vs ref)
 
 ## RESUME HERE (2026-11-15): Zmm cut study + tau veto + Delta phi(MET) (Summer22, run zbzc_run3_cutvar)
 

@@ -265,6 +265,8 @@ class NanoProcessor(processor.ProcessorABC):
         taggers=("PNet", "DeepJet", "RobustParT"),
         mu_trig_sf="pair",
         mu_pt_min=26.0,
+        mu_eta_max=2.4,
+        tau_veto=False,
         mu_variants=True,
         jer_smear=True,
     ):
@@ -289,6 +291,12 @@ class NanoProcessor(processor.ProcessorABC):
             raise ValueError(f"mu_trig_sf must be 'pair' or 'lead', not {mu_trig_sf}")
         self.mu_trig_sf = mu_trig_sf
         self.mu_pt_min = float(mu_pt_min)
+        # muon |eta| cut of the main selection (2.4 = lep_kin; smaller values for the
+        # cut study decks of 2026-11-16)
+        self.mu_eta_max = float(mu_eta_max)
+        # tau_veto=True: events with a loose hadronic tau (TAU_VETO) are removed in both
+        # channels (selection step "tauveto" after the Z mass window)
+        self.tau_veto = bool(tau_veto)
         self.mu_variants = bool(mu_variants)
         # jer_smear=False (workflow Zb_Zc_ratio_nojer): MC jets and type-1 MET without
         # JER smearing (JER factor 1 in correction.JME_shifts); data unchanged
@@ -634,6 +642,7 @@ class NanoProcessor(processor.ProcessorABC):
         mu = mu[mu.tightId]
         mu = mu[mu_iso(mu)]
         mu = mu[mu.pt > self.mu_pt_min]
+        mu = mu[abs(mu.eta) < self.mu_eta_max]
 
         # pT order can change after the scale/smearing corrections
         ele = ele[ak.argsort(ele.pt, ascending=False)]
@@ -683,6 +692,9 @@ class NanoProcessor(processor.ProcessorABC):
             sel.add("MET", req_met)
             sel.add("jet", req_jet)
             steps = ["trigger", "leptons", "OS", "Zmass", "MET", "jet"]
+            if self.tau_veto:
+                sel.add("tauveto", ~tau_veto_mask(events, ele_jetveto, mu_jetveto))
+                steps = ["trigger", "leptons", "OS", "Zmass", "tauveto", "MET", "jet"]
             for i, step in enumerate(steps):
                 passed = sel.all(*steps[: i + 1])
                 cutflow[channel][step] += float(np.sum(genw[passed]))

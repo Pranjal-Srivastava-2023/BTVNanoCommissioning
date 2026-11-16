@@ -28,6 +28,10 @@ import json
 keys = list(json.load(open('$JSON')))
 isdata = lambda k: k.startswith(('Muon', 'EGamma'))
 print(' '.join(k for k in keys if '$PART' == 'all' or ('$PART' == 'data') == isdata(k)))")
+# ZBZC_DSETS="<prefix> ..." keeps only the datasets starting with one of the prefixes (e.g. "Muon")
+if [ -n "$ZBZC_DSETS" ]; then
+  KEEP=""; for ds in $DSETS; do for p in $ZBZC_DSETS; do [[ $ds == $p* ]] && KEEP="$KEEP $ds"; done; done; DSETS=$KEEP
+fi
 for ds in $DSETS; do
   for try in 1 2 3; do
     echo "$(date +%T) $ds try $try" >> "$LOG"/driver_$PART.log

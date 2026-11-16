@@ -4,6 +4,7 @@ analysis-setup and "how to read" slides. Facts on the setup slides are taken fro
 workflows/Zb_Zc_ratio.py, utils/selection.py, utils/AK4_parameters.py (Summer22) and the jsonPOG files.
 """
 import json
+import os
 import re
 import textwrap
 
@@ -16,7 +17,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.patches import FancyBboxPatch
 
-D = "hists_zbzc_run3_v2/Summer22"
+# run directory of the deck (ZBZC_DECK_DIR, default: the 2026-11-08 run)
+D = os.environ.get("ZBZC_DECK_DIR", "hists_zbzc_run3_v2/Summer22")
+# selection / weights shown on the setup slides; a deck script may change these before setup_slides()
+SETUP = dict(mu_pt=26, mu_eta=2.4, zpt=False, tau=False)
 W, H = 1920, 1080
 DARK, LIGHT, ACCENT, BODY, MUTED = "#14213D", "#FBFBF8", "#1F5FA8", "#3B4450", "#6A7179"
 GOOD = ("#E8F3EA", "#2E7D32", "#1B5E20")
@@ -271,10 +275,14 @@ def setup_slides(deck):
     y = bullets(fig, xr, y + 14, cw, "Leptons", [
         "Electrons: pT > 25 GeV, |η| < 2.4, cut-based Tight ID, barrel–endcap gap 1.442 < |η_SC| < 1.566 removed, "
         "impact parameter |dxy| < 0.05 (0.1) cm and |dz| < 0.1 (0.2) cm in the barrel (endcap).",
-        "Muons: pT > 26 GeV, |η| < 2.4, Tight ID, PF isolation (ΔR = 0.4) < 0.15 (Tight).",
+        f"Muons: pT > {SETUP['mu_pt']:g} GeV, |η| < {SETUP['mu_eta']:g}, Tight ID, PF isolation (ΔR = 0.4) < 0.15 (Tight).",
     ])
     y = bullets(fig, xr, y + 14, cw, "Z + jet selection (applied in this order)", [
         "Trigger fired; two leptons of the channel, leading lepton pT > 35 GeV; opposite charge; 71 < m(ℓℓ) < 111 GeV.",
+    ] + ([
+        "Loose hadronic τ veto (both channels): no τh with pT > 20 GeV, |η| < 2.5, |dz| < 0.2 cm, decay mode 0/1/10/11, "
+        "DeepTau 2018v2p5 VSjet ≥ Loose, VSe ≥ VVLoose, VSμ ≥ VLoose, ΔR > 0.4 from the leptons. No τ SFs.",
+    ] if SETUP["tau"] else []) + [
         "Missing transverse momentum (type-1 PUPPI MET) < 50 GeV, to remove tt̄.",
         "At least one AK4 jet (PUPPI): pT > 30 GeV, |η| < 2.5, Tight-lepton-veto ID (with the NanoAODv12 fix), "
         "ΔR > 0.4 from the leptons. The leading jet is the one we study and tag.",
@@ -305,8 +313,13 @@ def setup_slides(deck):
         "Muons: Tight ID SF (NUM_TightID_DEN_TrackerMuons) and Tight isolation SF (NUM_TightPFIso_DEN_TightID), MUO.",
         "Trigger: either lepton can fire, so SF = [1 − (1−ε¹data)(1−ε²data)] / [1 − (1−ε¹MC)(1−ε²MC)] with the POG "
         "data and MC efficiencies of both leptons (EGM Ele30 Tight ID; MUO IsoMu24 for Tight ID + Tight isolation).",
+    ] + ([
+        "DY Z pT weights (not a POG correction): DY MC reweighted in bins of reconstructed pT(ℓℓ), weights from Z→μμ "
+        "data/MC before the MET and jet cuts, total DY yield unchanged; applied in both channels.",
+        "Not applied: L1 prefiring weight (not needed in Run 3).",
+    ] if SETUP["zpt"] else [
         "Not applied: L1 prefiring weight (not needed in Run 3), DY Z pT reweighting (switched off).",
-    ])
+    ]))
     y = bullets(fig, xr, y + 14, cw, "b and c tagging (leading jet only)", [
         "Taggers: ParticleNet, DeepJet, RobustParT. Official BTV Summer22 Loose/Medium/Tight working points.",
         "b-tag: B score > cut. c-tag: CvL > cut and CvB > cut. b-tag and c-tag are separate selections.",
