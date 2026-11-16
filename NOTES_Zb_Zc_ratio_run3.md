@@ -4,6 +4,15 @@ Run 2 QCD_sf work is in `SESSION_NOTES.md`; this file is only the Run 3 ratio me
 
 ## RESUME HERE (2026-11-16): one-change-per-deck b-tag decks (pT 26->30, |eta| 2.4->2.1, tau veto), Z pT weights ON
 
+STATUS 2026-11-15 22:30: DONE, pushed 182e5f9 (code, plots, yields, 4 PDFs, 138 pages each). Session paused, continue 2026-11-16.
+Results (no tag, data/MC Zee / Zmm, stat only): v2 0.949 / 0.943 -> zpt 0.971 / 0.963 (MC -2 %, data same);
+mupt30: Zmm 0.961 (data and MC both -17.5 %); mueta21: Zmm 0.964 (both -12 %; tagged Zmm ~ -0.01);
+tauveto 0.972 / 0.965 (both ~ -1 %). No cut moves data/MC beyond the stat. errors.
+Plot fix in this round: log/zoom plots get extra headroom so the stat box clears the data; slope label range
+clamped to the plotted range. Open: the user sent two images (3108x1764, 3885x2205) that Claude could not see;
+ask for their content. Not pushed / local only: coffea outputs; test dir hists_zbzc_statboxtest (can be deleted).
+Next: wait for user/advisor feedback on the 4 decks (and the images); nothing is running.
+
 User 2026-11-15 evening: the cut-study deck (cutvar) was rejected (no DY+b/c/light split, VV not named) and the
 nojer MET test was STOPPED by the user ("Stop everything now"); the metjer/metnojer runs were killed and are NOT to
 be resumed unless asked. New request: decks EXACTLY in the format of
