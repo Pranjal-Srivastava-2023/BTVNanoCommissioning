@@ -2,6 +2,25 @@
 
 Run 2 QCD_sf work is in `SESSION_NOTES.md`; this file is only the Run 3 ratio measurement.
 
+## RESUME HERE (2026-11-16): MET > 50 test without JER smearing (Summer22) + cutflow/yields
+
+User 2026-11-15 evening: "do the next steps", keep the PDFs SEPARATE, cutflows + yields for both runs
+(to be compared). User thought "another cut" was needed: it is not a cut, the test switches the MC JER
+smearing off (jets + type-1 MET); a cut (e.g. soft/forward-jet veto) only if the test confirms the picture.
+Code 39a0344 (local): workflow Zb_Zc_ratio_nojer (jer_smear=False: correction.get_JER -> 1 during
+common_shifts, MC only); new hist stage_jany (stage x metbin x dphireg <0.6/0.6-2.5/>2.5 x pT x |eta| of
+the leading lepton-cleaned pT > 15 any-eta jet); make_zbzc_yields.py <run> [<ref run>] -> <run>/yields/
+yields.{txt,json} (cutflow no SFs, stage yields + PNet tag-region yields with all weights) and
+compare_<ref>.{txt,json}. Done for cutvar: hists_zbzc_run3_cutvar/Summer22/yields/yields.txt.
+1-chunk test (DY MLL-50, Zmm): MET > 50 fraction of Z events MC 5.2 % -> 3.4 % without smearing, data 3.2 %.
+Runs started 2026-11-15 18:45 on cmslpc352 (3 jobs, json logs_zbzc_run3_v2/..._dyredir.json):
+  ZBZC_RUN=zbzc_run3_metjer  mc + data  (nominal, = cutvar + stage_jany; regression check vs cutvar)
+  ZBZC_RUN=zbzc_run3_metnojer ZBZC_WF=Zb_Zc_ratio_nojer  mc only (data = copy of metjer data, identical
+  by construction: the switch acts on MC only). Watch: scratchpad progress2.sh; check N/N in every log.
+Then: cp lumi.json; regression metjer vs cutvar; make_zbzc_yields.py for both + compare; plots (MET,
+dphi, stage_jany, jet pT/eta, N_jet, Z pT slope, muvar table) nominal vs nojer; three SEPARATE PDFs:
+cut study (exists, untouched), nojer test deck, cutflow+yields deck (both runs side by side). Push + paths.
+
 ## RESUME HERE (2026-11-15): Zmm cut study + tau veto + Delta phi(MET) (Summer22, run zbzc_run3_cutvar)
 
 STATUS 2026-11-15 evening: DONE. Run 14:30-17:28, all samples N/N (DY 20/20 x5, tt/WW/WZ/ZZ 20/20, Muon 12+8,
