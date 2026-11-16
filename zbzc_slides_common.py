@@ -21,6 +21,7 @@ from matplotlib.patches import FancyBboxPatch
 D = os.environ.get("ZBZC_DECK_DIR", "hists_zbzc_run3_v2/Summer22")
 # selection / weights shown on the setup slides; a deck script may change these before setup_slides()
 SETUP = dict(mu_pt=26, mu_eta=2.4, zpt=False, tau=False)
+# optional keys (MET deck, 2026-11-16): met_xy=True (JME PuppiMET XY correction), jer="both" (JER on/off runs)
 W, H = 1920, 1080
 DARK, LIGHT, ACCENT, BODY, MUTED = "#14213D", "#FBFBF8", "#1F5FA8", "#3B4450", "#6A7179"
 GOOD = ("#E8F3EA", "#2E7D32", "#1B5E20")
@@ -294,8 +295,13 @@ def setup_slides(deck):
                   "All corrections from the CMS jsonPOG files (/cvmfs/cms-griddata.cern.ch/cat/metadata), Summer22 versions.") + 10
     y = bullets(fig, xl, top, cw, "Jets and MET", [
         "Jet energy corrections Summer22_22Sep2023_V4 (data per run era and MC); jet energy resolution smearing "
-        "Summer22_22Sep2023_JRV2 (MC).",
+        "Summer22_22Sep2023_JRV2 (MC)" + (" in the nominal run; switched off in the second run of this deck (the test)."
+                                          if SETUP.get("jer") == "both" else "."),
         "Type-1 PUPPI MET recomputed with the corrected jets.",
+    ] + ([
+        "PUPPI MET XY correction (JME met_xyCorrections_2022, epoch 2022, data and MC versions): removes the "
+        "φ modulation of the MET; shifts MET by about 1 GeV.",
+    ] if SETUP.get("met_xy") else []) + [
         "Jet veto map Summer22_23Sep2023_RunCD_V1: event dropped if a jet (pT > 15 GeV, tight ID, EM fraction < 0.9, no muon "
         "nearby) is in a vetoed region.",
     ])

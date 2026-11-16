@@ -113,10 +113,22 @@ VV_HAVE = sorted({ds.split("_")[0] for c in camps for ds in OUT[c] if ds.split("
 BKG = {"tt": ("$t\\bar{t}$ (2L2Nu)", "#8e44ad"), "VV": (f"VV ({', '.join(VV_HAVE)})", "#16a085")}
 
 
+# plot name -> (histogram, extra slice) for the MET study plots (ZBZC_MET=1, 2026-11-16): one
+# slice of a multi-axis histogram, drawn with the standard stack (DY + b/c/light, tt, VV, data)
+SLICES = {}
+# drawn with a linear y axis (like z_mass)
+LINEAR = set()
+# x range cut to (lo, hi) without the zoom style (e.g. the 150-1000 GeV last bin of stage_jany pT)
+CROP = {}
+# data/MC panel range other than the default 0.5-1.5 (MET > 50 bins: data/MC ~0.4-0.8)
+RRANGE = {}
+
+
 def components(var, ch, flav):
     """{component: hist over the variable axes} for one channel: DY per flavour
     (flav = HADRON or PARTON), tt, VV (scaled MC) and data."""
     comp = {}
+    hname, extra = SLICES.get(var, (var, {}))
 
     def add(key, h):
         comp[key] = h if key not in comp else comp[key] + h
@@ -125,7 +137,7 @@ def components(var, ch, flav):
     for c in camps:
         for ds, o in OUT[c].items():
             k = kind(ds)
-            h = o[var][{"channel": ch}]
+            h = o[hname][{"channel": ch, **extra}]
             if "tag" in h.axes.name:
                 h = h[{"tag": TAG}]
             if k == "DY":
@@ -147,6 +159,8 @@ def arrays(h, var, zoom=None):
     """values, variances, edges; N_jet >= 5 merged into the last bin;
     zoom = (lo, hi): only the bins inside [lo, hi]."""
     v, w2, e = h.values(), h.variances(), h.axes[0].edges
+    if zoom is None and var in CROP:
+        zoom = CROP[var]
     if var == "n_jet":
         v = np.append(v[:5], v[5:].sum())
         w2 = np.append(w2[:5], w2[5:].sum())
@@ -245,8 +259,10 @@ def stack(var, flav, suffix="", zoom=None):
         top = max(tot.max(), d.max() if has_data else 0, 1.0)
         # with the statistics box the highest point must stay below ~55% of the frame (box bottom at ~60%)
         peak = 0.55 if STATBOX and has_data else None
-        if var == "z_mass" or zoom is not None:
+        if var == "z_mass" or zoom is not None or var in LINEAR:
             ax.set_ylim(0, top * (1 / peak if peak and var != "z_mass" else 1.5))
+            if var in LINEAR and zoom is None:
+                ax.set_ylim(0, top * (1 / peak if peak else 1.5))
         else:
             ax.set_yscale("log")
             ax.set_ylim(0.1, max(top * 80, 0.1 * (top / 0.1) ** (1 / peak)) if peak else top * 80)
@@ -274,7 +290,7 @@ def stack(var, flav, suffix="", zoom=None):
                 rerr = np.where(tot > 0, np.sqrt(d) / tot, np.nan)
                 hep.histplot(ratio, edges, ax=rax, histtype="errorbar", color="black", yerr=rerr)
         rax.axhline(1, color="black", lw=1, ls="--")
-        rax.set_ylim(*((0.8, 1.2) if zoom is not None else (0.5, 1.5)))
+        rax.set_ylim(*((0.8, 1.2) if zoom is not None else RRANGE.get(var, (0.5, 1.5))))
         rax.set_ylabel("Data / MC", fontsize=20)
         if var == "n_jet":
             rax.set_xticks(np.arange(6) + 0.5, ["0", "1", "2", "3", "4", "≥5"])
@@ -304,6 +320,44 @@ ZOOM = {"z_pt": (0, 200), "lep0_pt": (30, 200), "lep1_pt": (20, 150), "jet_pt": 
 for var, rng in ZOOM.items():
     if var in VARS:
         stack(var, HADRON, "_zoom", zoom=rng)
+
+# MET > 50 study (ZBZC_MET=1, runs zbzc_run3_metxy / _metxy_nojer): slices of dphi_met,
+# stage_dphi_met, stage_jany, met_phi_nm1 and recoil, standard stack, into plots/met/
+MET_PLOTS = []
+if os.environ.get("ZBZC_MET") == "1" and all("recoil" in o for c in camps for o in OUT[c].values()):
+    for mb in ("0-50", "50-100", "100+"):
+        tag = mb.replace("+", "plus")
+        for obj in ("j1", "jmin", "z", "lep0", "lep1"):
+            MET_PLOTS.append((f"dphi_met_{obj}_{tag}", "dphi_met", {"obj": obj, "metbin": mb}, True))
+        for obj in ("z", "jany"):
+            MET_PLOTS.append((f"stage_dphi_met_{obj}_{tag}", "stage_dphi_met",
+                              {"obj": obj, "metbin": mb, "stage": sum}, True))
+        MET_PLOTS.append((f"stage_jany_pt_{tag}", "stage_jany",
+                          {"stage": sum, "metbin": mb, "dphireg": sum, "abseta": sum}, False))
+        CROP[f"stage_jany_pt_{tag}"] = (15, 150)
+        MET_PLOTS.append((f"stage_jany_abseta_{tag}", "stage_jany",
+                          {"stage": sum, "metbin": mb, "dphireg": sum, "pt": sum}, True))
+    for xy in ("noXY", "XY"):
+        MET_PLOTS.append((f"met_phi_nm1_{xy}", "met_phi_nm1", {"xy": xy, "metbin": sum}, True))
+        MET_PLOTS.append((f"met_phi_nm1_{xy}_50-100", "met_phi_nm1", {"xy": xy, "metbin": "50-100"}, True))
+    zb = OUT[camps[0]][next(iter(OUT[camps[0]]))]["recoil"].axes["zpt"].edges
+    for sel in ("Z", "Z+jet"):
+        for comp in ("upar_qt", "uperp"):
+            for i in range(len(zb) - 1):
+                MET_PLOTS.append((f"recoil_{sel.replace('+', '')}_{comp}_qt{zb[i]:.0f}-{zb[i + 1]:.0f}", "recoil",
+                                  {"sel": sel, "comp": comp, "zpt": i}, True))
+    metdir = os.path.join(plotdir, "met")
+    os.makedirs(metdir, exist_ok=True)
+    plotdir_std = plotdir
+    plotdir = metdir
+    for name, hname, extra, linear in MET_PLOTS:
+        SLICES[name] = (hname, extra)
+        if name.endswith(("50-100", "100plus")):
+            RRANGE[name] = (0.2, 1.6)
+        if linear:
+            LINEAR.add(name)
+        stack(name, HADRON)
+    plotdir = plotdir_std
 
 # PNet CvL vs CvB per DY flavour and data, both channels summed, unit-normalized
 fig, axes = plt.subplots(1, 4, figsize=(34, 8))

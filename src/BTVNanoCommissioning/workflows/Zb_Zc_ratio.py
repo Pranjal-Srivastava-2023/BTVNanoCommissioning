@@ -66,6 +66,10 @@ MET bin (MET > 50 data/MC deficit study). stage_jany: pT and |eta| of that leadi
 any-eta jet ("jany") per MET bin and Delta phi(MET, jany) region (2026-11-16).
 jer_smear=False (workflow "Zb_Zc_ratio_nojer"): MC jets and type-1 MET without JER
 smearing, everything else as nominal (test of the MET > 50 deficit, 2026-11-16).
+met_xy=True (workflows "Zb_Zc_ratio_metxy", "Zb_Zc_ratio_metxy_nojer"): JME PuppiMET
+XY (phi-modulation) correction on top of the type-1 MET, data and MC (MET_XY;
+2022 / 2022EE only). met_phi_nm1 (MET phi before / after XY) and recoil (u_par + qT,
+u_perp vs pT(ll)) histograms are filled in every AK4 run (2026-11-16).
 
 The DY pT(ll)-binned samples (PTLL-X) are inclusive above X, so each one is
 restricted to its own LHE pT(ll) slice (STITCH below) and the inclusive sample
@@ -196,6 +200,16 @@ METBINS = ["0-50", "50-100", "100+"]
 STAGE_DPHI_OBJS = ["z", "jany"]
 # Delta phi(MET, jany) regions for stage_jany: MET along / sideways / opposite the jet
 DPHI_REGIONS = ["<0.6", "0.6-2.5", ">2.5"]
+# JME PuppiMET XY corrections (met_xy=True): {campaign: (cvmfs dir, epoch)}
+MET_XY = {
+    "Summer22": ("Run3-22CDSep23-Summer22-NanoAODv12", "2022"),
+    "Summer22EE": ("Run3-22EFGSep23-Summer22EE-NanoAODv12", "2022EE"),
+}
+# recoil u = -(MET + pT(ll)): u_par + qT and u_perp (w.r.t. the Z direction) in pT(ll) bins,
+# for Z events before the MET/jet cuts ("Z") and with every cut but MET ("Z+jet")
+RECOIL_SEL = ["Z", "Z+jet"]
+RECOIL_COMP = ["upar_qt", "uperp"]
+RECOIL_ZPT = [0, 10, 20, 30, 50, 75, 100, 150, 1000]
 
 
 def met_bin(met):
@@ -269,6 +283,7 @@ class NanoProcessor(processor.ProcessorABC):
         tau_veto=False,
         mu_variants=True,
         jer_smear=True,
+        met_xy=False,
     ):
         if campaign not in self.trigger_config:
             raise KeyError(
@@ -301,6 +316,14 @@ class NanoProcessor(processor.ProcessorABC):
         # jer_smear=False (workflow Zb_Zc_ratio_nojer): MC jets and type-1 MET without
         # JER smearing (JER factor 1 in correction.JME_shifts); data unchanged
         self.jer_smear = bool(jer_smear)
+        # met_xy=True: JME PuppiMET XY correction (data and MC) on the type-1 MET
+        self.met_xy = None
+        if met_xy:
+            if campaign not in MET_XY:
+                raise KeyError(f"Zb_Zc_ratio: no MET XY correction for {campaign}")
+            d, epoch = MET_XY[campaign]
+            f = f"/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/{d}/latest/met_xyCorrections_2022_2022.json.gz"
+            self.met_xy = (correctionlib.CorrectionSet.from_file(f)["met_xy_corrections"], epoch)
         # common_shifts: only JME-recipe jets (pT > 15, tight ID, EM fraction < 0.9,
         # no PF muon within 0.2) in a vetoed region drop the event
         self.jetveto_jme = True
@@ -495,6 +518,18 @@ class NanoProcessor(processor.ProcessorABC):
                 {
                     "dphi_met": h(hist.axis.StrCategory(DPHI_OBJS, name="obj"), mb, dp, tagged=False),
                     "stage_dphi_met": h(st, hist.axis.StrCategory(STAGE_DPHI_OBJS, name="obj"), mb, dp, tagged=False),
+                    # MET phi before / after the XY correction (every cut but MET), per MET bin
+                    "met_phi_nm1": h(
+                        hist.axis.StrCategory(["noXY", "XY"], name="xy"), mb,
+                        Reg(32, -np.pi, np.pi, name="phi", label="PUPPI $p_T^{miss}$ $\\phi$"), tagged=False,
+                    ),
+                    # hadronic recoil u = -(MET + pT(ll)) along / across the Z direction
+                    "recoil": h(
+                        hist.axis.StrCategory(RECOIL_SEL, name="sel"),
+                        hist.axis.StrCategory(RECOIL_COMP, name="comp"),
+                        V(RECOIL_ZPT, name="zpt", label="$p_T(\\ell\\ell)$ [GeV]"),
+                        Reg(50, -100, 100, name="u", label="Recoil [GeV]"), tagged=False,
+                    ),
                     # the jany jet itself: pT and |eta| per MET bin and Delta phi(MET, jany) region
                     "stage_jany": h(
                         st, mb, hist.axis.StrCategory(DPHI_REGIONS, name="dphireg"),
@@ -650,6 +685,17 @@ class NanoProcessor(processor.ProcessorABC):
 
         jets, lead, req_jet = self.select_jets(events, ele_jetveto, mu_jetveto)
         # events.MET = type-1 corrected PuppiMET from common_shifts
+        # (+ JME XY correction if met_xy; MET.phi_noxy = phi before it)
+        events["MET", "phi_noxy"] = events.MET.phi
+        if self.met_xy is not None and len(events) > 0:
+            corr, epoch = self.met_xy
+            dtmc = "DATA" if isRealData else "MC"
+            args = (ak.to_numpy(events.MET.pt).astype(float), ak.to_numpy(events.MET.phi).astype(float),
+                    ak.to_numpy(events.PV.npvsGood).astype(float))
+            new_pt = corr.evaluate("pt", "PuppiMET", epoch, dtmc, "nom", *args)
+            new_phi = corr.evaluate("phi", "PuppiMET", epoch, dtmc, "nom", *args)
+            events["MET", "pt"] = new_pt
+            events["MET", "phi"] = new_phi
         req_met = ak.to_numpy(events.MET.pt < 50)
         # MET study: leading lepton-cleaned jet with pT > 15 at any |eta| (the jets
         # that enter type-1 MET; no ID), phi = nan if none
@@ -729,6 +775,14 @@ class NanoProcessor(processor.ProcessorABC):
                         jets[zpre][nm1], zcand[zpre][nm1], l0[zpre][nm1], l1[zpre][nm1],
                         preweight[nm1],
                     )
+                    self.fill_recoil(
+                        output, "Z+jet", channel, isRealData, events[zpre][nm1],
+                        lead[zpre][nm1], zcand[zpre][nm1], preweight[nm1],
+                    )
+                self.fill_recoil(
+                    output, "Z", channel, isRealData, events[zpre], lead[zpre],
+                    zcand[zpre], preweight,
+                )
                 # Delta phi(MET, Z / any-eta jet) for all Z events (stage axis)
                 self.fill_stage_dphi(
                     output, channel, isRealData, events[zpre], lead[zpre], zcand[zpre],
@@ -1193,6 +1247,25 @@ class NanoProcessor(processor.ProcessorABC):
         }
         for obj, v in vals.items():
             output["dphi_met"].fill(obj=obj, dphi=v, **common)
+        if "met_phi_nm1" in output:
+            output["met_phi_nm1"].fill(xy="XY", phi=met_phi, **common)
+            output["met_phi_nm1"].fill(xy="noXY", phi=ak.to_numpy(ev.MET.phi_noxy), **common)
+
+    def fill_recoil(self, output, selname, channel, isRealData, ev, lead, z, weight):
+        """recoil: u = -(MET + pT(ll)); u_par + qT (u_par along the Z direction, ~0
+        for a well-measured recoil) and u_perp, in bins of qT = pT(ll)."""
+        if "recoil" not in output:
+            return
+        met_pt, met_phi = ak.to_numpy(ev.MET.pt), ak.to_numpy(ev.MET.phi)
+        qt, zphi = ak.to_numpy(z.pt), ak.to_numpy(z.phi)
+        ux = -(met_pt * np.cos(met_phi) + qt * np.cos(zphi))
+        uy = -(met_pt * np.sin(met_phi) + qt * np.sin(zphi))
+        upar = ux * np.cos(zphi) + uy * np.sin(zphi)
+        uperp = -ux * np.sin(zphi) + uy * np.cos(zphi)
+        flavs = self.z_flavours(isRealData, lead)
+        for comp, u in (("upar_qt", upar + qt), ("uperp", uperp)):
+            output["recoil"].fill(channel=channel, sel=selname, comp=comp, zpt=qt,
+                                  u=u, **flavs, weight=weight)
 
     def fill_stage_dphi(self, output, channel, isRealData, ev, lead, z, jany_phi, met, jet, weight,
                         jany_pt=None, jany_aeta=None):

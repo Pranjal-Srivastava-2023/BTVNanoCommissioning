@@ -2,7 +2,28 @@
 
 Run 2 QCD_sf work is in `SESSION_NOTES.md`; this file is only the Run 3 ratio measurement.
 
-## RESUME HERE (2026-11-16): one-change-per-deck b-tag decks (pT 26->30, |eta| 2.4->2.1, tau veto), Z pT weights ON
+## RESUME HERE (2026-11-16, MET study): MET > 50 deficit, Delta phi + recoil + JER on/off, MET XY correction
+
+User 2026-11-16: (1) check the "phi - 2pi" issue known from Run 2 -> Delta phi wrap IS applied (dphi() folds
+|dphi| > pi to 2pi - |dphi|; coffea delta_phi wraps; T1 MET phi = arctan2 + fixPhiRange); cutvar outputs have 0
+entries outside [0, pi] in dphi_met / stage_dphi_met / dphi_zj / dphi_ll / dphi_jj. Nothing to fix.
+BUT the JME PuppiMET XY (phi-modulation) correction was NOT applied: met_xyCorrections_2022_2022.json.gz
+(epochs 2022 / 2022EE, DATA / MC, input npvGood). Size: data (+0.3,+0.65) GeV at 15 PV .. (+0.9,+1.5) at 50 PV;
+MC 0.2-0.6 GeV. User chose: apply it in BOTH runs; ONE MET deck comparing A and B.
+(2) Delta phi study of MET > 50 with my suggestions (nojer + recoil), separate deck, 3-tagger deck style.
+Code: workflow kwarg met_xy (MET_XY dict, MET.phi_noxy kept), new hists met_phi_nm1 (xy noXY/XY x metbin) and
+recoil (sel Z / Z+jet x comp upar_qt / uperp x zpt bins), filled in every AK4 run. Workflows Zb_Zc_ratio_metxy
+(zpt + met_xy) and Zb_Zc_ratio_metxy_nojer (+ jer_smear=False). 1-file test: data identical except 1 event over
+the MET cut; noJER lowers MC MET>50 fraction (DY PTLL-100 Zee 13.5 -> 9.7 %).
+Runs 2026-11-16 11:12 on cmslpc371: launch_zbzc_job.sh zbzc_run3_metxy (mc + data), zbzc_run3_metxy_nojer (mc);
+watchdog logs_zbzc_run3_metxy/stall_watchdog_cmslpc371.log; postprocess_zbzc_met.sh (log
+logs_zbzc_run3_metxy/postprocess.log: N/N per log, links A data into B, lumi.json from zpt, plots, compare).
+Plots: ZBZC_RUN=<run> ZBZC_MET=1 python plot_zbzc_run3.py Summer22 -> plots/met/ (SLICES/LINEAR/CROP/RRANGE hooks);
+python plot_zbzc_met_compare.py -> hists_zbzc_run3_metxy/Summer22/met_compare/ (overlays, recoil_*.png, json).
+Deck: PYTHONPATH=$PWD python make_zbzc_met_slides_pdf.py -> hists_zbzc_run3_metxy/Summer22/slides_zbzc_met_Summer22.pdf
+(158 pages; FINDINGS dict filled by hand after looking at the plots). Layout tested on 1-file outputs.
+
+## (earlier) RESUME HERE (2026-11-16): one-change-per-deck b-tag decks (pT 26->30, |eta| 2.4->2.1, tau veto), Z pT weights ON
 
 STATUS 2026-11-15 22:30: DONE, pushed 182e5f9 (code, plots, yields, 4 PDFs, 138 pages each). Session paused, continue 2026-11-16.
 Results (no tag, data/MC Zee / Zmm, stat only): v2 0.949 / 0.943 -> zpt 0.971 / 0.963 (MC -2 %, data same);

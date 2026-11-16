@@ -116,6 +116,9 @@ workflows["Zb_Zc_ratio_zpt"] = partial(ZbZcRatioProcessor, **_zpt)
 workflows["Zb_Zc_ratio_zpt_mupt30"] = partial(ZbZcRatioProcessor, mu_pt_min=30.0, **_zpt)
 workflows["Zb_Zc_ratio_zpt_mueta21"] = partial(ZbZcRatioProcessor, mu_eta_max=2.1, **_zpt)
 workflows["Zb_Zc_ratio_zpt_tauveto"] = partial(ZbZcRatioProcessor, tau_veto=True, **_zpt)
+# MET > 50 study 2026-11-16: zpt setup + JME PuppiMET XY correction, with / without MC JER smearing
+workflows["Zb_Zc_ratio_metxy"] = partial(ZbZcRatioProcessor, met_xy=True, **_zpt)
+workflows["Zb_Zc_ratio_metxy_nojer"] = partial(ZbZcRatioProcessor, met_xy=True, jer_smear=False, **_zpt)
 
 # W+c
 workflows["ctag_Wc_sf"] = partial(CTAGWcTTValidSFProcessor, selectionModifier="WcM")
