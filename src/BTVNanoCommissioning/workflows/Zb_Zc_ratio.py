@@ -66,6 +66,11 @@ MET bin (MET > 50 data/MC deficit study). stage_jany: pT and |eta| of that leadi
 any-eta jet ("jany") per MET bin and Delta phi(MET, jany) region (2026-11-16).
 jer_smear=False (workflow "Zb_Zc_ratio_nojer"): MC jets and type-1 MET without JER
 smearing, everything else as nominal (test of the MET > 50 deficit, 2026-11-16).
+jer_met="matched" (workflow "Zb_Zc_ratio_metxy_jermatched"): the jets that enter the
+type-1 MET sum are JER-smeared only if they have a gen jet (Genpt > 0, scaling
+method); the gen-unmatched ones (all CorrT1METJet, pileup jets) keep factor 1 there
+instead of the random (stochastic) smearing. The analysis jets keep the full
+nominal smearing (2026-11-16).
 met_xy=True (workflows "Zb_Zc_ratio_metxy", "Zb_Zc_ratio_metxy_nojer"): JME PuppiMET
 XY (phi-modulation) correction on top of the type-1 MET, data and MC (MET_XY;
 2022 / 2022EE only). met_phi_nm1 (MET phi before / after XY) and recoil (u_par + qT,
@@ -284,6 +289,7 @@ class NanoProcessor(processor.ProcessorABC):
         mu_variants=True,
         jer_smear=True,
         met_xy=False,
+        jer_met="all",
     ):
         if campaign not in self.trigger_config:
             raise KeyError(
@@ -316,6 +322,11 @@ class NanoProcessor(processor.ProcessorABC):
         # jer_smear=False (workflow Zb_Zc_ratio_nojer): MC jets and type-1 MET without
         # JER smearing (JER factor 1 in correction.JME_shifts); data unchanged
         self.jer_smear = bool(jer_smear)
+        # jer_met="matched": no stochastic JER smearing in the type-1 MET jets
+        # (common_shifts_jermatched); "all" = nominal
+        if jer_met not in ("all", "matched"):
+            raise ValueError(f"jer_met must be 'all' or 'matched', not {jer_met}")
+        self.jer_met = jer_met
         # met_xy=True: JME PuppiMET XY correction (data and MC) on the type-1 MET
         self.met_xy = None
         if met_xy:
@@ -582,6 +593,8 @@ class NanoProcessor(processor.ProcessorABC):
             vetoed_events, shifts = events, [({}, None)]
         elif not self.jer_smear and not isRealData:
             vetoed_events, shifts = self.common_shifts_nojer(events)
+        elif self.jer_met == "matched" and not isRealData:
+            vetoed_events, shifts = self.common_shifts_jermatched(events)
         else:
             vetoed_events, shifts = common_shifts(self, events)
         pre["jetveto"] = count(vetoed_events)
@@ -1302,6 +1315,30 @@ class NanoProcessor(processor.ProcessorABC):
 
         get_jer = corr.get_JER
         corr.get_JER = lambda *a, **k: ak.ones_like(get_jer(*a, **k))
+        try:
+            return common_shifts(self, events)
+        finally:
+            corr.get_JER = get_jer
+
+    def common_shifts_jermatched(self, events):
+        """common_shifts where the jets of the type-1 MET sum get JER factor 1 if they
+        have no gen jet (Genpt < 0, i.e. the stochastic branch of JERSmear). The
+        type-1 collection is recognised by the missing "jetId" field (it only has the
+        get_MET_corr_keys fields); the analysis Jet collection is smeared as nominal."""
+        import BTVNanoCommissioning.utils.correction as corr
+
+        get_jer = corr.get_JER
+        self._jer_calls = {"jets": 0, "t1": 0}
+
+        def get_jer_matched(correct_map, jername, j, *a, **k):
+            f = get_jer(correct_map, jername, j, *a, **k)
+            if "jetId" in j.fields:
+                self._jer_calls["jets"] += 1
+                return f
+            self._jer_calls["t1"] += 1
+            return ak.where(j.Genpt > 0, f, ak.ones_like(f))
+
+        corr.get_JER = get_jer_matched
         try:
             return common_shifts(self, events)
         finally:

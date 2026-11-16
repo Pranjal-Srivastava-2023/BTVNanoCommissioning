@@ -9,6 +9,9 @@ Writes into hists_zbzc_run3_metxy/Summer22/met_compare/:
   dphi_j1_50-100_jer_vs_nojer.png     the same for Delta phi(MET, leading jet) at MET 50-100
   recoil_<Z|Zjet>.png                 <u_par + qT> and RMS(u_perp) vs pT(ll): data, MC JER, MC noJER
 Usage: python plot_zbzc_met_compare.py
+ZBZC_MET_C=1: add run C = zbzc_run3_metxy_jermatched (JER smearing in the type-1 MET only for gen-matched jets,
+analysis jets nominal) as a third MC curve / row; outputs then go to hists_zbzc_run3_metxy_jermatched/Summer22/met_compare/
+(the A/B outputs above stay as they are).
 """
 import glob
 import json
@@ -27,12 +30,17 @@ RUNS = {"zpt": "zbzc_run3_zpt", "JER": "zbzc_run3_metxy", "noJER": "zbzc_run3_me
 # ZBZC_MET_TEST=<prefix>: read hists_<prefix>metxy and hists_<prefix>metxy_nojer instead (layout test)
 if os.environ.get("ZBZC_MET_TEST"):
     RUNS.update(JER=os.environ["ZBZC_MET_TEST"] + "metxy", noJER=os.environ["ZBZC_MET_TEST"] + "metxy_nojer")
-OUTDIR = f"hists_{RUNS['JER']}/{C}/met_compare"
+MCKEYS = ["JER", "noJER"]
+if os.environ.get("ZBZC_MET_C"):
+    RUNS["matched"] = "zbzc_run3_metxy_jermatched"
+    MCKEYS.append("matched")
+OUTDIR = f"hists_{RUNS['matched' if 'matched' in RUNS else 'JER']}/{C}/met_compare"
 os.makedirs(OUTDIR, exist_ok=True)
 XS = json.load(open("metadata/Zb_Zc_ratio_xsections_run3.json"))
 CHANNELS = {"Zee": r"Z$\to$ee", "Zmm": r"Z$\to\mu\mu$"}
-COL = {"JER": "#1f77b4", "noJER": "#d62728", "zpt": "#7f7f7f"}
-LAB = {"JER": "MC, JER smearing (nominal)", "noJER": "MC, no JER smearing", "zpt": "MC, no MET XY (zpt run)"}
+COL = {"JER": "#1f77b4", "noJER": "#d62728", "zpt": "#7f7f7f", "matched": "#2ca02c"}
+LAB = {"JER": "MC, JER smearing (nominal)", "noJER": "MC, no JER smearing", "zpt": "MC, no MET XY (zpt run)",
+       "matched": "MC, JER in MET only for gen-matched jets"}
 
 
 def lumi_of(run):
@@ -66,7 +74,8 @@ def ratio(d, m):
 res = {}
 L = ["MET > 50 study, Summer22, 20 files per sample, statistical errors only",
      "zpt = 8 Nov setup + DY Z pT weights (no MET XY); JER / noJER = zpt + PuppiMET XY, MC with / without JER smearing",
-     "Data: zpt run for zpt, metxy run for JER and noJER (data are the same events; only the XY correction differs).", ""]
+     "matched (if present) = JER smearing in the type-1 MET only for gen-matched jets, analysis jets nominal",
+     "Data: zpt run for zpt, metxy run for JER, noJER and matched (data are the same events; only the XY correction differs).", ""]
 
 # ---------------------------------------------------------------- data/MC per MET bin (all cuts but MET)
 L.append("== data/MC, all cuts except MET, per MET bin")
@@ -113,7 +122,7 @@ def overlay(hname, sl, fname, xlabel, logy):
         e = d.axes[0].edges
         dv = d.values()
         hep.histplot(dv, e, ax=ax, histtype="errorbar", color="black", yerr=np.sqrt(dv), label="Data")
-        for key in ("JER", "noJER"):
+        for key in MCKEYS:
             _, m = get(RUNS[key], hname, ch, sl)
             mv = m.values()
             hep.histplot(mv, e, ax=ax, color=COL[key], lw=2.5, label=f"{LAB[key]} (data/MC {dv.sum() / mv.sum():.3f})")
@@ -160,14 +169,14 @@ L.append("== hadronic recoil u = -(MET + pT(ll)): mean of u_par + qT (0 = balanc
 for sel in ("Z", "Z+jet"):
     fig, axes = plt.subplots(2, 2, figsize=(20, 11), sharex=True, gridspec_kw={"hspace": 0.05})
     for j, ch in enumerate(CHANNELS):
-        L.append(f"-- {sel}, {ch}: qT bin | <u_par+qT> data / JER / noJER | RMS(u_perp) data / JER / noJER")
+        L.append(f"-- {sel}, {ch}: qT bin | <u_par+qT> data / {' / '.join(MCKEYS)} | RMS(u_perp) data / {' / '.join(MCKEYS)}")
         d0, _ = get(RUNS["JER"], "recoil", ch, {"sel": sel, "comp": "uperp"})
         zb = d0.axes["zpt"].edges
         x = 0.5 * (zb[:-1] + np.minimum(zb[1:], 250))
-        pts = {k: ([], []) for k in ("data", "JER", "noJER")}
+        pts = {k: ([], []) for k in ["data"] + MCKEYS}
         for i in range(len(zb) - 1):
             out = {}
-            for key in ("JER", "noJER"):
+            for key in MCKEYS:
                 for comp, idx in (("upar_qt", 0), ("uperp", 1)):
                     d, m = get(RUNS[key], "recoil", ch, {"sel": sel, "comp": comp, "zpt": i})
                     if key == "JER":
@@ -179,7 +188,7 @@ for sel in ("Z", "Z+jet"):
             L.append(f"   {zb[i]:4.0f}-{zb[i + 1]:<5.0f}| " + " / ".join(f"{out[(k, 'upar_qt')][0]:6.2f}" for k in pts)
                      + " | " + " / ".join(f"{out[(k, 'uperp')][1]:6.2f}" for k in pts))
             res[f"recoil_{sel}_{ch}_{i}"] = {k: [out[(k, 'upar_qt')][0], out[(k, 'uperp')][1]] for k in pts}
-        for k, col in (("data", "black"), ("JER", COL["JER"]), ("noJER", COL["noJER"])):
+        for k, col in [("data", "black")] + [(k, COL[k]) for k in MCKEYS]:
             lab = "Data" if k == "data" else LAB[k]
             axes[0, j].errorbar(x, [p[0] for p in pts[k][0]], yerr=[p[2] for p in pts[k][0]], fmt="o-", color=col, label=lab)
             axes[1, j].errorbar(x, [p[1] for p in pts[k][1]], yerr=[p[3] for p in pts[k][1]], fmt="o-", color=col, label=lab)

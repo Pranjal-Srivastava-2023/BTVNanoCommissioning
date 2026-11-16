@@ -19,6 +19,15 @@ RESULTS (data/MC all cuts except MET, MET 0-50 / 50-100 / 100-200, stat only):
   Hypothesis (untested): CorrT1METJet get Genpt=-1 (correction.py ~l.1133) and gen-unmatched Jet get genJetIdx=-1,
      so both get STOCHASTIC smearing that enters the type-1 MET sum. Proposed next one-change run: smear only
      gen-matched jets in the type-1 MET (keep smearing of the analysis jets). Ask the user before running.
+RUN C (user OK 2026-11-16 14:10): zbzc_run3_metxy_jermatched = workflow Zb_Zc_ratio_metxy_jermatched (jer_met="matched":
+  common_shifts_jermatched swaps get_JER; type-1 MET jets (no "jetId" field) get factor 1 where Genpt <= 0; analysis
+  jets nominal). Direct test 20k raw DY PTLL-100 events: jets identical to nominal, MET>50 frac 40.2 % nominal /
+  39.1 % matched / 37.3 % noJER. Launched 14:15 on cmslpc371 as TWO MC jobs (ZBZC_DSETS "DYto2L" and "TTto2L2Nu WW WZ
+  ZZ", both write logs_zbzc_run3_metxy_jermatched/Summer22/driver_mc.log -> needs 2x "ALL DONE"); watchdog
+  ZBZC_RUN=zbzc_run3_metxy_jermatched; postprocess_zbzc_met_c.sh (log logs_zbzc_run3_metxy_jermatched/postprocess.log)
+  links run A data, plots, then ZBZC_MET_C=1 plot_zbzc_met_compare.py -> hists_zbzc_run3_metxy_jermatched/Summer22/
+  met_compare/ (A/B/C). User closed the PC; on return: check postprocess.log N/N, then deck for C (to do: extend
+  make_zbzc_met_slides_pdf.py or a short follow-up deck), commit + push with plots, give the PDF path.
 
 User 2026-11-16: (1) check the "phi - 2pi" issue known from Run 2 -> Delta phi wrap IS applied (dphi() folds
 |dphi| > pi to 2pi - |dphi|; coffea delta_phi wraps; T1 MET phi = arctan2 + fixPhiRange); cutvar outputs have 0
