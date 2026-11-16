@@ -62,7 +62,10 @@ variant changes one thing in the muon selection or weights (MU_VARIANTS); since
 2026-11-15 also one cut at a time (muon pT / |eta|, Z mass window, MET, jet pT /
 |eta| / ID, loose tau veto) for the data/MC pT-slope study.
 dphi_met / stage_dphi_met: Delta phi between MET and the jets, Z and leptons per
-MET bin (MET > 50 data/MC deficit study).
+MET bin (MET > 50 data/MC deficit study). stage_jany: pT and |eta| of that leading
+any-eta jet ("jany") per MET bin and Delta phi(MET, jany) region (2026-11-16).
+jer_smear=False (workflow "Zb_Zc_ratio_nojer"): MC jets and type-1 MET without JER
+smearing, everything else as nominal (test of the MET > 50 deficit, 2026-11-16).
 
 The DY pT(ll)-binned samples (PTLL-X) are inclusive above X, so each one is
 restricted to its own LHE pT(ll) slice (STITCH below) and the inclusive sample
@@ -191,10 +194,16 @@ TAU_VETO = dict(pt=20.0, eta=2.5, dz=0.2, dms=(0, 1, 10, 11), vsjet=4, vse=2, vs
 DPHI_OBJS = ["j1", "jmin", "z", "lep0", "lep1"]
 METBINS = ["0-50", "50-100", "100+"]
 STAGE_DPHI_OBJS = ["z", "jany"]
+# Delta phi(MET, jany) regions for stage_jany: MET along / sideways / opposite the jet
+DPHI_REGIONS = ["<0.6", "0.6-2.5", ">2.5"]
 
 
 def met_bin(met):
     return np.select([met < 50, met < 100], METBINS[:2], default=METBINS[2])
+
+
+def dphi_region(d):
+    return np.select([d < 0.6, d < 2.5], DPHI_REGIONS[:2], default=DPHI_REGIONS[2])
 
 
 def dphi(a_phi, b_phi):
@@ -257,6 +266,7 @@ class NanoProcessor(processor.ProcessorABC):
         mu_trig_sf="pair",
         mu_pt_min=26.0,
         mu_variants=True,
+        jer_smear=True,
     ):
         if campaign not in self.trigger_config:
             raise KeyError(
@@ -280,6 +290,9 @@ class NanoProcessor(processor.ProcessorABC):
         self.mu_trig_sf = mu_trig_sf
         self.mu_pt_min = float(mu_pt_min)
         self.mu_variants = bool(mu_variants)
+        # jer_smear=False (workflow Zb_Zc_ratio_nojer): MC jets and type-1 MET without
+        # JER smearing (JER factor 1 in correction.JME_shifts); data unchanged
+        self.jer_smear = bool(jer_smear)
         # common_shifts: only JME-recipe jets (pT > 15, tight ID, EM fraction < 0.9,
         # no PF muon within 0.2) in a vetoed region drop the event
         self.jetveto_jme = True
@@ -474,6 +487,13 @@ class NanoProcessor(processor.ProcessorABC):
                 {
                     "dphi_met": h(hist.axis.StrCategory(DPHI_OBJS, name="obj"), mb, dp, tagged=False),
                     "stage_dphi_met": h(st, hist.axis.StrCategory(STAGE_DPHI_OBJS, name="obj"), mb, dp, tagged=False),
+                    # the jany jet itself: pT and |eta| per MET bin and Delta phi(MET, jany) region
+                    "stage_jany": h(
+                        st, mb, hist.axis.StrCategory(DPHI_REGIONS, name="dphireg"),
+                        V([15, 20, 25, 30, 40, 50, 70, 100, 150, 1000], name="pt", label="Leading any-$\\eta$ jet $p_T$ [GeV]"),
+                        V([0, 1.3, 2.0, 2.5, 2.75, 3.0, 3.2, 4.0, 5.0], name="abseta", label="Leading any-$\\eta$ jet $|\\eta|$"),
+                        tagged=False,
+                    ),
                 }
             )
         return hists
@@ -517,6 +537,8 @@ class NanoProcessor(processor.ProcessorABC):
         ## JEC/JER + type-1 MET, lepton scale/smearing, jet veto map
         if len(events) == 0:
             vetoed_events, shifts = events, [({}, None)]
+        elif not self.jer_smear and not isRealData:
+            vetoed_events, shifts = self.common_shifts_nojer(events)
         else:
             vetoed_events, shifts = common_shifts(self, events)
         pre["jetveto"] = count(vetoed_events)
@@ -626,7 +648,10 @@ class NanoProcessor(processor.ProcessorABC):
         jany = jany[ak.all(jany.metric_table(ele_jetveto) > 0.4, axis=2)]
         jany = jany[ak.all(jany.metric_table(mu_jetveto) > 0.4, axis=2)]
         jany = jany[ak.argsort(jany.pt, ascending=False)]
-        jany_phi = ak.to_numpy(ak.fill_none(ak.pad_none(jany, 1, axis=1)[:, 0].phi, np.nan))
+        jany0 = ak.pad_none(jany, 1, axis=1)[:, 0]
+        jany_phi = ak.to_numpy(ak.fill_none(jany0.phi, np.nan))
+        jany_pt = ak.to_numpy(ak.fill_none(jany0.pt, np.nan))
+        jany_aeta = ak.to_numpy(ak.fill_none(abs(jany0.eta), np.nan))
 
         ## Per-channel selection
         genw = (
@@ -696,6 +721,7 @@ class NanoProcessor(processor.ProcessorABC):
                 self.fill_stage_dphi(
                     output, channel, isRealData, events[zpre], lead[zpre], zcand[zpre],
                     jany_phi[zpre], req_met[zpre], req_jet[zpre], preweight,
+                    jany_pt[zpre], jany_aeta[zpre],
                 )
 
             # Z events before the jet requirement: only the jet multiplicity is
@@ -1156,7 +1182,8 @@ class NanoProcessor(processor.ProcessorABC):
         for obj, v in vals.items():
             output["dphi_met"].fill(obj=obj, dphi=v, **common)
 
-    def fill_stage_dphi(self, output, channel, isRealData, ev, lead, z, jany_phi, met, jet, weight):
+    def fill_stage_dphi(self, output, channel, isRealData, ev, lead, z, jany_phi, met, jet, weight,
+                        jany_pt=None, jany_aeta=None):
         """stage_dphi_met: Delta phi(MET, Z) and Delta phi(MET, leading any-eta
         jet with pT > 15) for Z events before the MET and jet cuts (stage axis
         as in fill_stage), split by MET bin; "jany" only for events with such a jet."""
@@ -1175,6 +1202,25 @@ class NanoProcessor(processor.ProcessorABC):
                 **{k: v[has] for k, v in flavs.items()},
                 dphi=dphi(met_phi[has], jany_phi[has]), weight=weight[has],
             )
+            if jany_pt is not None and "stage_jany" in output:
+                output["stage_jany"].fill(
+                    channel=channel, stage=stage[has], metbin=mb[has],
+                    **{k: v[has] for k, v in flavs.items()},
+                    dphireg=dphi_region(dphi(met_phi[has], jany_phi[has])),
+                    pt=jany_pt[has], abseta=jany_aeta[has], weight=weight[has],
+                )
+
+    def common_shifts_nojer(self, events):
+        """common_shifts with the MC JER smearing switched off (JER factor 1 for the
+        jets and the type-1 MET); correction.get_JER is swapped only for this call."""
+        import BTVNanoCommissioning.utils.correction as corr
+
+        get_jer = corr.get_JER
+        corr.get_JER = lambda *a, **k: ak.ones_like(get_jer(*a, **k))
+        try:
+            return common_shifts(self, events)
+        finally:
+            corr.get_JER = get_jer
 
     def variant_jets(self, events, jpt, jeta, jid, ele_clean, mu_clean):
         """AK4 jets for a cut-study variant: select_jets with pT / |eta| / ID changed
