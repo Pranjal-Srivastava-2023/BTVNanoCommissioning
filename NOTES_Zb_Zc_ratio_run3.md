@@ -4,6 +4,22 @@ Run 2 QCD_sf work is in `SESSION_NOTES.md`; this file is only the Run 3 ratio me
 
 ## RESUME HERE (2026-11-16, MET study): MET > 50 deficit, Delta phi + recoil + JER on/off, MET XY correction
 
+STATUS 2026-11-16 ~14:30: DONE, pushed 325fb66 (+ this notes commit). Runs finished 13:49, every log N/N (DY 20/20
+x5, tt/WW/WZ/ZZ 20/20 in both runs, Muon 12+8, EGamma 15+5), no non-zero exits. Deck 158 p.
+RESULTS (data/MC all cuts except MET, MET 0-50 / 50-100 / 100-200, stat only):
+  Zee  A (JER on) 0.971 / 0.697 / 0.917   B (JER off) 0.959 / 0.964 / 1.274+-0.17
+  Zmm  A          0.964 / 0.687 / 0.750   B           0.952 / 0.961 / 1.022+-0.09
+  -> JER smearing (as propagated to type-1 MET) causes most of the MET 50-100 deficit; fixed at every
+     Delta phi(MET, j1). MET XY: data MET phi flatter (chi2/ndf 73->50 Zee, 108->75 Zmm), no effect on MET>50.
+  NOT fixed by JER off: Z stage (no jet cut) Delta phi(MET, any-eta jet>15) data/MC 0.49 -> 0.72 only; recoil u_perp
+     RMS in Z events at low qT MC still ~2 GeV wider (15.7 vs 13.9); recoil response u_par+qT 1.5-2.5 GeV larger in
+     data (data recoil lower) in A and B. In Z+jet (all cuts except MET) B recoil width matches data within 0.5 GeV.
+  JER off is NOT the fix: selected-jet pt_balance chi2/ndf worse (40->58 Zee, 110->144 Zmm), MET<50 data/MC -1.2 %,
+     final raw data/MC 0.856->0.842 Zee, 0.914->0.898 Zmm.
+  Hypothesis (untested): CorrT1METJet get Genpt=-1 (correction.py ~l.1133) and gen-unmatched Jet get genJetIdx=-1,
+     so both get STOCHASTIC smearing that enters the type-1 MET sum. Proposed next one-change run: smear only
+     gen-matched jets in the type-1 MET (keep smearing of the analysis jets). Ask the user before running.
+
 User 2026-11-16: (1) check the "phi - 2pi" issue known from Run 2 -> Delta phi wrap IS applied (dphi() folds
 |dphi| > pi to 2pi - |dphi|; coffea delta_phi wraps; T1 MET phi = arctan2 + fixPhiRange); cutvar outputs have 0
 entries outside [0, pi] in dphi_met / stage_dphi_met / dphi_zj / dphi_ll / dphi_jj. Nothing to fix.
