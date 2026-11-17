@@ -108,7 +108,8 @@ class CountDeck:
 
     def save(self, fig, foot=True):
         import matplotlib.pyplot as plt
-        self.n += 1
+        from zbzc_slides_common import dropped
+        self.n += 0 if dropped(fig) else 1  # same pages as Deck.save (ZBZC_CLEAN)
         plt.close(fig)
 
 

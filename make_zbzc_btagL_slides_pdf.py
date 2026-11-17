@@ -181,6 +181,7 @@ SCORES = [("B", "B score (b vs everything)", "The score used for the selection: 
 MAP = ("lep_eta_phi_ratio", "Lepton η–φ map: data / MC", "Both Z leptons, MC normalised to data in each map, cells of 1.0 in η × "
        "π/4 in φ. Colour scale from 0.85 to 1.15; the number in each cell is data/MC. Few events per cell in a tagged region.")
 N_PLOTS = len(VARS) + len(SCORES) + 1
+N_SHOWN = N_PLOTS - (sum(v[0].endswith("_zoom") for v in VARS) if common.CLEAN else 0)  # zoom pages dropped
 for t, reg in REG.items():
     for v in [x[0] for x in VARS] + [f"jet_{t}{s}" for s, _, _ in SCORES] + [MAP[0]]:
         assert os.path.exists(f"{D}/plots_{reg}/{v}.png"), (reg, v)
@@ -334,7 +335,7 @@ for t in REG:
             text(fig, x, 490 + k * 60, val, 28, "white")
     text(fig, 110, 680, "Flavour shares are of all MC. Tagged = fraction of Z + jet events whose leading jet passes the tag. "
          "Statistical errors only.", 23, "#C9D3E3", width=1700)
-    text(fig, 110, 760, f"{N_PLOTS} plots follow, in this order: Z and leptons, jets, Z–jet, MET and vertices, generator Z pT, "
+    text(fig, 110, 760, f"{N_SHOWN} plots follow, in this order: Z and leptons, jets, Z–jet, MET and vertices, generator Z pT, "
          f"the {t} scores, the lepton η–φ map. Left Z→ee, right Z→μμ.", 23, "#C9D3E3", width=1700)
     deck.save(fig)
     for var, title, expl in VARS:

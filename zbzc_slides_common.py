@@ -37,6 +37,16 @@ CHS = {"Zee": "Z→ee", "Zmm": "Z→μμ"}
 # below also records what it draws in fig._ops; Deck.save turns those into PowerPoint shapes (text boxes, tables,
 # rounded boxes, pictures). Upload the .pptx to Google Drive and "Open with Google Slides" to edit it there.
 PPTX = os.environ.get("ZBZC_PPTX", "0") == "1"
+# ZBZC_CLEAN=1 (user request 2026-11-17): drop the zoomed-plot pages, "Analysis setup 1/2", "Contents" and
+# "How to read the numbers"; the remaining setup page loses its "2/2"; page numbers stay continuous.
+CLEAN = os.environ.get("ZBZC_CLEAN", "0") == "1"
+DROP_TITLES = ("Contents", "Analysis setup 1/2", "How to read the numbers")
+
+
+def dropped(fig):
+    """True if CLEAN removes this page: title in DROP_TITLES, or 'zoom' in the title or subtitle."""
+    t = [o[3] for o in getattr(fig, "_ops", None) or [] if o[0] == "text"][:2]
+    return CLEAN and bool(t) and (t[0].startswith(DROP_TITLES) or any(re.search(r"\bzoom\b", s) for s in t))
 
 
 def _rec(fig, *op):
@@ -167,6 +177,10 @@ class Deck:
             self.pdf, self.out = PdfPages(out), out
 
     def save(self, fig, foot=True):
+        if dropped(fig):
+            self.n_dropped = getattr(self, "n_dropped", 0) + 1
+            plt.close(fig)
+            return
         self.n += 1
         if foot:
             text(fig, 110, 1040, f"{self.foot} · page {self.n}", 18, MUTED)
@@ -181,7 +195,7 @@ class Deck:
             self.prs.save(self.out)
         else:
             self.pdf.close()
-        print("wrote", self.out, f"({self.n} pages)")
+        print("wrote", self.out, f"({self.n} pages" + (f", {self.n_dropped} dropped by ZBZC_CLEAN)" if CLEAN else ")"))
 
 
 # ------------------------------------------------------------------ .pptx backend (ZBZC_PPTX=1)
@@ -454,7 +468,7 @@ def setup_slides(deck):
     deck.save(fig)
 
     fig = page()
-    top = heading(fig, "Analysis setup 2/2: corrections, scale factors, b/c tagging",
+    top = heading(fig, ("Analysis setup" if CLEAN else "Analysis setup 2/2") + ": corrections, scale factors, b/c tagging",
                   "All corrections from the CMS jsonPOG files (/cvmfs/cms-griddata.cern.ch/cat/metadata), Summer22 versions.") + 10
     y = bullets(fig, xl, top, cw, "Jets and MET", [
         "Jet energy corrections Summer22_22Sep2023_V4 (data per run era and MC); jet energy resolution smearing "

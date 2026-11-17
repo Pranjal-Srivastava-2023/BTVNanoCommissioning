@@ -12,6 +12,10 @@ boxes (Arial), tables become real tables, plots are pictures. Upload to Google D
 Built 2026-11-17 for the 6 latest decks (4 one-change b-tag decks, MET A/B, run C); slide counts = PDF page counts;
 text-fit check with Liberation Sans (Arial metrics): no box needs more lines than in the PDF.
 Not checked by eye in Google Slides yet (no LibreOffice render on the node).
+CLEANED same day (user): ZBZC_CLEAN=1 drops zoomed-plot pages ('zoom' in title/subtitle), 'Analysis setup 1/2',
+'Contents', 'How to read the numbers'; setup 2/2 is then titled 'Analysis setup: ...'; footers renumbered; b-tag
+divider pages say '32 plots follow'. The committed .pptx are the CLEANED ones (b-tag 105 slides, MET 153, run C 16);
+PDFs unchanged (full). Rebuild: ZBZC_PPTX=1 ZBZC_CLEAN=1 PYTHONPATH=$PWD:/uscms_data/d3/psrivast/pylibs_pptx python <deck script> ...
 
 ## RESUME HERE (2026-11-16 evening, RUN C done): JER in type-1 MET only for gen-matched jets
 
