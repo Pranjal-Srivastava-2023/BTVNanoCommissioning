@@ -33,10 +33,22 @@ TAGGER_CL = {"PNet": "particleNet", "DeepJet": "deepJet", "RobustParT": "robustP
 CHS = {"Zee": "Z→ee", "Zmm": "Z→μμ"}
 
 
+# ZBZC_PPTX=1: Deck writes an editable .pptx (same file name, .pptx) instead of the PDF. Every layout helper
+# below also records what it draws in fig._ops; Deck.save turns those into PowerPoint shapes (text boxes, tables,
+# rounded boxes, pictures). Upload the .pptx to Google Drive and "Open with Google Slides" to edit it there.
+PPTX = os.environ.get("ZBZC_PPTX", "0") == "1"
+
+
+def _rec(fig, *op):
+    if getattr(fig, "_ops", None) is not None and not getattr(fig, "_mute", False):
+        fig._ops.append(op)
+
+
 # ------------------------------------------------------------------ layout
 def page(bg=LIGHT):
     fig = plt.figure(figsize=(W / 100, H / 100), dpi=100)
     fig.patch.set_facecolor(bg)
+    fig._ops, fig._bg = [], bg
     return fig
 
 
@@ -49,13 +61,16 @@ def wrap(s, size, width, bold=False, indent=""):
 
 
 def text(fig, x, y, s, size, color=DARK, weight="normal", ha="left", width=None, ls=1.35, indent=""):
+    raw = s
     if width:
         s = wrap(s, size, width, weight == "bold", indent)
+    _rec(fig, "text", x, y, raw, size, color, weight, ha, width, ls, indent, s.count("\n") + 1)
     fig.text(x / W, 1 - y / H, s, fontsize=size * PX, color=color, weight=weight, ha=ha, va="top", linespacing=ls, zorder=3)
     return y + size * ls * (s.count("\n") + 1)
 
 
 def box(fig, x, y, w, h, color):
+    _rec(fig, "box", x, y, w, h, color)
     fig.add_artist(FancyBboxPatch((x / W, 1 - (y + h) / H), w / W, h / H, boxstyle="round,pad=0,rounding_size=0.008",
                                   transform=fig.transFigure, facecolor=color, edgecolor=color, lw=0, zorder=0))
 
@@ -106,6 +121,7 @@ def image(fig, path, y, x=110, w=1700, hmax=None):
     if hmax and h > hmax:
         w2 = hmax * img.shape[1] / img.shape[0]
         x, w, h = x + (w - w2) / 2, w2, hmax
+    _rec(fig, "image", path, x, y, w, h)
     ax = fig.add_axes([x / W, 1 - (y + h) / H, w / W, h / H])
     ax.imshow(img, interpolation="none")
     ax.axis("off")
@@ -113,6 +129,15 @@ def image(fig, path, y, x=110, w=1700, hmax=None):
 
 
 def table(fig, x, y, cols, rows, size=22, bold_rows=(), shade_rows=()):
+    _rec(fig, "table", x, y, cols, rows, size, tuple(bold_rows), tuple(shade_rows))
+    fig._mute = True  # the cells below are drawn for the PDF only; the .pptx gets one real table
+    try:
+        return _table(fig, x, y, cols, rows, size, bold_rows, shade_rows)
+    finally:
+        fig._mute = False
+
+
+def _table(fig, x, y, cols, rows, size, bold_rows, shade_rows):
     rh = size * 1.85
     tw = sum(c[1] for c in cols)
     for i in shade_rows:
@@ -131,19 +156,157 @@ def table(fig, x, y, cols, rows, size=22, bold_rows=(), shade_rows=()):
 
 class Deck:
     def __init__(self, out, foot):
-        from matplotlib.backends.backend_pdf import PdfPages
-        self.pdf, self.n, self.foot, self.out = PdfPages(out), 0, foot, out
+        self.n, self.foot = 0, foot
+        if PPTX:
+            from pptx import Presentation
+            self.out = re.sub(r"\.pdf$", "", out) + ".pptx"
+            self.prs = Presentation()
+            self.prs.slide_width, self.prs.slide_height = W * EMU, H * EMU
+        else:
+            from matplotlib.backends.backend_pdf import PdfPages
+            self.pdf, self.out = PdfPages(out), out
 
     def save(self, fig, foot=True):
         self.n += 1
         if foot:
             text(fig, 110, 1040, f"{self.foot} · page {self.n}", 18, MUTED)
-        self.pdf.savefig(fig)
+        if PPTX:
+            pptx_slide(self.prs, fig)
+        else:
+            self.pdf.savefig(fig)
         plt.close(fig)
 
     def close(self):
-        self.pdf.close()
+        if PPTX:
+            self.prs.save(self.out)
+        else:
+            self.pdf.close()
         print("wrote", self.out, f"({self.n} pages)")
+
+
+# ------------------------------------------------------------------ .pptx backend (ZBZC_PPTX=1)
+EMU = 6350          # 1920 px canvas -> 13.333 in slide (12192000 EMU)
+PT = 0.5            # canvas font size -> PowerPoint pt (size * 0.72 pt on 19.2 in == size * 0.5 pt on 13.33 in)
+FONT = "Arial"      # narrower than DejaVu Sans, so text never needs more lines than in the PDF
+
+
+def _rgb(c):
+    from pptx.dml.color import RGBColor
+    return RGBColor.from_string(matplotlib.colors.to_hex(c).lstrip("#").upper())  # also named colours ("white")
+
+
+def _para(p, s, size, color, bold, ha, ls, indent):
+    from pptx.enum.text import PP_ALIGN
+    from pptx.util import Pt
+    p.alignment = {"left": PP_ALIGN.LEFT, "right": PP_ALIGN.RIGHT, "center": PP_ALIGN.CENTER}[ha]
+    p.line_spacing = ls / 1.2
+    if indent:  # hanging indent for "• " bullets
+        m = int(0.65 * size * EMU)
+        pPr = p._p.get_or_add_pPr()
+        pPr.set("marL", str(m))
+        pPr.set("indent", str(-m))
+    r = p.add_run()
+    r.text = s
+    f = r.font
+    f.name, f.size, f.bold, f.color.rgb = FONT, Pt(size * PT), bold, _rgb(color)
+
+
+def _textbox(slide, x, y, w, h, lines, size, color, bold, ha, ls, indent, wrapw):
+    from pptx.enum.text import MSO_ANCHOR, MSO_AUTO_SIZE
+    tb = slide.shapes.add_textbox(int(x * EMU), int(y * EMU), int(w * EMU), int(h * EMU))
+    tf = tb.text_frame
+    tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
+    tf.word_wrap, tf.auto_size, tf.vertical_anchor = wrapw, MSO_AUTO_SIZE.NONE, MSO_ANCHOR.TOP
+    for i, s in enumerate(lines):
+        _para(tf.paragraphs[0] if i == 0 else tf.add_paragraph(), s, size, color, bold, ha, ls, indent)
+    return tb
+
+
+def _op_text(slide, x, y, s, size, color, weight, ha, width, ls, indent, nlines):
+    h = size * ls * nlines
+    if width:
+        w = width
+    else:
+        w = max(len(l) for l in s.split("\n")) * 0.62 * size + size
+    x0 = x if ha == "left" else (x - w if ha == "right" else x - w / 2)
+    _textbox(slide, x0, y, w, h, s.split("\n"), size, color, weight == "bold", ha, ls, indent, bool(width))
+
+
+def _op_box(slide, x, y, w, h, color):
+    from pptx.enum.shapes import MSO_SHAPE
+    sh = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, int(x * EMU), int(y * EMU), int(w * EMU), int(h * EMU))
+    sh.adjustments[0] = min(0.5, 10 / max(1, min(w, h)))
+    sh.fill.solid()
+    sh.fill.fore_color.rgb = _rgb(color)
+    sh.line.fill.background()
+    sh.shadow.inherit = False
+
+
+def _op_image(slide, path, x, y, w, h):
+    slide.shapes.add_picture(path, int(x * EMU), int(y * EMU), int(w * EMU), int(h * EMU))
+
+
+def _op_table(slide, x, y, cols, rows, size, bold_rows, shade_rows):
+    from lxml import etree
+    from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
+    from pptx.oxml.ns import qn
+    from pptx.util import Pt
+    rh = size * 1.85
+    tw = sum(c[1] for c in cols)
+    allrows = [[c[0] for c in cols]] + rows
+    gf = slide.shapes.add_table(len(allrows), len(cols), int(x * EMU), int(y * EMU), int(tw * EMU),
+                                int(rh * len(allrows) * EMU))
+    tbl = gf.table
+    tblPr = tbl._tbl.tblPr
+    tblPr.set("firstRow", "0")
+    tblPr.set("bandRow", "0")
+    sid = tblPr.find(qn("a:tableStyleId"))
+    if sid is None:
+        sid = etree.SubElement(tblPr, qn("a:tableStyleId"))
+    sid.text = "{2D5ABB26-0587-4C30-8999-92F81FD0307C}"  # "No Style, No Grid"
+    for j, c in enumerate(cols):
+        tbl.columns[j].width = int(c[1] * EMU)
+    for i, r in enumerate(allrows):
+        tbl.rows[i].height = int(rh * EMU)
+        for j, ((hdr, w, al), val) in enumerate(zip(cols, r)):
+            cell = tbl.cell(i, j)
+            cell.margin_left = cell.margin_right = int(10 * EMU)
+            cell.margin_top = cell.margin_bottom = 0
+            cell.vertical_anchor = MSO_ANCHOR.MIDDLE
+            p = cell.text_frame.paragraphs[0]
+            p.alignment = {"left": PP_ALIGN.LEFT, "right": PP_ALIGN.RIGHT, "center": PP_ALIGN.CENTER}[al]
+            run = p.add_run()
+            run.text = str(val)
+            f = run.font
+            f.name, f.size, f.color.rgb = FONT, Pt(size * PT), _rgb(DARK)
+            f.bold = i == 0 or (i - 1) in bold_rows
+            # tcPr: thin rule under each row (dark under the header), then the fill (schema order lnB before fill)
+            tcPr = cell._tc.get_or_add_tcPr()
+            for child in list(tcPr):
+                tcPr.remove(child)
+            for tag in ("a:lnL", "a:lnR", "a:lnT"):
+                ln = etree.SubElement(tcPr, qn(tag), w="0")
+                etree.SubElement(ln, qn("a:noFill"))
+            ln = etree.SubElement(tcPr, qn("a:lnB"), w=str((2 if i == 0 else 1) * 12700))
+            sf = etree.SubElement(ln, qn("a:solidFill"))
+            etree.SubElement(sf, qn("a:srgbClr"), val=(DARK if i == 0 else "#C9D3E3").lstrip("#").upper())
+            if i >= 1 and (i - 1) in shade_rows:
+                sf = etree.SubElement(tcPr, qn("a:solidFill"))
+                etree.SubElement(sf, qn("a:srgbClr"), val="EAF1FB")
+            else:
+                etree.SubElement(tcPr, qn("a:noFill"))
+
+
+_ZORDER = {"box": 0, "image": 0, "table": 2, "text": 3}
+
+
+def pptx_slide(prs, fig):
+    """One slide from the shapes recorded by the layout helpers on fig."""
+    slide = prs.slides.add_slide(prs.slide_layouts[6])  # blank
+    slide.background.fill.solid()
+    slide.background.fill.fore_color.rgb = _rgb(fig._bg)
+    for op in sorted(fig._ops, key=lambda o: _ZORDER[o[0]]):
+        {"text": _op_text, "box": _op_box, "image": _op_image, "table": _op_table}[op[0]](slide, *op[1:])
 
 
 def f3(r, e):

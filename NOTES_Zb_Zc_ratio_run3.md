@@ -2,6 +2,17 @@
 
 Run 2 QCD_sf work is in `SESSION_NOTES.md`; this file is only the Run 3 ratio measurement.
 
+## Editable .pptx copies of the decks (2026-11-17), for Google Slides
+
+Every deck built with zbzc_slides_common.Deck can also be written as an editable PowerPoint file: set ZBZC_PPTX=1
+and add /uscms_data/d3/psrivast/pylibs_pptx (python-pptx + lxml, installed with pip --target, NOT in the zbb-btv env)
+to PYTHONPATH. Same script, same --date; output = same name with .pptx. Text, bullets and coloured notes become text
+boxes (Arial), tables become real tables, plots are pictures. Upload to Google Drive -> Open with Google Slides.
+  ZBZC_PPTX=1 PYTHONPATH=$PWD:/uscms_data/d3/psrivast/pylibs_pptx python make_zbzc_btagL_slides_pdf.py --setup zpt --date "15 November 2026"
+Built 2026-11-17 for the 6 latest decks (4 one-change b-tag decks, MET A/B, run C); slide counts = PDF page counts;
+text-fit check with Liberation Sans (Arial metrics): no box needs more lines than in the PDF.
+Not checked by eye in Google Slides yet (no LibreOffice render on the node).
+
 ## RESUME HERE (2026-11-16 evening, RUN C done): JER in type-1 MET only for gen-matched jets
 
 STATUS 2026-11-16 ~17:00: run C finished 15:37, postprocess 15:44; every log N/N (DY 20/20 x5, tt/WW/WZ/ZZ 20/20), 2x
