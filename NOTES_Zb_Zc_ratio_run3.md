@@ -9,6 +9,11 @@ python make_zbzc_yields.py hists_zbzc_run3_<setup>/Summer22 [<ref run dir>] for 
 metxy (ref zpt), metxy_nojer/jermatched (ref metxy) -> <run>/Summer22/yields/yields.{txt,json} + compare_*.
 Deck (10 p.): PYTHONPATH=$PWD python make_zbzc_cuts_yields_pdf.py --date "17 November 2026" (+ ZBZC_PPTX=1 for .pptx)
 -> hists_zbzc_run3_summary/Summer22/slides_zbzc_cuts_yields_Summer22.{pdf,pptx}. FINAL / SUMMARY text by hand in script.
+Same day, user: "more detailed, every cut, correction, SF, trigger, weight; don't assume people know" -> 11 description
+pages added after the title (samples+normalisation+DY stitching, triggers/MET filters/jet veto/golden JSON, electrons,
+muons, Z candidate+tau veto, jets JEC/JER/ID, type-1 MET + XY + JER variants, b tagging + WP table, every MC weight,
+Z pT weight table, not applied). Facts from the workflow/selection/correction code and the cvmfs correctionlib keys.
+Deck now 21 pages. Fixed: cuts table said run C changes the jets (only B does).
 Key numbers: Z events data/MC 0.996/0.986 (ee/mm), >=1 jet 0.945/0.938 (B 0.961/0.952), final 0.971/0.963 base;
 cut changes <= 0.003 inclusive, <= 0.009 Loose b-tag; B/C add 1.2-1.9 % MC after MET cut -> final 0.959/0.954 ee.
 
