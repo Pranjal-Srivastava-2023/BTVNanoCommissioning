@@ -2,6 +2,16 @@
 
 Run 2 QCD_sf work is in `SESSION_NOTES.md`; this file is only the Run 3 ratio measurement.
 
+## Cuts / cutflow / yields deck of all latest setups (2026-11-17)
+
+User asked for a separate deck with the cuts, cutflow and yields of everything in the latest decks. Tables:
+python make_zbzc_yields.py hists_zbzc_run3_<setup>/Summer22 [<ref run dir>] for zpt, zpt_mupt30/mueta21/tauveto (ref zpt),
+metxy (ref zpt), metxy_nojer/jermatched (ref metxy) -> <run>/Summer22/yields/yields.{txt,json} + compare_*.
+Deck (10 p.): PYTHONPATH=$PWD python make_zbzc_cuts_yields_pdf.py --date "17 November 2026" (+ ZBZC_PPTX=1 for .pptx)
+-> hists_zbzc_run3_summary/Summer22/slides_zbzc_cuts_yields_Summer22.{pdf,pptx}. FINAL / SUMMARY text by hand in script.
+Key numbers: Z events data/MC 0.996/0.986 (ee/mm), >=1 jet 0.945/0.938 (B 0.961/0.952), final 0.971/0.963 base;
+cut changes <= 0.003 inclusive, <= 0.009 Loose b-tag; B/C add 1.2-1.9 % MC after MET cut -> final 0.959/0.954 ee.
+
 ## Editable .pptx copies of the decks (2026-11-17), for Google Slides
 
 Every deck built with zbzc_slides_common.Deck can also be written as an editable PowerPoint file: set ZBZC_PPTX=1

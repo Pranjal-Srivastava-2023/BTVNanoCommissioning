@@ -1,0 +1,58 @@
+zbzc_run3_zpt_mupt30 vs zbzc_run3_zpt: MC, data and data/MC per row; 'MC ratio' = MC(zbzc_run3_zpt_mupt30) / MC(zbzc_run3_zpt)
+
+== Zee: cutflow (no SFs)
+step        MC zbzc_run3_zptMC zbzc_run3_zpt_mupt30  MC ratiodata zbzc_run3_zptdata zbzc_run3_zpt_mupt30d/MC zbzc_run3_zptd/MC zbzc_run3_zpt_mupt30
+all                  2601237         2601237    1.0000      17684779      17684779       6.799       6.799
+lumi_slice           2555950         2555950    1.0000      13616960      13616960       5.328       5.328
+met_filters          2555541         2555541    1.0000      13577028      13577028       5.313       5.313
+jetveto              2500447         2500447    1.0000      13123529      13123529       5.248       5.248
+trigger               418610          418610    1.0000       5118945       5118945      12.228      12.228
+leptons               129639          129639    1.0000        116581        116581       0.899       0.899
+OS                    128845          128845    1.0000        115577        115577       0.897       0.897
+Zmass                 123598          123598    1.0000        110212        110212       0.892       0.892
+MET                   115378          115378    1.0000        106999        106999       0.927       0.927
+jet                    22002           22002    1.0000         18833         18833       0.856       0.856
+-- Zee: Z events by stage (all weights)
+                          MC zbzc_run3_zptMC zbzc_run3_zpt_mupt30  MC ratio data/MC zbzc_run3_zptdata/MC zbzc_run3_zpt_mupt30
+Z events                          110703        110703    1.0000         0.996 +- 0.005         0.996 +- 0.005
+MET < 50                          104410        104410    1.0000         1.025 +- 0.005         1.025 +- 0.005
+>= 1 jet                           21483         21483    1.0000         0.945 +- 0.012         0.945 +- 0.012
+final (MET < 50 + jet)             19401         19401    1.0000         0.971 +- 0.013         0.971 +- 0.013
+-- Zee: final selection per PNet tag region (all weights)
+                          MC zbzc_run3_zptMC zbzc_run3_zpt_mupt30  MC ratio data/MC zbzc_run3_zptdata/MC zbzc_run3_zpt_mupt30
+incl                               19401         19401    1.0000         0.971 +- 0.013         0.971 +- 0.013
+btag_L                              3276          3276    1.0000         0.970 +- 0.032         0.970 +- 0.032
+btag_M                              1132          1132    1.0000         0.987 +- 0.054         0.987 +- 0.054
+btag_T                               621           621    1.0000         1.035 +- 0.077         1.035 +- 0.077
+ctag_L                             17360         17360    1.0000         0.952 +- 0.013         0.952 +- 0.013
+ctag_M                              5409          5409    1.0000         0.962 +- 0.024         0.962 +- 0.024
+ctag_T                              1466          1466    1.0000         0.942 +- 0.045         0.942 +- 0.045
+
+== Zmm: cutflow (no SFs)
+step        MC zbzc_run3_zptMC zbzc_run3_zpt_mupt30  MC ratiodata zbzc_run3_zptdata zbzc_run3_zpt_mupt30d/MC zbzc_run3_zptd/MC zbzc_run3_zpt_mupt30
+all                  4954236         4954236    1.0000      20302913      20302913       4.098       4.098
+lumi_slice           4867984         4867984    1.0000      16813924      16813924       3.454       3.454
+met_filters          4867204         4867204    1.0000      16756804      16756804       3.443       3.443
+jetveto              4762275         4762275    1.0000      16403253      16403253       3.444       3.444
+trigger              1031713         1031713    1.0000       9133547       9133547       8.853       8.853
+leptons               426587          386650    0.9064        407912        368676       0.956       0.954
+OS                    426537          386606    0.9064        407758        368557       0.956       0.953
+Zmass                 410080          372386    0.9081        387029        351421       0.944       0.944
+MET                   383434          348721    0.9095        376329        342075       0.981       0.981
+jet                    68806           56692    0.8239         62865         51744       0.914       0.913
+-- Zmm: Z events by stage (all weights)
+                          MC zbzc_run3_zptMC zbzc_run3_zpt_mupt30  MC ratio data/MC zbzc_run3_zptdata/MC zbzc_run3_zpt_mupt30
+Z events                          392339        355982    0.9073         0.986 +- 0.003         0.987 +- 0.003
+MET < 50                          370945        337039    0.9086         1.015 +- 0.004         1.015 +- 0.004
+>= 1 jet                           71984         59504    0.8266         0.938 +- 0.008         0.935 +- 0.009
+final (MET < 50 + jet)             65264         53869    0.8254         0.963 +- 0.009         0.961 +- 0.010
+-- Zmm: final selection per PNet tag region (all weights)
+                          MC zbzc_run3_zptMC zbzc_run3_zpt_mupt30  MC ratio data/MC zbzc_run3_zptdata/MC zbzc_run3_zpt_mupt30
+incl                               65264         53869    0.8254         0.963 +- 0.009         0.961 +- 0.010
+btag_L                             11710          9651    0.8242         0.942 +- 0.022         0.944 +- 0.024
+btag_M                              3910          3175    0.8120         0.934 +- 0.037         0.952 +- 0.042
+btag_T                              2302          1836    0.7975         0.895 +- 0.045         0.924 +- 0.053
+ctag_L                             58475         48315    0.8262         0.948 +- 0.010         0.945 +- 0.010
+ctag_M                             18652         15438    0.8277         0.948 +- 0.017         0.942 +- 0.018
+ctag_T                              4734          3898    0.8235         0.928 +- 0.034         0.919 +- 0.036
+

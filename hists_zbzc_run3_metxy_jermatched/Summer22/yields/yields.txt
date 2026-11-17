@@ -1,0 +1,60 @@
+Run zbzc_run3_metxy_jermatched (hists_zbzc_run3_metxy_jermatched/Summer22): cutflow and yields
+
+== Zee: cutflow, raw data events vs MC sum(genWeight) x xsec x lumi / sumw (no SFs)
+   data PDs are trigger-selected: data/MC means something from 'trigger' on
+step                  DY        tt       VV          MC        data  data/MC  eff MC eff data
+all              2517254     38930    45052     2601237    17684779    6.799
+lumi_slice       2471967     38930    45052     2555950    13616960    5.328   0.983    0.770
+met_filters      2471584     38914    45042     2555541    13577028    5.313   1.000    0.997
+jetveto          2420357     37009    43082     2500447    13123529    5.248   0.978    0.967
+trigger           403611     11585     3413      418610     5118945   12.228   0.167    0.390
+leptons           128332      1088      219      129639      116581    0.899   0.310    0.023
+OS                127555      1078      211      128845      115577    0.897   0.994    0.991
+Zmass             123146       298      154      123598      110212    0.892   0.959    0.954
+MET               117345        94      116      117555      106996    0.910   0.951    0.971
+jet                22275        87       73       22435       18836    0.840   0.191    0.176
+-- Zee: Z events by stage (all weights)
+                                DY-b      DY-c      DY-l        tt        VV         MC      data         data/MC
+Z events                         839      1683    107780       264       138     110703    110212   0.996 +- 0.005
+MET < 50                         760      1569    103473        84       105     105991    106996   1.009 +- 0.005
+>= 1 jet                         839      1683     18635       247        80      21483     20306   0.945 +- 0.012
+final (MET < 50 + jet)           760      1569     17278        78        65      19751     18836   0.954 +- 0.012
+-- Zee: final selection per PNet tag region (all weights)
+                                DY-b      DY-c      DY-l        tt        VV         MC      data         data/MC
+incl                             760      1569     17278        78        65      19751     18836   0.954 +- 0.012
+btag_L                           693       768      1806        59        15       3342      3185   0.953 +- 0.031
+btag_M                           639       262       211        53         6       1171      1112   0.950 +- 0.052
+btag_T                           523        37        30        44         3        638       641   1.005 +- 0.074
+ctag_L                           204      1520     15854        30        58      17667     16528   0.936 +- 0.013
+ctag_M                           163      1101      4168        16        24       5471      5210   0.952 +- 0.024
+ctag_T                           129       728       624        10         9       1500      1381   0.921 +- 0.043
+
+== Zmm: cutflow, raw data events vs MC sum(genWeight) x xsec x lumi / sumw (no SFs)
+   data PDs are trigger-selected: data/MC means something from 'trigger' on
+step                  DY        tt       VV          MC        data  data/MC  eff MC eff data
+all              4794286     74145    85805     4954236    20302913    4.098
+lumi_slice       4708033     74145    85805     4867984    16813924    3.454   0.983    0.828
+met_filters      4707304     74115    85785     4867204    16756804    3.443   1.000    0.997
+jetveto          4609737     70486    82052     4762275    16403253    3.444   0.978    0.979
+trigger           995919     27354     8441     1031713     9133547    8.853   0.217    0.557
+leptons           422673      3242      673      426587      407912    0.956   0.413    0.045
+OS                422663      3218      656      426537      407758    0.956   1.000    1.000
+Zmass             408698       900      482      410080      387029    0.944   0.961    0.949
+MET               390468       289      367      391124      376338    0.962   0.954    0.972
+jet                69880       266      225       70370       62877    0.894   0.180    0.167
+-- Zmm: Z events by stage (all weights)
+                                DY-b      DY-c      DY-l        tt        VV         MC      data         data/MC
+Z events                        3084      5777    382155       862       461     392339    387029   0.986 +- 0.003
+MET < 50                        2817      5351    368299       277       354     377098    376338   0.998 +- 0.003
+>= 1 jet                        3084      5777     62051       806       266      71984     67533   0.938 +- 0.008
+final (MET < 50 + jet)          2817      5351     57865       254       217      66505     62877   0.945 +- 0.009
+-- Zmm: final selection per PNet tag region (all weights)
+                                DY-b      DY-c      DY-l        tt        VV         MC      data         data/MC
+incl                            2817      5351     57865       254       217      66505     62877   0.945 +- 0.009
+btag_L                          2542      2446      6650       195        50      11883     11036   0.929 +- 0.021
+btag_M                          2324       661       769       174        19       3947      3654   0.926 +- 0.036
+btag_T                          1872       101       163       144        11       2290      2062   0.900 +- 0.046
+ctag_L                           773      5143     53378        96       194      59583     55450   0.931 +- 0.009
+ctag_M                           614      3697     14622        53        77      19064     17683   0.928 +- 0.016
+ctag_T                           473      2424      1914        34        29       4874      4397   0.902 +- 0.032
+
