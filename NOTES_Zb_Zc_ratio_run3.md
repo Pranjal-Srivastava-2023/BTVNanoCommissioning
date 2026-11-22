@@ -2,6 +2,27 @@
 
 Run 2 QCD_sf work is in `SESSION_NOTES.md`; this file is only the Run 3 ratio measurement.
 
+## RESUME HERE (2026-11-22): MET > 50 study Phase 1 -- which jets make the MC MET grow under JER (MC only)
+
+Context (group meeting): "is JER already in NanoAOD / just keep JER off?". Checked on a DY file: NanoAOD Jet_pt and
+PuppiMET have NO JER (Jet_pt = raw x JEC within 0.3-0.9 %, MC width = MC PtResolution, nano PuppiMET = our JEC-only
+type-1). JME docs uploaded by the user (src/BTVNanoCommissioning/*.pdf: JER page, JEC page, Type-1 MET page +
+Type1MET.pdf worked example, Type1METUnc.pdf, Nurfikri JME General 2 Feb 2026, Malucchi Run 3 MET performance):
+the recipe smears every jet in the type-1 sum incl. CorrT1METJet, pT > 15 on the smeared pT -> run A IS the recipe.
+Phase 1: python study_zbzc_met_jer_split.py hists_zbzc_run3_metsplit/Summer22 30,15,10,6,4 (65 DY files, ~15 min,
+local, no batch; log logs_zbzc_metsplit/run.log) + python plot_zbzc_met_jer_split.py hists_zbzc_run3_metsplit/Summer22.
+Same events, ~30 MET versions (smear only one jet class in the MET); simplified analysis selection (no SFs, see
+SELECTION in the script). Output met_jer_split.{txt,json}, plots/met_jer_split_{zjet,z}.{png,pdf}.
+RESULTS (Z+jet, all cuts except MET; MC MET 50-100 fraction with JER / without JER in the MET):
+  all jets (run A) 1.37 Zee / 1.39 Zmm  (full runs: data/MC 0.697 -> 0.964, i.e. x1.38: reproduced)
+  only |eta| 2.65-2.853 (JER SF 1.60) 1.18 / 1.20 = about half the effect from ONE SF bin; |eta| 2.5-3.0 1.21 / 1.25;
+  mostly soft jets there (pT<30 & |eta|>2.5: 1.22 / 1.25); analysis-type jets (pT>30, |eta|<2.5) only 1.08 / 1.08.
+  JER everywhere except |eta| 2.5-3.139: 1.16 / 1.12 -> expected data/MC ~0.83 / 0.86 (= 0.964 / that; not measured).
+  JEC at raw pT (JME talk) vs muon-subtracted pT (framework): no change (1.368 vs 1.368). CorrT1METJet off: 1.24 / 1.25.
+  JER SF (Summer22 JRV2, pT < 121): |eta| 2.5-2.65 1.22, 2.65-2.853 1.60, 2.853-2.964 1.64, 2.964-3.139 1.21, else 1.02-1.30.
+Next = Phase 2 (needs user OK): one MC+data run filling several MET versions side by side (e.g. no JER in |eta|
+2.5-3.139 in the MET, no JER for soft jets) to get the data/MC of each directly.
+
 ## Cuts / cutflow / yields deck of all latest setups (2026-11-17)
 
 User asked for a separate deck with the cuts, cutflow and yields of everything in the latest decks. Tables:
