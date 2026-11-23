@@ -476,7 +476,11 @@ def setup_slides(deck):
                                           if SETUP.get("jer") == "both" else
                                           ". Run A: all jets smeared (nominal). Run B: no smearing, neither the jets nor the "
                                           "MET. Run C: jets smeared as in A, but in the type-1 MET only gen-matched jets are "
-                                          "smeared." if SETUP.get("jer") == "abc" else "."),
+                                          "smeared." if SETUP.get("jer") == "abc" else
+                                          ". MC: all jets smeared (nominal). The type-1 MET is in addition filled in six "
+                                          "versions where the JER factor of one class of jets in the MET sum is set to 1 "
+                                          "(see the table of versions); the selected jets are smeared in every version."
+                                          if SETUP.get("jer") == "metvar" else "."),
         "Type-1 PUPPI MET recomputed with the corrected jets.",
     ] + ([
         "PUPPI MET XY correction (JME met_xyCorrections_2022, epoch 2022, data and MC versions): removes the "

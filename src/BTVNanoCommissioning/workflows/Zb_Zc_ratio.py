@@ -215,6 +215,19 @@ MET_XY = {
 RECOIL_SEL = ["Z", "Z+jet"]
 RECOIL_COMP = ["upar_qt", "uperp"]
 RECOIL_ZPT = [0, 10, 20, 30, 50, 75, 100, 150, 1000]
+# MET > 50 study Phase 2 (met_variants=True, MC): extra type-1 PuppiMET versions built from the same
+# type-1 jets as the framework MET; only the JER factor of some jets in the MET sum is set to 1.
+# Jet classes use the full-jet JEC pT (before JER) and the jet |eta|. "all" must reproduce the
+# framework MET (check stored in metvar_check). The analysis jets are always smeared as nominal.
+MET_VARIANTS = {
+    "all": "JER in the MET for every jet (= nominal, run A)",
+    "noJERfwd": "no JER in the MET for 2.5 <= |eta| < 3.139",
+    "noJERhighSF": "no JER in the MET for 2.65 <= |eta| < 2.964 (JER SF 1.60 / 1.64)",
+    "noJERsoftfwd": "no JER in the MET for JEC pT < 30 and 2.5 <= |eta| < 3.139",
+    "noJERsoft": "no JER in the MET for JEC pT < 30",
+    "noJERcorrT1": "no JER in the MET for the CorrT1METJet jets",
+    "noJER": "no JER in the MET at all",
+}
 
 
 def met_bin(met):
@@ -290,6 +303,7 @@ class NanoProcessor(processor.ProcessorABC):
         jer_smear=True,
         met_xy=False,
         jer_met="all",
+        met_variants=False,
     ):
         if campaign not in self.trigger_config:
             raise KeyError(
@@ -327,6 +341,8 @@ class NanoProcessor(processor.ProcessorABC):
         if jer_met not in ("all", "matched"):
             raise ValueError(f"jer_met must be 'all' or 'matched', not {jer_met}")
         self.jer_met = jer_met
+        # met_variants=True: MET_VARIANTS filled side by side (MC; data = nominal MET)
+        self.met_variants = bool(met_variants)
         # met_xy=True: JME PuppiMET XY correction (data and MC) on the type-1 MET
         self.met_xy = None
         if met_xy:
@@ -541,6 +557,18 @@ class NanoProcessor(processor.ProcessorABC):
                         V(RECOIL_ZPT, name="zpt", label="$p_T(\\ell\\ell)$ [GeV]"),
                         Reg(50, -100, 100, name="u", label="Recoil [GeV]"), tagged=False,
                     ),
+                    **({
+                        # MET > 50 study Phase 2: MET (every cut but MET) and recoil per MET version
+                        "metvar_nm1": h(hist.axis.StrCategory(list(MET_VARIANTS), name="metvar"),
+                                        Reg(40, 0, 200, name="pt", label="PUPPI $p_T^{miss}$ [GeV] (no MET cut)")),
+                        "metvar_recoil": h(
+                            hist.axis.StrCategory(list(MET_VARIANTS), name="metvar"),
+                            hist.axis.StrCategory(RECOIL_SEL, name="sel"),
+                            hist.axis.StrCategory(RECOIL_COMP, name="comp"),
+                            V(RECOIL_ZPT, name="zpt", label="$p_T(\\ell\\ell)$ [GeV]"),
+                            Reg(50, -100, 100, name="u", label="Recoil [GeV]"), tagged=False,
+                        ),
+                    } if self.met_variants else {}),
                     # the jany jet itself: pT and |eta| per MET bin and Delta phi(MET, jany) region
                     "stage_jany": h(
                         st, mb, hist.axis.StrCategory(DPHI_REGIONS, name="dphireg"),
@@ -595,6 +623,8 @@ class NanoProcessor(processor.ProcessorABC):
             vetoed_events, shifts = self.common_shifts_nojer(events)
         elif self.jer_met == "matched" and not isRealData:
             vetoed_events, shifts = self.common_shifts_jermatched(events)
+        elif self.met_variants and not isRealData:
+            vetoed_events, shifts = self.common_shifts_metvar(events)
         else:
             vetoed_events, shifts = common_shifts(self, events)
         pre["jetveto"] = count(vetoed_events)
@@ -628,6 +658,8 @@ class NanoProcessor(processor.ProcessorABC):
         }
         cutflow_raw = {c: processor.defaultdict_accumulator(int) for c in CHANNELS}
         output["cutflow"] = cutflow
+        if self.met_variants:
+            output["metvar_check"] = {c: processor.defaultdict_accumulator(float) for c in CHANNELS}
         output["cutflow_raw"] = cutflow_raw
         # unweighted number of selected events per jet flavour
         output["nevt_flav"] = {
@@ -709,6 +741,14 @@ class NanoProcessor(processor.ProcessorABC):
             new_phi = corr.evaluate("phi", "PuppiMET", epoch, dtmc, "nom", *args)
             events["MET", "pt"] = new_pt
             events["MET", "phi"] = new_phi
+            if self.met_variants:
+                for v in MET_VARIANTS:
+                    if f"pt_{v}" not in events.MET.fields:
+                        continue
+                    a = (ak.to_numpy(events.MET[f"pt_{v}"]).astype(float),
+                         ak.to_numpy(events.MET[f"phi_{v}"]).astype(float), args[2])
+                    events["MET", f"pt_{v}"] = corr.evaluate("pt", "PuppiMET", epoch, dtmc, "nom", *a)
+                    events["MET", f"phi_{v}"] = corr.evaluate("phi", "PuppiMET", epoch, dtmc, "nom", *a)
         req_met = ak.to_numpy(events.MET.pt < 50)
         # MET study: leading lepton-cleaned jet with pT > 15 at any |eta| (the jets
         # that enter type-1 MET; no ID), phi = nan if none
@@ -792,10 +832,14 @@ class NanoProcessor(processor.ProcessorABC):
                         output, "Z+jet", channel, isRealData, events[zpre][nm1],
                         lead[zpre][nm1], zcand[zpre][nm1], preweight[nm1],
                     )
+                    self.fill_metvar(output, "Z+jet", channel, isRealData, events[zpre][nm1],
+                                     lead[zpre][nm1], zcand[zpre][nm1], preweight[nm1], nm1_hist=True)
                 self.fill_recoil(
                     output, "Z", channel, isRealData, events[zpre], lead[zpre],
                     zcand[zpre], preweight,
                 )
+                self.fill_metvar(output, "Z", channel, isRealData, events[zpre], lead[zpre],
+                                 zcand[zpre], preweight)
                 # Delta phi(MET, Z / any-eta jet) for all Z events (stage axis)
                 self.fill_stage_dphi(
                     output, channel, isRealData, events[zpre], lead[zpre], zcand[zpre],
@@ -1264,6 +1308,36 @@ class NanoProcessor(processor.ProcessorABC):
             output["met_phi_nm1"].fill(xy="XY", phi=met_phi, **common)
             output["met_phi_nm1"].fill(xy="noXY", phi=ak.to_numpy(ev.MET.phi_noxy), **common)
 
+    def fill_metvar(self, output, selname, channel, isRealData, ev, lead, z, weight, nm1_hist=False):
+        """metvar_nm1 (with the tag regions, only for selname "Z+jet") and metvar_recoil for every
+        MET_VARIANTS version; data (no JER) and missing fields use the nominal MET."""
+        if "metvar_nm1" not in output or len(ev) == 0:
+            return
+        qt, zphi = ak.to_numpy(z.pt), ak.to_numpy(z.phi)
+        flavs = self.z_flavours(isRealData, lead)
+        fields = ev.MET.fields
+        if selname == "Z" and "metvar_diff" in fields:
+            d = np.abs(ak.to_numpy(ev.MET.metvar_diff))
+            output["metvar_check"][channel]["n"] += len(d)
+            output["metvar_check"][channel]["n_diff_gt_0p01"] += int(np.sum(d > 0.01))
+            output["metvar_check"][channel]["sum_absdiff"] += float(d.sum())
+        n = len(ev)
+        for v in MET_VARIANTS:
+            if f"pt_{v}" in fields:
+                mpt, mphi = ak.to_numpy(ev.MET[f"pt_{v}"]), ak.to_numpy(ev.MET[f"phi_{v}"])
+            else:
+                mpt, mphi = ak.to_numpy(ev.MET.pt), ak.to_numpy(ev.MET.phi)
+            vv = np.full(n, v)
+            if nm1_hist:
+                self.fill_tagged(output, "metvar_nm1", channel, isRealData, lead, weight, metvar=vv, pt=mpt)
+            ux = -(mpt * np.cos(mphi) + qt * np.cos(zphi))
+            uy = -(mpt * np.sin(mphi) + qt * np.sin(zphi))
+            upar = ux * np.cos(zphi) + uy * np.sin(zphi)
+            uperp = -ux * np.sin(zphi) + uy * np.cos(zphi)
+            for comp, u in (("upar_qt", upar + qt), ("uperp", uperp)):
+                output["metvar_recoil"].fill(channel=channel, metvar=vv, sel=selname, comp=comp, zpt=qt,
+                                             u=u, **flavs, weight=weight)
+
     def fill_recoil(self, output, selname, channel, isRealData, ev, lead, z, weight):
         """recoil: u = -(MET + pT(ll)); u_par + qT (u_par along the Z direction, ~0
         for a well-measured recoil) and u_perp, in bins of qT = pT(ll)."""
@@ -1343,6 +1417,73 @@ class NanoProcessor(processor.ProcessorABC):
             return common_shifts(self, events)
         finally:
             corr.get_JER = get_jer
+
+    def common_shifts_metvar(self, events):
+        """common_shifts (nominal, run A) + the MET_VARIANTS type-1 PuppiMET versions as MET
+        fields pt_<v> / phi_<v>. The flat type-1 jet list (Jet + CorrT1METJet per event, with
+        pt = full-jet JEC pT, pt_noMu_JEC, pt_noMuL1, phi_noMuRaw, eta, EmEF) and its nominal
+        JER factor are taken from the framework's own get_JER call; the type-1 sum is redone as
+        in correction.calc_T1_MET (Summer22: smeared pt_noMu > 15, |eta| < 5.2, EmEF < 0.9).
+        MET.metvar_diff = pt_all - framework MET pt (must be ~0)."""
+        import BTVNanoCommissioning.utils.correction as corr
+
+        get_jer = corr.get_JER
+        cap = {}
+
+        def get_jer_capture(correct_map, jername, j, *a, **k):
+            f = get_jer(correct_map, jername, j, *a, **k)
+            jersyst = a[0] if a else k.get("jersyst")
+            if "jetId" not in j.fields and jersyst == "nom" and "t1" not in cap:
+                cap["t1"] = {key: np.asarray(j[key]) for key in
+                             ("pt", "eta", "pt_noMu_JEC", "pt_noMuL1", "phi_noMuRaw", "EmEF")}
+                cap["f"] = np.asarray(f)
+            return f
+
+        events["zbzc_idx"] = np.arange(len(events))
+        corr.get_JER = get_jer_capture
+        try:
+            vetoed_events, shifts = common_shifts(self, events)
+        finally:
+            corr.get_JER = get_jer
+        if "t1" not in cap:
+            raise RuntimeError("met_variants: type-1 jets not captured from get_JER")
+        t1, fac = cap["t1"], cap["f"]
+        nj = ak.to_numpy(ak.num(events.Jet))
+        nc = ak.to_numpy(ak.num(events.CorrT1METJet))
+        ntot = nj + nc
+        if ntot.sum() != len(fac):
+            raise RuntimeError(f"met_variants: {ntot.sum()} type-1 jets expected, {len(fac)} captured")
+        ev = np.repeat(np.arange(len(events)), ntot)
+        pos = np.arange(len(fac)) - np.repeat(np.cumsum(ntot) - ntot, ntot)
+        is_c1 = pos >= np.repeat(nj, ntot)
+        aeta, ptj = np.abs(t1["eta"]), t1["pt"]
+        fwd = (aeta >= 2.5) & (aeta < 3.139)
+        nofac = {
+            "all": np.zeros(len(fac), bool),
+            "noJERfwd": fwd,
+            "noJERhighSF": (aeta >= 2.65) & (aeta < 2.964),
+            "noJERsoftfwd": fwd & (ptj < 30),
+            "noJERsoft": ptj < 30,
+            "noJERcorrT1": is_c1,
+            "noJER": np.ones(len(fac), bool),
+        }
+        raw = events.RawPuppiMET
+        mx0 = ak.to_numpy(raw.pt * np.cos(raw.phi))
+        my0 = ak.to_numpy(raw.pt * np.sin(raw.phi))
+        cosp, sinp = np.cos(t1["phi_noMuRaw"]), np.sin(t1["phi_noMuRaw"])
+        base = (aeta < 5.2) & (t1["EmEF"] < 0.9)
+        idx = ak.to_numpy(vetoed_events.zbzc_idx)
+        met = shifts[0][0]["MET"]
+        for v, off in nofac.items():
+            full = t1["pt_noMu_JEC"] * np.where(off, 1.0, fac)
+            dpt = np.where(base & (full > 15.0), full - t1["pt_noMuL1"], 0.0)
+            mx = mx0 - np.bincount(ev, dpt * cosp, len(events))
+            my = my0 - np.bincount(ev, dpt * sinp, len(events))
+            met[f"pt_{v}"] = np.hypot(mx, my)[idx]
+            met[f"phi_{v}"] = np.arctan2(my, mx)[idx]
+        met["metvar_diff"] = met["pt_all"] - met["pt"]
+        shifts[0][0]["MET"] = met
+        return vetoed_events, shifts
 
     def variant_jets(self, events, jpt, jeta, jid, ele_clean, mu_clean):
         """AK4 jets for a cut-study variant: select_jets with pT / |eta| / ID changed

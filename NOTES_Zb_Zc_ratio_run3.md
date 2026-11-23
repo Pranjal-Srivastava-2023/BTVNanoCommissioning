@@ -2,6 +2,39 @@
 
 Run 2 QCD_sf work is in `SESSION_NOTES.md`; this file is only the Run 3 ratio measurement.
 
+## RESUME HERE (2026-11-22 night): MET > 50 study PHASE 2 DONE -- deck for the meeting 2026-11-23
+
+DECK: hists_zbzc_run3_metvar/Summer22/slides_zbzc_metvar_Summer22.pdf (22 p.) + .pptx (cleaned, 20 p.).
+Rebuild: python plot_zbzc_metvar.py (-> metvar/metvar.{txt,json} + 4 png); conclusions are hand-written in
+hists_zbzc_run3_metvar/Summer22/metvar/findings.json; PYTHONPATH=$PWD python make_zbzc_metvar_slides_pdf.py
+(+ ZBZC_PPTX=1 ZBZC_CLEAN=1 PYTHONPATH=$PWD:/uscms_data/d3/psrivast/pylibs_pptx for the pptx).
+Run: 9 MC samples 20/20 files (PTLL-400 killed twice by the stall watchdog, OK on try 3). Checks exact: 'all' ==
+run A met_pt_nm1 (diff 0), 0 of 2.8M Z events with |MET_all - framework MET| > 0.01 GeV.
+RESULTS, data/MC at MET 50-100 (Zee / Zmm), all cuts except MET:
+  nominal 0.70 / 0.69; no JER in MET for 2.65-2.964 0.81 / 0.82; 2.5-3.139 0.82 / 0.84 (Phase 1 predicted 0.83 / 0.86);
+  soft & 2.5-3.139 0.80 / 0.82; pT<30 0.84 / 0.85; CorrT1METJet 0.77 / 0.75; no JER in MET 0.95 / 0.95; run B 0.96 / 0.96.
+  MET < 50: 0.971 / 0.964 nominal -> 0.955 / 0.945 (fwd off) -> 0.944 / 0.937 (no JER in MET): with no JER data/MC is
+  flat ~0.94-0.95 (shape described, ~5 % normalisation left). MET 100-200: too few events.
+  MC b-tag/c-tag yield ratio change: L < 0.6 %, M +1.5..+2.7 % (Zee) / -0.6..-1.2 % (Zmm), T up to +1.5 % (Zee) /
+  -3.1 +- 0.4 % (Zmm); data stat of the ratio 1.9/3.3/4.8 % (Zee), 1.1/1.8/2.7 % (Zmm) L/M/T.
+  NOT fixed: recoil RMS(u_perp) at qT<10: data 13.9, MC nominal 17.0, no JER 15.7 GeV (MC still wider); recoil response
+  <u_par+qT> data 1-2.5 GeV higher than every MC version (JER-independent).
+Proposal on slides: keep recipe (run A) as nominal; MET-cut systematic on b/c = change to no-JER-in-MET for
+2.5-3.139 (or no JER in MET, larger); ask JME about SF 1.60-1.64 for soft jets at 2.65-2.964; study recoil
+(pileup, unclustered, 2022 v12 DY MET remark of the JME talk); other eras only if asked.
+
+### (state while it was running)
+
+Workflow Zb_Zc_ratio_metvar = run A (metxy + Z pT weights) + met_variants=True: MET_VARIANTS (all, noJERfwd,
+noJERhighSF, noJERsoftfwd, noJERsoft, noJERcorrT1, noJER) filled side by side in metvar_nm1 (tag regions, as
+met_pt_nm1) and metvar_recoil; common_shifts_metvar captures the framework's type-1 jets + JER factor from get_JER
+and redoes the T1 sum; check metvar_check (1-file test: 'all' == framework MET, sum |diff| 1e-11). Analysis jets
+nominal (smeared). Data not rerun: data have no JER -> every version = nominal; postprocess links run A data.
+Launched 19:04 on cmslpc317: launch_zbzc_job.sh zbzc_run3_metvar Zb_Zc_ratio_metvar mc "DYto2L" + same with
+"TTto2L2Nu WW WZ ZZ" (both -> logs_zbzc_run3_metvar/Summer22/driver_mc.log, need 2x ALL DONE); watchdog
+ZBZC_RUN=zbzc_run3_metvar; postprocess_zbzc_metvar.sh (log logs_zbzc_run3_metvar/postprocess.log: N/N, links data).
+To do after: comparison plots + data/MC table per version, deck (PDF + pptx), commit + push.
+
 ## RESUME HERE (2026-11-22): MET > 50 study Phase 1 -- which jets make the MC MET grow under JER (MC only)
 
 Context (group meeting): "is JER already in NanoAOD / just keep JER off?". Checked on a DY file: NanoAOD Jet_pt and

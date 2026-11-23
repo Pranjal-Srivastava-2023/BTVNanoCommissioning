@@ -1,0 +1,13 @@
+20:29:48 both MC jobs done
+zbzc_run3_metvar DYto2L-2Jets_MLL-50 files 20/20
+zbzc_run3_metvar DYto2L-2Jets_MLL-50_PTLL-100 files 20/20
+zbzc_run3_metvar DYto2L-2Jets_MLL-50_PTLL-200 files 20/20
+zbzc_run3_metvar DYto2L-2Jets_MLL-50_PTLL-400 files 20/20
+zbzc_run3_metvar DYto2L-2Jets_MLL-50_PTLL-600 files 20/20
+zbzc_run3_metvar TTto2L2Nu files 20/20
+zbzc_run3_metvar WW files 20/20
+zbzc_run3_metvar WZ files 20/20
+zbzc_run3_metvar ZZ files 20/20
+19:54:45 DYto2L-2Jets_MLL-50_PTLL-400_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 exit 143
+20:09:45 DYto2L-2Jets_MLL-50_PTLL-400_TuneCP5_13p6TeV_amcatnloFXFX-pythia8 exit 143
+20:29:48 postprocess done

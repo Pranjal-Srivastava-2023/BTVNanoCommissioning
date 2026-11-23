@@ -1,0 +1,46 @@
+{
+ "summary": [
+  ["No double counting, and our MET follows the JME recipe",
+   "The NanoAOD jets and PuppiMET contain only the JEC. Our code starts from the raw values and applies the JER once, in MC only, and propagates it into the type-1 MET exactly as the JME Type-1 MET recipe says.", "GOOD"],
+  ["About half of the MC excess at MET 50–100 GeV comes from soft forward jets",
+   "Jets at 2.65 < |η| < 2.964 have a JER scale factor of 1.60–1.64 and get a very large random smearing. Removing the JER from the MET only for these jets moves data/MC at MET 50–100 GeV from 0.70 to 0.81 (Z→ee) and from 0.69 to 0.82 (Z→μμ). Removing it for all jets gives 0.95.", "INFO"],
+  ["With no JER in the MET, data/MC is flat in MET",
+   "It is 0.94–0.95 both below and between 50 and 100 GeV. The total MC yield is the same in every version: the smearing only moves MC events across the 50 GeV cut. What is left is an overall 5% normalisation difference.", "INFO"],
+  ["The effect on the b-tag / c-tag yield ratio is small",
+   "Changing the MET version changes the MC b/c-tag yield ratio by less than 1% at Loose, by up to 2.7% at Medium and by up to 3.1% at Tight. This is below or about equal to the data statistical error of the ratio (1–2% Loose, 2–3% Medium, 3–5% Tight).", "GOOD"],
+  ["Not fixed: the MC recoil is wider than in data even without JER",
+   "At low pT(ℓℓ) the RMS of u⊥ is 13.9 GeV in data, 17.0 GeV in nominal MC and still 15.7 GeV in MC with no JER in the MET. The recoil response differs by 1–2 GeV and does not depend on the JER.", "OPEN"]
+ ],
+ "glance": ["Removing the JER from a few jets closes about half of the MET 50–100 GeV gap",
+  "Data/MC at MET 50–100 GeV (Z→ee / Z→μμ): nominal 0.70 / 0.69; no JER for 2.65–2.964: 0.81 / 0.82; for 2.5–3.139: 0.82 / 0.84; for all jets below 30 GeV: 0.84 / 0.85; for CorrT1METJet: 0.77 / 0.75; no JER in the MET: 0.95 / 0.95. The MC-only study predicted 0.83 / 0.86 for 2.5–3.139. Below 50 GeV, data/MC drops by 1.5–2.7% at the same time, because the MC events come back below the cut.", "INFO"],
+ "met_overlay": ["Between 50 and 100 GeV the MC moves onto the data step by step",
+  "The nominal MC (blue) is above the data from 50 to about 100 GeV in both channels. The MC without JER in the MET (red) and run B (dashed grey) follow the data there. Above 100 GeV there are too few events to tell the versions apart.", "INFO"],
+ "bc": ["The MET choice moves the MC b/c-tag ratio by at most about 3%",
+  "Loose: below 0.6% in both channels. Medium: +1.5 to +2.7% (Z→ee) and −0.6 to −1.2% (Z→μμ), opposite signs, so not a common shift. Tight: up to +1.5% (Z→ee) and −3.0% (Z→μμ). The data statistical errors of the ratio are 1.9 / 3.3 / 4.8% (Z→ee) and 1.1 / 1.8 / 2.7% (Z→μμ) for L / M / T. The errors of the change are approximate because the versions share events.", "INFO"],
+ "recoil_Z": ["The JER explains part of the wider MC recoil, but not all of it",
+  "RMS(u⊥) at qT < 10 GeV: data 13.9 GeV, nominal MC 17.0–17.1, no JER for 2.5–3.139 16.0–16.1, no JER in the MET 15.7 GeV. Above qT = 100 GeV the MC without JER matches the data. The mean of u∥ + qT is 1–2.5 GeV higher in data than in every MC version for qT of 10–150 GeV, so the JER does not change the response.", "OPEN"],
+ "recoil_Zjet": ["With a jet required, the picture is the same",
+  "RMS(u⊥): MC is 1.4–2.7 GeV wider than data with the JER, and 0–1 GeV wider without the JER in the MET. The mean of u∥ + qT follows the data's shape vs qT, but above qT = 50 GeV data is 1–2.5 GeV higher in every MC version.", "OPEN"],
+ "conclusions": [
+  ["No double counting, and our MET follows the JME recipe",
+   "The NanoAOD has no JER. We apply it once, in MC, to the jets and to the type-1 MET, as JME recommends. Our two small deviations from the recipe (gen matching, JEC evaluated at the muon-subtracted pT) change the MET by less than 1%.", "GOOD"],
+  ["The MET 50–100 GeV deficit is the JER smearing of the MC MET",
+   "About half of it comes from soft jets at 2.5 < |η| < 3.139, where the JER SFs are 1.2–1.64 and the MC resolution at 15 GeV is 50–75%. The rest is spread over the other jets; no other single class of jets does it. The MC-only study and the full run agree (0.83 / 0.86 predicted, 0.82 / 0.84 found).", "INFO"],
+  ["With no JER in the MET, the MC describes the MET shape",
+   "Data/MC is then flat at 0.94–0.95. The total MC yield is the same in every version; only the 50 GeV cut is crossed differently.", "INFO"],
+  ["For the Z+b / Z+c ratio the MET choice matters at the 1–3% level",
+   "It is below 1% at Loose and up to about 3% at Tight, about the size of the current data statistical error.", "GOOD"],
+  ["What is not fixed",
+   "The MC recoil is still about 2 GeV wider than data at low pT(ℓℓ) with no JER at all, and the recoil response differs by 1–2 GeV independently of the JER. The 100–200 GeV MET bin has too few events (20 files per sample) to conclude. Only Summer22 was tested.", "OPEN"]
+ ],
+ "next": [
+  ["Proposal: keep the JME recipe as nominal and use the MET versions as a systematic",
+   "Nominal = run A (JER on for the jets and the MET, as JME recommends). The systematic for the MET cut is the change of the b/c ratio when the JER is removed from the MET for 2.5 < |η| < 3.139, or from the MET entirely (take the larger). This keeps the recipe and covers the region where it does not describe the data.", "INFO"],
+  ["Ask JME about the JER scale factor for soft forward jets",
+   "Is the SF of 1.60–1.64 for 2.65 < |η| < 2.964 meant to be used for jets below 30 GeV and for the low-pT jets that enter the MET? Show them the MC-only split plot and the MET 50–100 GeV numbers.", "INFO"],
+  ["Understand the remaining recoil difference",
+   "Check pileup in the Z events (number of vertices, ρ) and the unclustered PUPPI part of the MET. The JME talk of 2 February says that the 2022 NanoAODv12 DY samples have a problematic MET resolution; compare with another DY sample.", "INFO"],
+  ["More statistics and other eras, if wanted",
+   "All numbers use 20 files per sample and Summer22 only. The same run can be done for Summer22EE, Summer23 and Summer23BPix.", "INFO"]
+ ]
+}

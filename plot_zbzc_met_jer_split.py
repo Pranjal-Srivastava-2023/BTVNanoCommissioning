@@ -34,7 +34,8 @@ def short(k):
 
 
 for stage in ["Z+jet (all cuts except MET)", "Z (no jet cut)"]:
-    fig, axes = plt.subplots(len(GROUPS), 1, figsize=(9, 2.2 * len(GROUPS) + 1))
+    fig, axs = plt.subplots(2, 3, figsize=(20, 8.5))
+    axes = axs.T.flatten()
     for ax, (title, keys) in zip(axes, GROUPS):
         y = np.arange(len(keys))
         for i, ch in enumerate(["Zee", "Zmm"]):
@@ -43,20 +44,22 @@ for stage in ["Z+jet (all cuts except MET)", "Z (no jet cut)"]:
             ax.barh(y + (0.2 if i else -0.2), vals, height=0.38, color=["#3b75af", "#d1495b"][i],
                     label=ch.replace("Zee", "Z→ee").replace("Zmm", "Z→μμ"))
             for yy, v in zip(y + (0.2 if i else -0.2), vals):
-                ax.text(v + 0.5, yy, f"{v:+.1f}%", va="center", fontsize=7)
+                ax.text(v + 0.5, yy, f"{v:+.1f}%", va="center", fontsize=9)
         ax.set_yticks(y)
-        ax.set_yticklabels([short(k) for k in keys], fontsize=8)
+        ax.set_yticklabels([short(k) for k in keys], fontsize=10)
         ax.invert_yaxis()
-        ax.set_title(title, fontsize=9, loc="left")
+        ax.set_title(title, fontsize=12, loc="left")
         ax.axvline(0, color="k", lw=0.6)
     xmax = max(100 * (js[f"{ch} | {stage}"][k]["ratio_noJER"] - 1) for ch in ("Zee", "Zmm") for _, ks in GROUPS for k in ks)
     for ax in axes:
         ax.set_xlim(0, 1.15 * xmax)
-    axes[0].legend(fontsize=8, loc="lower right")
-    axes[-1].set_xlabel("Increase of the MC fraction of events with 50 < MET < 100 GeV\n"
-                        "when only these jets are JER-smeared in the type-1 MET (vs no JER in the MET) [%]", fontsize=9)
-    fig.suptitle(f"Summer22 DY MC, {stage}: which jets make the MET grow under JER smearing", fontsize=10)
-    fig.tight_layout()
+    axes[0].legend(fontsize=11, loc="lower right")
+    for ax in axs[1]:
+        ax.set_xlabel("increase of the MC MET 50-100 fraction [%]", fontsize=11)
+    fig.text(0.5, 0.005, "Increase of the MC fraction of events with 50 < MET < 100 GeV when only these jets are "
+             "JER-smeared in the type-1 MET (vs no JER in the MET)", ha="center", fontsize=12)
+    fig.suptitle(f"Summer22 DY MC, {stage}: which jets make the MET grow under JER smearing", fontsize=14)
+    fig.tight_layout(rect=(0, 0.03, 1, 1))
     tag = "zjet" if "jet (all" in stage else "z"
     for ext in ("png", "pdf"):
         fig.savefig(os.path.join(outd, f"met_jer_split_{tag}.{ext}"), dpi=130)

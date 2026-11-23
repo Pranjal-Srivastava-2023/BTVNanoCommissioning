@@ -120,6 +120,7 @@ workflows["Zb_Zc_ratio_zpt_tauveto"] = partial(ZbZcRatioProcessor, tau_veto=True
 workflows["Zb_Zc_ratio_metxy"] = partial(ZbZcRatioProcessor, met_xy=True, **_zpt)
 workflows["Zb_Zc_ratio_metxy_nojer"] = partial(ZbZcRatioProcessor, met_xy=True, jer_smear=False, **_zpt)
 workflows["Zb_Zc_ratio_metxy_jermatched"] = partial(ZbZcRatioProcessor, met_xy=True, jer_met="matched", **_zpt)
+workflows["Zb_Zc_ratio_metvar"] = partial(ZbZcRatioProcessor, met_xy=True, met_variants=True, **_zpt)  # MET > 50 Phase 2
 
 # W+c
 workflows["ctag_Wc_sf"] = partial(CTAGWcTTValidSFProcessor, selectionModifier="WcM")
