@@ -1,0 +1,446 @@
+================================================================================
+ JER, TYPE-1 MET AND THE JME DOCUMENTS -- WHAT WE DID, HOW, AND WHAT WE CONCLUDED
+ Run 3 Z(->ll)+b / Z(->ll)+c ratio, Summer22 (2022 preEE), NanoAODv12, AK4 PUPPI
+ Written 2026-11-23 for the group meeting.  Repository: BTVNanoCommissioning,
+ branch coffea_machine (fork Pranjal-Srivastava-2023), commits up to 5d89ef8.
+================================================================================
+
+CONTENTS
+  0. Short answer
+  1. Background in one page (JEC, JER, type-1 MET)
+  2. THE DOUBT: "Is the JER already in the NanoAOD, so we apply it twice?"
+       2.1 Why the doubt was reasonable and what it would mean
+       2.2 Argument 1: what our code starts from (double counting impossible)
+       2.3 Argument 2: first check, 22 Nov (1 DY file, 40k events)
+       2.4 Argument 3: second check, 23 Nov (3 samples, ~280k events)
+       2.5 Argument 4: JME's own closure test (JME General, 2 Feb 2026)
+       2.6 Conclusion on the doubt, and caveats
+  3. The JER documents you uploaded: what they say, what we did, conclusion
+  4. The type-1 MET documents you uploaded: what they say, what we did,
+     conclusion (incl. the two JME talks of 2 Feb 2026)
+  5. Official recommendations and our status, item by item
+  6. So where does the MET > 50 GeV deficit come from?
+  7. What is NOT fixed / not studied
+  8. Proposal
+  9. Where everything is (files, scripts, commits)
+
+--------------------------------------------------------------------------------
+0. SHORT ANSWER
+--------------------------------------------------------------------------------
+* The NanoAOD contains NO JER smearing: neither Jet_pt nor PuppiMET.
+  Our framework starts from raw jet pT and from RawPuppiMET anyway, so a smeared
+  NanoAOD value could not enter even in principle. The JER is applied exactly
+  ONCE, by us, in MC, to the jets and (through the type-1 sum) to the MET.
+* Our type-1 MET follows the official JME recipe step by step. The official
+  recipe REQUIRES the JER smearing in MC, also inside the MET. "Just switch the
+  JER off" is therefore not an allowed nominal choice.
+* The MET > 50 GeV deficit (data/MC 0.70 Zee / 0.69 Zmm at MET 50-100 GeV) is
+  caused by applying the JER once, as the recipe says, to soft forward jets at
+  |eta| 2.65-2.964, where the Summer22 JER scale factor is 1.60-1.64. This is
+  a question for JME, not a bug on our side.
+
+--------------------------------------------------------------------------------
+1. BACKGROUND IN ONE PAGE
+--------------------------------------------------------------------------------
+JEC (jet energy corrections). Scale the raw jet pT so that on average it equals
+  the particle-level jet pT. Applied in data and MC. Chain:
+  L1FastJet x L2Relative x L3Absolute x L2L3Residual = "L1L2L3Res".
+  For PUPPI jets L1FastJet is exactly 1 (PUPPI already removes pile-up) and
+  L2L3Residual is 1 in MC. We use Summer22_22Sep2023_V4.
+
+JER (jet energy resolution) smearing. The jet resolution in data is worse than
+  in MC, so MC jets are made broader. MC only. Scale factor s (data/MC), MC
+  relative resolution sigma. Hybrid method:
+    jet with a generator match:  c = 1 + (s-1) * (pT - pT_gen) / pT
+    jet without a match:         c = 1 + N(0, sigma) * sqrt(max(s^2 - 1, 0))
+  and the jet pT becomes c * pT. We use Summer22_22Sep2023_JRV2.
+
+Type-1 MET. Raw MET = minus the vector sum of all PUPPI particles
+  (RawPuppiMET). Type-1 replaces, for each jet, the raw jet momentum by the
+  corrected one:
+    MET_T1 = RawPuppiMET - SUM_jets ( pT_full - pT_L1 )      (as vectors)
+  with pT_full = muon-subtracted raw pT x JEC x JER(MC). A jet enters if
+  pT_full > 15 GeV, |eta| < 5.2, EM fraction < 0.9. Jets = NanoAOD Jet
+  collection + CorrT1METJet (low-pT jets stored only for the MET).
+
+Why the MET is so sensitive to the JER: the MET is a vector sum. Every jet in
+  the sum gets its own random smearing, so the MET gets one random kick per jet,
+  mostly from the many soft jets. The analysis jets (pT > 30, |eta| < 2.5) have
+  small SFs; the soft forward jets do not (section 6).
+
+--------------------------------------------------------------------------------
+2. THE DOUBT: "IS THE JER ALREADY IN THE NANOAOD, SO WE APPLY IT TWICE?"
+--------------------------------------------------------------------------------
+
+2.1 Why the doubt was reasonable and what it would mean
+-------------------------------------------------------
+Observation from the earlier runs: with the JER switched off (run B), data/MC
+at MET 50-100 GeV goes from 0.70 to 0.96. A natural explanation would be:
+the NanoAOD already contains the JER, we add it a second time, the MC MET
+becomes too wide, and switching our JER off "fixes" it.
+Two variants of the doubt were raised:
+  (a) NanoAOD Jet_pt is already smeared -> our jets are smeared twice;
+  (b) NanoAOD PuppiMET is already smeared (even if the jets are not) -> the MET
+      is smeared twice, while the jet plots are fine.
+If either were true, the fix would be to remove our JER in that object.
+We answered it in four independent ways (2.2 - 2.5).
+
+2.2 Argument 1: what our code starts from
+-----------------------------------------
+File src/BTVNanoCommissioning/utils/correction.py (JME_shifts, calc_T1_MET):
+  * Jets: pt_raw = Jet_pt x (1 - Jet_rawFactor)                (line ~1102)
+    then OUR JEC (V4), then OUR JER (JRV2, MC only).
+    rawFactor is defined as 1 - raw/pt, so this removes WHATEVER was applied
+    at production. Even if NanoAOD Jet_pt contained a JER factor, it would be
+    removed here.
+  * MET: starts from RawPuppiMET                               (line ~1206)
+    = the plain vector sum of the PUPPI particles, before any jet correction.
+    The NanoAOD PuppiMET value is NOT used for the analysis MET.
+    (It is only used for the unclustered-energy uncertainty, as a vector
+    DIFFERENCE PuppiMET_ptUnclusteredUp/Down - PuppiMET, as JME recommends;
+    any common content cancels in the difference.)
+  * The low-pT MET jets start from CorrT1METJet_rawPt (raw by definition).
+  * The type-1 sum uses the SAME smeared jets that are used in the jet plots.
+    So jets and MET each contain the JER exactly once and are consistent.
+  * Check made in the full run: our MET recomputed independently from the raw
+    inputs equals the framework MET in every event (0 of 2.8 million events
+    differ by more than 0.01 GeV).
+=> By construction double counting is impossible. We still checked the files.
+
+2.3 Argument 2: first check, 22 Nov 2026 (one Summer22 DY file, 40 000 events)
+------------------------------------------------------------------------------
+Script: scratchpad check_jer_in_nano.py (not committed); numbers are in the
+report, section 4.
+  Test 1  NanoAOD Jet_pt / (raw pT x our JEC):
+          if smeared: random spread ~9 % at 20 GeV
+          found:      spread 0.3 - 0.9 % (pT 15 -> 100+ GeV), no random part
+                      (the small spread = production JEC vs V4)
+  Test 2  width of jet pT / gen-jet pT, |eta| < 1.3,
+          gen pT 20-30 / 50-100 GeV:
+          if smeared (SF x MC res.): 0.202 / 0.131
+          unsmeared (MC res.):       0.182 / 0.118
+          found:                     0.188 / 0.111  -> unsmeared
+  Test 3a NanoAOD PuppiMET - our type-1 MET with JEC only:
+          median +0.06 GeV, width 1.3 GeV   -> agrees
+  Test 3b NanoAOD PuppiMET - our type-1 MET with JEC + JER:
+          median -1.05 GeV, width 5.4 GeV   -> disagrees
+
+2.4 Argument 3: second check, 23 Nov 2026 (three samples, ~280k events)
+----------------------------------------------------------------------
+Because the doubt remained, we redid it with tests that are designed to give a
+BIG, unmistakable signal if JER were present, on more samples:
+  DY inclusive (150 000 events), DY PTLL-200 (96 588), TTto2L2Nu (32 853).
+Script: study_zbzc_jer_in_nano.py (reads the NanoAOD directly with uproot +
+correctionlib; NO framework code involved, so it is an independent check).
+Output: hists_zbzc_run3_jerinnano/Summer22/ (jerinnano.txt, .json, 3 png).
+
+Test T1 -- are the NanoAOD jets smeared? (slope test)
+  For jets with a good generator match (dR < 0.2, |pT - pT_gen| < 3 sigma pT,
+  pT > 20 GeV) compute
+     r = Jet_pt(NanoAOD) / (raw pT x our JEC)       (= the JER factor, if any)
+     d = (pT_JEC - pT_gen) / pT_JEC                 (how far the jet is from gen)
+  The hybrid smearing for matched jets is r = 1 + (SF - 1) d. So if the NanoAOD
+  jets were smeared, r - 1 versus d would be a straight line with slope SF - 1.
+  The SF is known per |eta| bin, so the expected slope is known exactly.
+  This test is very sensitive at |eta| 2.65-2.964, where SF - 1 = 0.6.
+
+   |eta|          expected slope     measured slope
+                  if smeared (SF-1)  DY incl   DY PTLL-200   TT
+   0 - 1.3            0.10           0.002       0.000      0.001
+   1.3 - 2.5          0.14           0.007       0.002      0.001
+   2.5 - 2.65         0.22           0.001       0.002      0.001
+   2.65 - 2.964       0.60           0.018       0.011      0.009
+   2.964 - 3.139      0.21          -0.068      -0.036     -0.051
+   3.139 - 5.2        0.12-0.13     -0.032      -0.019     -0.019
+  => slope ~ 0 everywhere: NanoAOD jets are JEC only. (Mean r = 0.996-1.027:
+     the JEC used at production differs slightly from V4; this is a constant
+     offset, not correlated with the gen-jet difference, i.e. not JER.)
+
+Test T3 -- is the NanoAOD PuppiMET smeared? (projection test)
+  Rebuild the type-1 MET from RawPuppiMET with JEC only (Jet + CorrT1METJet,
+  muon subtraction, pT > 15, |eta| < 5.2, EM fraction < 0.9). Compute the
+  vector J = the change the JER (scaling part, matched jets) WOULD make to the
+  MET. Then project R = PuppiMET(NanoAOD) - MET_T1(JEC only) on J:
+     slope = sum(R . J) / sum(J . J)
+  = 1 if the NanoAOD MET contains the JER shift, = 0 if it does not.
+  Only events where the JER would move the MET by more than 2 GeV are used.
+     DY inclusive  0.012  (29 983 events)
+     DY PTLL-200   0.001  (52 208 events)
+     TT            0.008  (14 351 events)
+  => 0, not 1: the NanoAOD PuppiMET does not contain the JER.
+  (Plot: middle panel of jerinnano_<sample>.png -- the points lie on the flat
+  "JEC-only" line, far from the "had JER" diagonal.)
+
+Test T4 -- direct comparison of the NanoAOD PuppiMET with the two versions
+                         median |NanoAOD - T1 JEC only|  |NanoAOD - T1 JEC+JER|
+     DY inclusive                 1.17 GeV                    4.78 GeV
+     DY PTLL-200                  1.20 GeV                    4.75 GeV
+     TT                           1.23 GeV                    4.34 GeV
+  NanoAOD is closer to the JEC-only version in 87-88 % of the events.
+  The remaining ~1.2 GeV comes from the different JEC version at production
+  and small differences in the muon subtraction.
+
+Test T2 -- jet resolution width (supporting only, INCONCLUSIVE)
+  Core width of pT(NanoAOD)/pT(gen) compared with the MC resolution
+  (unsmeared) and SF x MC resolution (smeared). The width estimator used
+  here (iterative 2-sigma core) is not reliable: e.g. for central low-pT jets
+  in DY inclusive it gives 0.074 where both hypotheses are ~0.15-0.17,
+  which is impossible for either. In the most sensitive bin
+  (|eta| 2.65-2.964, gen pT 60-150 GeV):
+                   NanoAOD   MC res.   SF x MC res.
+     DY incl       0.242     0.176      0.283     (closer to smeared)
+     DY PTLL-200   0.192     0.161      0.258     (closer to unsmeared)
+     TT            0.189     0.173      0.278     (closer to unsmeared)
+  We do NOT use T2 as evidence either way. T1 and T3 are the clean tests
+  (they test the exact functional form of the smearing, not a width).
+  (The 22 Nov width test, 2.3 Test 2, used a different method on central
+  jets and agreed with unsmeared.)
+
+2.5 Argument 4: JME's own closure test
+--------------------------------------
+N. Norjoharuddeen, "MET Type-1 correction with NanoAODs", JME General,
+2 Feb 2026 (file src/BTVNanoCommissioning/260202_JMEGeneral.pdf), slide 7:
+a type-1 MET rebuilt from RawPuppiMET with JEC ONLY (no JER) reproduces the
+stored PuppiMET to within 0.5 % in 99.9999 % of events (Summer24 NanoAODv15,
+DY and TT). This is JME's own statement that the stored PuppiMET is a
+JEC-only type-1 MET. Our Summer22 v12 tests (2.3, 2.4) show the same.
+The official Type-1 page also says the stored MET "was computed with the JEC
+payload used during production" -- it mentions JEC, not JER.
+
+2.6 Conclusion on the doubt, and caveats
+---------------------------------------
+NO DOUBLE COUNTING. NanoAOD Jet_pt and PuppiMET are JEC-only. Our code
+starts from the raw values. The JER is applied once, by us, in MC, to the
+jets and through them to the MET. The jet plots and the MET use the same
+smeared jets.
+Caveats (stated honestly):
+  * T1/T3 test the deterministic (gen-matched scaling) part of the smearing.
+    The random part for unmatched jets cannot be tested event by event. This
+    is enough: any smearing in the NanoAOD production would also have scaled
+    the matched jets, and it did not.
+  * T2 (width) is inconclusive with the estimator used; not relied upon.
+  * Summer22 MC only (data have no JER by definition).
+
+--------------------------------------------------------------------------------
+3. THE JER DOCUMENTS YOU UPLOADED
+--------------------------------------------------------------------------------
+Files (src/BTVNanoCommissioning/, commit 248b7f5 + TWiki page):
+  * "Jet Energy Resolution - CMS JME JERC.pdf"      (official JER page)
+  * "More on Jet Energy Corrections - CMS JME JERC.pdf"
+  * "JetMET < CMS < TWiki.pdf" -- only says the JetMET documentation moved to
+    cms-jme.docs.cern.ch; no physics content.
+
+What they say:
+  * "Measurements show that the JER in data is worse than in the simulation
+    and the jets in MC need to be smeared to describe the data."
+  * Order: apply the nominal JEC first; starting from JEC-corrected jets,
+    evaluate the nominal JER smearing and its up/down variations.
+    JER smearing only in simulation; data jets are not smeared.
+  * Hybrid method (formulas in section 1). Matching: dR < R/2 (= 0.2 for AK4)
+    AND |pT - pT_gen| < 3 sigma pT; otherwise stochastic smearing.
+    Negative c is truncated to 0.
+  * The random number must be reproducible: hashPRNG seeded with
+    (pT, eta, rho, EventID); official tool jer_smear.json.gz.
+    Same seed for nominal and up/down.
+  * JEC page: correction chain L1L2L3Res; for Run 3 PUPPI L1FastJet and
+    L3Absolute are identity, L2L3Residual identity in MC.
+
+What we did:
+  * Compared the framework with the page: JEC V4, then JER JRV2, MC only,
+    using JME's own JERSmear tool from
+    /cvmfs/cms-griddata.cern.ch/cat/metadata/JME/JER-Smearing/latest/jer_smear.json.gz
+    (inputs JetPt, JetEta, GenPt, Rho, EventID, JER, JERSF). So the hybrid
+    method and the reproducible seed come from the official implementation.
+  * One deviation found: the generator jet is taken from NanoAOD genJetIdx
+    instead of applying dR < 0.2 ourselves. Tested: MET > 50 GeV fraction
+    with/without JER x1.075 -> x1.068 with the strict JME matching.
+    Negligible.
+  * Checked that NanoAOD is not already smeared (section 2).
+  * Looked at the Summer22 JER SFs per |eta| bin (section 6).
+
+Conclusion:
+  * The JER is applied once, correctly, with the official tool.
+  * Switching the JER off is not allowed by the recipe. It also makes our
+    own Z-jet pT balance worse (chi2/ndf 40 -> 58 Zee, 110 -> 144 Zmm without
+    JER), i.e. the MC jets really need the extra smearing.
+
+--------------------------------------------------------------------------------
+4. THE TYPE-1 MET DOCUMENTS YOU UPLOADED
+--------------------------------------------------------------------------------
+Files (src/BTVNanoCommissioning/, commits a106381, f629509, 3a2a020):
+  * "Type-1 MET Correction - CMS JME JERC.pdf"   (official page)
+  * Type1MET.pdf      (worked example, 17 Apr 2026)
+  * Type1METUnc.pdf   (unclustered-energy uncertainty, 17 Apr 2026)
+  * 260202_JMEGeneral.pdf  N. Norjoharuddeen, JME General, 2 Feb 2026
+  * PHJetMET.pdf           M. Malucchi, "Run 3 MET performance",
+                           DPG-PH JetMET, 2 Feb 2026
+
+What the official page + worked example require:
+  1. Start from RawPuppiMET (Cartesian components), not PuppiMET.
+  2. Merge Jet and CorrT1METJet into one list; "each jet is processed
+     uniformly".
+  3. Per jet: raw pT = (1 - rawFactor) pT; muon-subtracted raw pT
+     = raw x (1 - muonSubtrFactor); L1; L2Relative; residual (data);
+     JES variation (MC); JER SMEARING (MC). Quote: "Each jet receives the
+     full JEC/JER chain before contributing to the MET update."
+  4. Jet enters if pT_full > 15 GeV, |eta| < 5.2, EM fraction < 0.9
+     (if CorrT1METJet has no EM-fraction branch, as in v12, the cut may be
+     relaxed for those jets).
+  5. MET -= (pT_full - pT_L1) at phi + muonSubtrDeltaPhi.
+  6. "Keep jet and MET corrections consistent": the stored PuppiMET used the
+     production JEC; if the JEC differs, RECOMPUTE the type-1 MET from the
+     same corrected AK4 jets. Do not combine the stored MET with jets
+     corrected differently. Only AK4 jets, no AK8.
+  7. Type1METUnc.pdf: take the unclustered-energy uncertainty from NanoAOD
+     as a VECTOR SHIFT (PuppiMET_ptUnclusteredUp/Down - PuppiMET) and add it
+     to the recomputed nominal type-1 MET.
+
+What we did -- our code vs the recipe, step by step
+(utils/correction.py: JME_shifts, calc_T1_MET):
+  recipe step                                   ours     tested effect
+  start from RawPuppiMET                        yes
+  muon-subtracted raw pT and phi                yes
+  JEC V4 (PUPPI L1 = 1)                         yes
+  JER smearing in MC, also in the MET           yes      MET 50-100 fraction
+                                                         changes by ~40 %
+  Jet + CorrT1METJet merged, both smeared       yes
+  pT_full > 15, |eta| < 5.2, EMF < 0.9          yes (EMF cut relaxed for
+                                                 CorrT1METJet in v12, allowed)
+  unclustered unc. as vector shift              yes
+  gen match dR < 0.2 and 3 sigma                partly   x1.075 -> x1.068
+                                                (genJetIdx)
+  JEC evaluated at raw pT (talk) vs at
+  muon-subtracted pT (ours)                     differs  no change
+                                                         (x1.368 both)
+  CorrT1METJet matched to GenJets by dR         not done no change
+  => All deviations together < 1 %; the JER itself ~40 %.
+
+The two talks:
+  * Norjoharuddeen (JME General): the same recipe in code form (RawPuppiMET,
+    Jet + CorrT1METJet, noMu pT, pT > 15, EMF < 0.9). Closure: JEC-only
+    recomputation = stored PuppiMET within 0.5 % for 99.9999 % of events
+    -> official confirmation that the stored PuppiMET has no JER (2.5).
+    The talk covers the JEC part only; it does not say to skip the JER (the
+    official page and worked example include it).
+  * Malucchi (DPG-PH): Zmumu DY MC only, no JER, no data. For 2022
+    NanoAODv12, the type-1 MET recomputed with JEC has a worse resolution and
+    a larger high-MET tail than the stored PuppiMET; "for 2023 this effect is
+    much smaller"; the 2022 v12 DY samples "seem problematic for the MET
+    resolution"; the v15 sample does not show it.
+    In our files: the stored PuppiMET gives a 6-10 % LARGER MET 50-100
+    fraction than our JEC-only MET (x1.06 Zee, x1.10 Zmm), while the JER gives
+    x1.37 / x1.39 -> for us the JER is the dominant effect. The 2022 v12
+    remark could be part of what remains even without JER (recoil, section 7);
+    NOT tested.
+
+Conclusion:
+  * Our nominal MET (run A) IS the official type-1 recipe including JER.
+    Run B (JER off), run C (JER in MET only for gen-matched jets) and the
+    Phase 2 versions (JER removed from the MET per jet class) are diagnostics
+    to locate the problem, not proposed setups.
+  * Using the stored NanoAOD PuppiMET instead is not a way out: it has no JER
+    and the production JEC, i.e. it is "MET without JER", which the recipe
+    excludes, and it is inconsistent with our V4-corrected jets.
+
+--------------------------------------------------------------------------------
+5. OFFICIAL RECOMMENDATIONS AND OUR STATUS
+--------------------------------------------------------------------------------
+  [OK]  JEC first, then JER; JER in MC only                    (JER page)
+  [OK]  hybrid smearing, official tool, reproducible seed      (JER page)
+  [~]   gen match dR < R/2 and 3 sigma -> we use genJetIdx;
+        effect < 1 % (tested)                                  (JER page)
+  [OK]  recompute type-1 from RawPuppiMET with the same JEC as
+        the jets; do not mix with stored PuppiMET              (Type-1 page)
+  [OK]  full JEC+JER chain for every MET jet incl. CorrT1METJet (Type1MET.pdf)
+  [OK]  pT_full > 15, |eta| < 5.2, EMF < 0.9                   (Type1MET.pdf,
+                                                                JME talk)
+  [OK]  unclustered uncertainty as vector shift                (Type1METUnc.pdf)
+  [OK]  only AK4 jets in type-1                                (Type-1 page)
+  [OK]  jet veto map, MET filters                              (Malucchi talk)
+NOT covered by any official document:
+  * none of them recommends dropping the JER from the MET;
+  * none says what to do if the smearing of soft forward jets with SF 1.6
+    over-smears the MET. -> question for JME.
+
+--------------------------------------------------------------------------------
+6. SO WHERE DOES THE MET > 50 GeV DEFICIT COME FROM?
+--------------------------------------------------------------------------------
+Summer22 JER SFs (Summer22_22Sep2023_JRV2_MC_ScaleFactor_AK4PFPuppi, < 121 GeV):
+   |eta|            SF           rel. unc.   SF -1 sigma   MC res. 15/100 GeV
+   0 - 1.305        1.06-1.13    1.5-2.2 %   1.03-1.11     16-24 % / 10-12 %
+   1.305 - 2.5      1.02-1.30    3-12 %      0.92-1.22     28-44 % / 12-13 %
+   2.5 - 2.65       1.22         5.9 %       1.15          56 % / 13 %
+   2.65 - 2.853     1.60         9.6 %       1.45          60 % / 14 %
+   2.853 - 2.964    1.64         16.9 %      1.36          75 % / 16 %
+   2.964 - 3.139    1.21         11.8 %      1.06          52 % / 19 %
+   3.139 - 5.191    1.12         13.4 %      0.97          35-38 % / 9-11 %
+Random smearing width of an unmatched jet = sigma x sqrt(s^2 - 1):
+   |eta| 2.65-2.853, 15 GeV: 0.60 x sqrt(1.6^2 - 1) = 0.60 x 1.25 ~ 75 % of pT
+   central jet:              0.20 x sqrt(1.1^2 - 1) ~ 9 % of pT
+Even at -1 sigma the SFs are 1.45 / 1.36 (63-69 % width): the SF uncertainty
+cannot cover it.
+
+Phase 1 (MC only): about half of the JER-induced MET 50-100 excess comes from
+jets at |eta| 2.65-2.853, mostly with pT < 30 GeV. Gen-matched and unmatched
+jets contribute equally (so it is not only pile-up jets). Analysis-type jets
+(pT > 30, |eta| < 2.5) alone give only a small part.
+
+Phase 2 (full run, 7 MET versions side by side; analysis jets always smeared):
+data/MC at MET 50-100 GeV (Zee / Zmm), all cuts except MET:
+   nominal recipe (run A)                         0.70 / 0.69
+   no JER in MET for |eta| 2.65-2.964             0.81 / 0.82
+   no JER in MET for |eta| 2.5-3.139              0.82 / 0.84
+   no JER in MET for CorrT1METJet only            0.77 / 0.75
+   no JER in MET for jets with pT < 30            0.84 / 0.85
+   no JER in MET at all                           0.95 / 0.95
+   run B (JER off everywhere)                     0.96 / 0.96
+Effect on the MC b-tag/c-tag yield ratio: Loose < 0.6 %, Medium up to 2.7 %,
+Tight up to ~3 % (Zmm -3.1 +- 0.4 %). Data stat. error on the ratio:
+1.9/3.3/4.8 % (Zee), 1.1/1.8/2.7 % (Zmm) for L/M/T.
+
+--------------------------------------------------------------------------------
+7. WHAT IS NOT FIXED / NOT STUDIED
+--------------------------------------------------------------------------------
+  * Hadronic recoil at qT < 10 GeV: RMS(u_perp) data 13.9 GeV, MC nominal
+    17.0 GeV, MC without JER 15.7 GeV -> MC still wider even without JER.
+  * Recoil response <u_par + qT>: data 1-2.5 GeV higher than EVERY MC
+    version (independent of the JER).
+  * With no JER in the MET, data/MC below 50 GeV is flat at 0.94-0.95:
+    shape right, ~5 % normalisation left (not studied).
+  * The 2022 v12 DY MET remark of the Malucchi talk: not tested.
+  * No full run with the JER-down variation.
+  * Summer22 only; other eras not done.
+
+--------------------------------------------------------------------------------
+8. PROPOSAL
+--------------------------------------------------------------------------------
+  1. Keep the official recipe (run A) as the nominal.
+  2. MET-cut systematic on the b/c ratio = change to "no JER in MET for
+     |eta| 2.5-3.139" (or "no JER in MET", larger).
+  3. Ask JME about the SF 1.60-1.64 for soft jets at |eta| 2.65-2.964, and
+     about the 2022 v12 DY MET remark.
+  4. Study the recoil (pile-up, unclustered energy) if the group wants.
+  5. Other eras only if asked.
+
+--------------------------------------------------------------------------------
+9. WHERE EVERYTHING IS
+--------------------------------------------------------------------------------
+Repository: /uscms/home/psrivast/nobackup/BTVNanoCommissioning
+  JME documents:   src/BTVNanoCommissioning/*.pdf
+  Framework code:  src/BTVNanoCommissioning/utils/correction.py
+                   (JME_shifts, get_JER, calc_T1_MET)
+  NanoAOD check (23 Nov):
+     study_zbzc_jer_in_nano.py
+     hists_zbzc_run3_jerinnano/Summer22/jerinnano.txt  (all numbers)
+     hists_zbzc_run3_jerinnano/Summer22/jerinnano_DY_inclusive.png
+     hists_zbzc_run3_jerinnano/Summer22/jerinnano_DY_PTLL-200.png
+     hists_zbzc_run3_jerinnano/Summer22/jerinnano_TTto2L2Nu.png
+     (left: jet slope test T1; middle: MET projection T3; right: T4)
+  Full report (22 pages, 17 doubts answered in section 9):
+     hists_zbzc_run3_metvar/Summer22/report/report_MET50_JER_Summer22.pdf
+  Slides (Phase 2):
+     hists_zbzc_run3_metvar/Summer22/slides_zbzc_metvar_Summer22.pdf
+  Phase 1 / Phase 2 scripts: study_zbzc_met_jer_split.py, plot_zbzc_metvar.py
+  Notes: NOTES_Zb_Zc_ratio_run3.md
+  Commits: 895342e (Phase 1), b6f34d0 (Phase 2), db3eca4 (report),
+           5d89ef8 (NanoAOD check)

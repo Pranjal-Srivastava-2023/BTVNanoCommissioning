@@ -9,8 +9,9 @@ T1 jets: slope of Jet_pt(nano)/(raw x V4 JEC) - 1 vs (pT_JEC - pT_gen)/pT_JEC = 
   be SF-1 = 0.10 (barrel) ... 0.60 (2.65-2.964). -> nano jets are JEC-only (<r> 0.996-1.027 = GT JEC vs V4).
 T3 nano PuppiMET: projection of [PuppiMET - T1(JEC only, rebuilt from RawPuppiMET)] on the JER-scaling MET shift: slope
   0.001-0.012 (1 if smeared), 14k-52k events. T4: median |nano - T1 JEC-only| 1.2 GeV vs |nano - T1 JEC+JER| 4.3-4.8 GeV.
-T2 (core width vs PtRes / SFxPtRes): crude estimator, unreliable at low pT barrel; forward 2.65-2.964 60-150 GeV
-  agrees with unsmeared MC res, not SFxres. Supporting only.
+T2 (core width vs PtRes / SFxPtRes): crude estimator, unreliable (barrel low pT 0.074 vs ~0.15); forward 2.65-2.964
+  60-150 GeV: PTLL-200 and TT closer to unsmeared, DY incl closer to smeared -> INCONCLUSIVE, not used.
+Meeting explainer (JME docs + this doubt): hists_zbzc_run3_jerinnano/Summer22/EXPLANATION_JER_TypeI_MET_JME_docs.txt
 Framework: jets start from Jet_pt x (1-rawFactor), MET from RawPuppiMET (correction.py ~1102, ~1206, calc_T1_MET) and the
   smeared jets enter the T1 sum once; plotted jets = same smeared jets. So JER is applied exactly once, in jets and MET.
 
