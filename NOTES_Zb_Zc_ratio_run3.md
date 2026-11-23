@@ -2,6 +2,18 @@
 
 Run 2 QCD_sf work is in `SESSION_NOTES.md`; this file is only the Run 3 ratio measurement.
 
+## 2026-11-23: "is JER already in NanoAOD -> double counting?" -- re-checked, answer NO (study_zbzc_jer_in_nano.py)
+
+Out: hists_zbzc_run3_jerinnano/Summer22/{jerinnano.txt,.json, jerinnano_<sample>.png}; DY incl. 150k, DY PTLL-200 97k, TT 33k ev.
+T1 jets: slope of Jet_pt(nano)/(raw x V4 JEC) - 1 vs (pT_JEC - pT_gen)/pT_JEC = 0.00-0.02 in every |eta| bin; smeared would
+  be SF-1 = 0.10 (barrel) ... 0.60 (2.65-2.964). -> nano jets are JEC-only (<r> 0.996-1.027 = GT JEC vs V4).
+T3 nano PuppiMET: projection of [PuppiMET - T1(JEC only, rebuilt from RawPuppiMET)] on the JER-scaling MET shift: slope
+  0.001-0.012 (1 if smeared), 14k-52k events. T4: median |nano - T1 JEC-only| 1.2 GeV vs |nano - T1 JEC+JER| 4.3-4.8 GeV.
+T2 (core width vs PtRes / SFxPtRes): crude estimator, unreliable at low pT barrel; forward 2.65-2.964 60-150 GeV
+  agrees with unsmeared MC res, not SFxres. Supporting only.
+Framework: jets start from Jet_pt x (1-rawFactor), MET from RawPuppiMET (correction.py ~1102, ~1206, calc_T1_MET) and the
+  smeared jets enter the T1 sum once; plotted jets = same smeared jets. So JER is applied exactly once, in jets and MET.
+
 ## RESUME HERE (2026-11-22 night): MET > 50 study PHASE 2 DONE -- deck for the meeting 2026-11-23
 
 DECK: hists_zbzc_run3_metvar/Summer22/slides_zbzc_metvar_Summer22.pdf (22 p.) + .pptx (cleaned, 20 p.).
